@@ -1,0 +1,9 @@
+
+/* TeaCafe: restrained Minecraft-style motion only */
+.topbar{transition:transform .18s steps(3,end);will-change:transform}.topbar.topbar-hidden{transform:translateY(calc(-100% - 6px))}
+.mc-button,.mc-nav,.discord-button,.mc-menu-button{transition:filter .08s linear}.mc-button:active,.mc-nav:active,.discord-button:active,.mc-menu-button:active{transform:translateY(2px)}
+dialog[open]{animation:mc-menu-in .12s steps(3,end)}@keyframes mc-menu-in{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+.home-page .topbar{transition:transform .16s steps(3,end)}
+@media(prefers-reduced-motion:reduce){.home-scroll-cue i{animation:none}.home-hero-video{display:none}}
