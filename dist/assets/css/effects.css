@@ -1,9 +1,22 @@
+/* TeaCafe v10: restrained, smooth Minecraft-style motion */
+:root{--motion-fast:140ms;--motion-normal:260ms;--motion-slow:420ms;--ease-ui:cubic-bezier(.2,.72,.24,1)}
+.topbar{transition:transform var(--motion-normal) var(--ease-ui),opacity var(--motion-fast) ease;will-change:transform,opacity}
+.topbar.topbar-hidden{transform:translate3d(0,calc(-100% - 8px),0);opacity:0;pointer-events:none}
+.mc-button,.mc-nav,.discord-button,.mc-menu-button,.gallery-arrow{transition:transform var(--motion-fast) var(--ease-ui),filter var(--motion-fast) ease,background-color var(--motion-fast) ease,box-shadow var(--motion-fast) ease}
+.mc-button:hover,.mc-nav:hover,.discord-button:hover,.mc-menu-button:hover,.gallery-arrow:hover{filter:brightness(1.07)}
+.mc-button:active,.mc-nav:active,.discord-button:active,.mc-menu-button:active,.gallery-arrow:active{transform:translate3d(0,2px,0)}
+.home-link{transition:transform var(--motion-normal) var(--ease-ui),background-color var(--motion-normal) ease,box-shadow var(--motion-normal) var(--ease-ui)}
+.home-link:hover,.home-link:focus-visible{transform:translate3d(0,-4px,0);box-shadow:inset 3px 3px #fff,inset -4px -4px #b6b8aa,10px 12px rgba(35,39,32,.14)}
+.toast{transition:translate var(--motion-normal) var(--ease-ui),opacity var(--motion-fast) ease}
+dialog[open]{animation:mc-menu-in var(--motion-fast) var(--ease-ui)}
+@keyframes mc-menu-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.gallery-progress i{transition:width var(--motion-normal) var(--ease-ui)}
+html[data-motion="reduced"] *{scroll-behavior:auto!important;animation:none!important;transition:none!important}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}.home-hero-video{display:none}}
 
-/* TeaCafe: restrained Minecraft-style motion only */
-.topbar{transition:transform .18s steps(3,end);will-change:transform}.topbar.topbar-hidden{transform:translateY(calc(-100% - 6px))}
-.mc-button,.mc-nav,.discord-button,.mc-menu-button{transition:filter .08s linear}.mc-button:active,.mc-nav:active,.discord-button:active,.mc-menu-button:active{transform:translateY(2px)}
-dialog[open]{animation:mc-menu-in .12s steps(3,end)}@keyframes mc-menu-in{from{opacity:0}to{opacity:1}}
-@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
-
-.home-page .topbar{transition:transform .16s steps(3,end)}
-@media(prefers-reduced-motion:reduce){.home-scroll-cue i{animation:none}.home-hero-video{display:none}}
+/* v12 motion pass */
+:root{--motion-fast:150ms;--motion-normal:240ms;--ease-ui:cubic-bezier(.2,.75,.25,1)}
+.topbar{transition:transform 260ms var(--ease-ui),opacity 180ms ease}
+.home-link{transition:transform 220ms var(--ease-ui),background-color 180ms ease,box-shadow 220ms var(--ease-ui)}
+.home-link:hover,.home-link:focus-visible{transform:translateY(-3px)}
+.mc-button,.mc-nav,.discord-button,.mc-menu-button,.gallery-arrow{transition:transform 140ms var(--ease-ui),filter 140ms ease,background-color 140ms ease,box-shadow 140ms ease}
