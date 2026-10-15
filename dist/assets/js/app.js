@@ -8,13 +8,13 @@ const nav = [
   ["rules.html", "規則"],
   ["news.html", "公告"],
   ["gallery.html", "玩家相冊"],
-  ["pass.html", "通行證"],
+  ["forum.html", "論壇"],
   ["wiki.html", "Wiki"]
 ];
 
 const header = $("[data-header]");
 if (header) {
-  header.innerHTML = `<header class="topbar ${page === "index.html" ? "home-topbar topbar-hidden" : ""}">
+  header.innerHTML = `<header class="topbar topbar-hidden ${page === "index.html" ? "home-topbar" : ""}">
     <a class="brand" href="/"><span class="brand-block"></span><span><b>茶咖暖居</b><small>TEACAFE</small></span></a>
     <nav class="topnav">${nav.map(([url, name]) => `<a class="mc-nav ${page === url ? "active" : ""}" href="/${url}">${name}</a>`).join("")}</nav>
     <div class="top-tools">
@@ -29,7 +29,7 @@ const footer = $("[data-footer]");
 if (footer) {
   footer.innerHTML = `<footer class="site-footer">
     <a class="brand" href="/"><span class="brand-block"></span><span><b>茶咖暖居</b><small>TEACAFE</small></span></a>
-    <nav><a href="/">主頁</a><a href="/rules.html">規則</a><a href="/news.html">公告</a><a href="/gallery.html">玩家相冊</a><a href="/pass.html">通行證</a><a href="/wiki.html">Wiki</a></nav>
+    <nav><a href="/">主頁</a><a href="/rules.html">規則</a><a href="/news.html">公告</a><a href="/gallery.html">玩家相冊</a><a href="/forum.html">論壇</a><a href="/wiki.html">Wiki</a></nav>
   </footer>`;
 }
 
@@ -196,7 +196,7 @@ $("#motion-switch")?.addEventListener("click", () => {
 });
 
 $$('[data-copy]').forEach((button) => button.addEventListener("click", async () => {
-  const value = button.dataset.copy === "SERVER_IP" ? "teacafe.xyz" : button.dataset.copy;
+  const value = button.dataset.copy === "SERVER_IP" ? "mc.teacafe.xyz" : button.dataset.copy;
   try { await navigator.clipboard.writeText(value); toast(value + " 已複製"); }
   catch { toast(value); }
 }));
@@ -209,7 +209,7 @@ async function loadServerStatus() {
     if (!response.ok) throw new Error("status");
     const data = await response.json();
     const address = $("[data-server-address]");
-    if (address) address.textContent = data.address || "teacafe.xyz";
+    if (address) address.textContent = "mc.teacafe.xyz";
     status.classList.remove("status-loading", "status-offline", "status-online");
     if (data.online) {
       status.textContent = "● 線上";
@@ -292,10 +292,13 @@ async function loadAuth() {
     const name = document.createElement("b");
     name.textContent = authName(user);
     copy.append(name);
+    const level = document.createElement("span");
+    level.className = "topbar-level";
+    level.textContent = "Lv.0";
     const caret = document.createElement("span");
     caret.className = "topbar-auth-caret";
     caret.textContent = "▾";
-    button.append(copy, caret);
+    button.append(copy, level, caret);
   });
   return authState;
 }
@@ -324,6 +327,22 @@ async function openAuth(event) {
   const handle = document.createElement("p");
   handle.textContent = "@" + user.username;
   content.append(handle);
+  const levelRow = document.createElement("div");
+  levelRow.className = "profile-level-row";
+  const levelTitle = document.createElement("span");
+  levelTitle.textContent = "TeaCafe 社群等級";
+  const levelBadge = document.createElement("b");
+  levelBadge.textContent = "Lv.0";
+  levelRow.append(levelTitle, levelBadge);
+  content.append(levelRow);
+  const progress = document.createElement("div");
+  progress.className = "profile-exp-track";
+  progress.append(document.createElement("span"));
+  content.append(progress);
+  const explanation = document.createElement("p");
+  explanation.className = "profile-level-explanation";
+  explanation.textContent = "0 / 100 EXP · 論壇發文與相冊分享在後端啟用後可累積經驗。";
+  content.append(explanation);
   const logout = document.createElement("button");
   logout.type = "button";
   logout.className = "mc-button";
@@ -335,6 +354,9 @@ async function openAuth(event) {
     location.reload();
   });
 }
+// Shared read-only auth state for front-end components.
+window.TeaCafeAuth = { ready: authReady, open: openAuth, getState: () => authState };
+window.addEventListener('teacafe-toast', (event) => toast(String(event.detail || '')));
 $$('[data-auth]').forEach((button) => button.addEventListener("click", openAuth));
 $$('.auth-required').forEach((button) => button.addEventListener("click", async (event) => {
   event.preventDefault();
@@ -343,34 +365,48 @@ $$('.auth-required').forEach((button) => button.addEventListener("click", async 
   toast("目前尚未開放購買");
 }));
 
-// Smooth topbar reveal without layout movement.
+// Navigation is revealed only by moving the pointer upward into its hover band.
+// Scrolling down hides the bar immediately, even while the pointer is over it.
 const topbar = $(".topbar");
 if (topbar) {
-  if (page === "index.html") {
-    const hotzone = $("[data-topbar-hotzone]");
-    let hideTimer;
-    const showTopbar = () => { clearTimeout(hideTimer); topbar.classList.remove("topbar-hidden"); };
-    const hideTopbar = () => { clearTimeout(hideTimer); hideTimer = setTimeout(() => topbar.classList.add("topbar-hidden"), 320); };
-    // The transparent hotzone is visual only; pointer position controls reveal.
-    hotzone?.setAttribute("aria-hidden", "true");
-    topbar.addEventListener("pointerenter", showTopbar);
-    topbar.addEventListener("pointerleave", hideTopbar);
-    document.addEventListener("pointermove", (event) => { if (event.clientY <= 96) showTopbar(); }, { passive: true });
-  } else {
-    let lastY = scrollY;
-    let ticking = false;
-    addEventListener("scroll", () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        const y = scrollY;
-        topbar.classList.toggle("topbar-hidden", y > lastY && y > 120);
-        lastY = y;
-        ticking = false;
-      });
-    }, { passive: true });
-    document.addEventListener("pointermove", (event) => { if (event.clientY < 96) topbar.classList.remove("topbar-hidden"); }, { passive: true });
-  }
+  let previousPointerY = null;
+  let hideTimer = 0;
+  const touchPointer = matchMedia('(hover: none), (pointer: coarse)');
+  const showTopbar = () => {
+    if (touchPointer.matches) return;
+    clearTimeout(hideTimer);
+    topbar.classList.remove('topbar-hidden');
+  };
+  const hideTopbar = (immediate = false) => {
+    if (touchPointer.matches) return;
+    clearTimeout(hideTimer);
+    if (immediate) topbar.classList.add('topbar-hidden');
+    else hideTimer = setTimeout(() => topbar.classList.add('topbar-hidden'), 90);
+  };
+  document.addEventListener('pointermove', event => {
+    if (event.pointerType === 'touch' || touchPointer.matches) return;
+    const withinRevealBand = event.clientY <= Math.max(108, topbar.offsetHeight + 26);
+    const movingUp = previousPointerY !== null && event.clientY < previousPointerY - 1;
+    if (withinRevealBand && movingUp) showTopbar();
+    else if (!withinRevealBand && !topbar.contains(event.target)) hideTopbar();
+    previousPointerY = event.clientY;
+  }, {passive:true});
+  topbar.addEventListener('pointerleave', () => hideTopbar());
+  document.addEventListener('wheel', event => {
+    if (event.deltaY > 0) hideTopbar(true);
+  }, {passive:true});
+  let priorScroll = window.scrollY;
+  addEventListener('scroll', () => {
+    if (window.scrollY > priorScroll + 2) hideTopbar(true);
+    priorScroll = window.scrollY;
+  }, {passive:true});
+  topbar.addEventListener('focusin', () => topbar.classList.remove('topbar-hidden'));
+  document.addEventListener('keydown', event => {
+    if (event.altKey && event.key.toLowerCase() === 'm') {
+      event.preventDefault();
+      topbar.classList.toggle('topbar-hidden');
+    }
+  });
 }
 
 // News content is editable in /dist/data/news.json.
@@ -455,7 +491,30 @@ if (galleryRail) {
   const uploadForm = $("[data-gallery-upload-form]");
   const uploadStatus = $("[data-gallery-upload-status]");
   let posts = [];
+  const COOLDOWN_MS = 48 * 60 * 60 * 1000;
   let activeIndex = 0;
+  function cooldownUntil() {
+    const userId = authState.user?.id;
+    if (!userId) return 0;
+    const stored = Number(localStorage.getItem(`teacafe-gallery-last-${userId}`) || 0);
+    const ownPosts = posts.filter(post => String(post.author_id || '') === String(userId));
+    const lastOnline = Math.max(0, ...ownPosts.map(post => +new Date(post.created_at) || 0));
+    return Math.max(stored, lastOnline) + COOLDOWN_MS;
+  }
+  function getCooldownRemaining() {
+    const userId = authState.user?.id;
+    if (!userId) return 0;
+    return Math.max(0, cooldownUntil() - Date.now());
+  }
+  function updateCooldownHint() {
+    const hint = $('[data-gallery-cooldown]');
+    if (!hint) return;
+    const left = getCooldownRemaining();
+    if (!left) { hint.textContent = '每 48 小時最多發布一張照片。'; return; }
+    const hours = Math.floor(left / 3600000);
+    const minutes = Math.ceil(left % 3600000 / 60000);
+    hint.textContent = `距離下次可發布約 ${hours} 小時 ${minutes} 分鐘（前端提示）`;
+  }
   let galleryConfigured = false;
   let commentLoadToken = 0;
   let drag = null;
@@ -502,7 +561,10 @@ if (galleryRail) {
     const time = document.createElement("time");
     time.dateTime = post.created_at || "";
     time.textContent = formatTime(post.created_at);
-    who.append(name, time);
+    const level = document.createElement('span');
+    level.className = 'level-pill';
+    level.textContent = `Lv.${Math.max(0, Number(post.level) || 0)}`;
+    who.append(name, level, time);
     author.append(avatar, who);
 
     const text = document.createElement("div");
@@ -568,7 +630,14 @@ if (galleryRail) {
       const data = await response.json();
       if (token !== commentLoadToken) return;
       const comments = Array.isArray(data.comments) ? data.comments : [];
-      if (commentCount) commentCount.textContent = comments.length ? `${comments.length} 則` : "";
+      if (commentCount) commentCount.textContent = comments.length ? `${comments.length} 則` : "0 則";
+      if (!comments.length) {
+        const empty = document.createElement('p');
+        empty.className = 'gallery-comments-empty';
+        empty.textContent = '還沒有留言。';
+        commentsBox.replaceChildren(empty);
+        return;
+      }
       commentsBox.replaceChildren(...comments.map((comment) => {
         const row = document.createElement("article");
         row.className = "gallery-comment";
@@ -576,15 +645,15 @@ if (galleryRail) {
         avatar.src = comment.author_avatar_url || "/image/favicon.svg";
         avatar.alt = "";
         const content = document.createElement("div");
-        const head = document.createElement("header");
+        const line = document.createElement("p");
+        line.className = 'social-comment-text';
         const name = document.createElement("strong");
         name.textContent = comment.author_name || comment.author_username || "Discord 使用者";
+        line.append(name, document.createTextNode('  ' + comment.body));
         const time = document.createElement("time");
+        time.dateTime = comment.created_at || '';
         time.textContent = formatTime(comment.created_at);
-        const body = document.createElement("p");
-        body.textContent = comment.body;
-        head.append(name, time);
-        content.append(head, body);
+        content.append(line, time);
         row.append(avatar, content);
         return row;
       }));
@@ -611,6 +680,7 @@ if (galleryRail) {
     }
 
     galleryRail.replaceChildren(...posts.map(makeSlide));
+    updateCooldownHint();
     activeIndex = 0;
     requestAnimationFrame(() => {
       updateGalleryUi(true);
@@ -679,6 +749,11 @@ if (galleryRail) {
       location.href = "/api/auth/login?return=" + encodeURIComponent(location.pathname);
       return;
     }
+    if (getCooldownRemaining() > 0) {
+      updateCooldownHint();
+      toast('目前尚未達到下一次照片發布時間。');
+      return;
+    }
     if (!galleryConfigured) {
       toast("相冊後端尚未設定");
       return;
@@ -699,6 +774,9 @@ if (galleryRail) {
         if (response.status === 503) throw new Error("相冊儲存空間尚未設定");
         if (response.status === 413) throw new Error("圖片大小超過 12 MB");
         throw new Error("發布失敗");
+      }
+      if (authState.user?.id) {
+        localStorage.setItem(`teacafe-gallery-last-${authState.user.id}`, String(Date.now()));
       }
       uploadForm.reset();
       uploadDialog.close();
