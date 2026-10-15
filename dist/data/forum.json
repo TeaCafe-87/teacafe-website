@@ -1,0 +1,62 @@
+{
+  "categories": [
+    {
+      "id": "all",
+      "name": "全部文章"
+    },
+    {
+      "id": "general",
+      "name": "閒聊交流"
+    },
+    {
+      "id": "help",
+      "name": "新手提問"
+    },
+    {
+      "id": "commands",
+      "name": "指令交流"
+    },
+    {
+      "id": "survival",
+      "name": "傳送與生存"
+    },
+    {
+      "id": "items",
+      "name": "物品討論"
+    },
+    {
+      "id": "systems",
+      "name": "系統交流"
+    },
+    {
+      "id": "builds",
+      "name": "建築分享"
+    }
+  ],
+  "posts": [
+    {
+      "id": "example-welcome",
+      "category": "general",
+      "title": "歡迎來到 TeaCafe 玩家論壇",
+      "body": "這是一篇用於預覽論壇排版的示範文章。未來玩家可以在此交流 Minecraft 遊戲心得、詢問問題與分享建築。",
+      "author_name": "TeaCafe",
+      "author_avatar_url": "/image/favicon.svg",
+      "level": 0,
+      "created_at": null,
+      "demo": true,
+      "media": []
+    },
+    {
+      "id": "example-builds",
+      "category": "builds",
+      "title": "分享你的 Minecraft 建築",
+      "body": "論壇會支援上傳圖片與影片。發文送出後先進入審核，通過才公開。這篇目前只用來示範文章顯示方式。",
+      "author_name": "TeaCafe",
+      "author_avatar_url": "/image/favicon.svg",
+      "level": 0,
+      "created_at": null,
+      "demo": true,
+      "media": []
+    }
+  ]
+}
