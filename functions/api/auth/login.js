@@ -3,11 +3,17 @@ function cookie(name, value, maxAge = 600) {
 }
 export async function onRequestGet({ request, env }) {
   if (!env.DISCORD_CLIENT_ID || !env.DISCORD_REDIRECT_URI) return new Response("Discord OAuth is not configured.", { status: 500 });
-  const stateBytes = new Uint8Array(24); crypto.getRandomValues(stateBytes);
-  const state = Array.from(stateBytes, b => b.toString(16).padStart(2,"0")).join("");
   const url = new URL(request.url);
   const returnTo = url.searchParams.get("return") || "/";
   const safeReturn = returnTo.startsWith("/") && !returnTo.startsWith("//") && !returnTo.includes("\\") && !/[\u0000-\u001f]/.test(returnTo) ? returnTo : "/";
+  const callbackUrl = new URL(env.DISCORD_REDIRECT_URI);
+  if (url.origin !== callbackUrl.origin) {
+    const canonicalLogin = new URL("/api/auth/login", callbackUrl.origin);
+    canonicalLogin.searchParams.set("return", safeReturn);
+    return Response.redirect(canonicalLogin, 302);
+  }
+  const stateBytes = new Uint8Array(24); crypto.getRandomValues(stateBytes);
+  const state = Array.from(stateBytes, b => b.toString(16).padStart(2,"0")).join("");
   const auth = new URL("https://discord.com/oauth2/authorize");
   auth.searchParams.set("response_type", "code");
   auth.searchParams.set("client_id", env.DISCORD_CLIENT_ID);
