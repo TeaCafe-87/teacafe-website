@@ -145,6 +145,8 @@ $('[data-settings-discord]')?.addEventListener('click', () => { settings.close()
 
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
+  const openDialog = [...document.querySelectorAll('dialog[open]')].at(-1);
+  if (openDialog && openDialog !== settings && openDialog !== auth) return;
   event.preventDefault();
   if (settings.open) { closeSettingPanels(); settings.close(); return; }
   if (auth?.open) { auth.close(); return; }
@@ -409,14 +411,18 @@ if (topbar) {
   });
 }
 
-// News content is editable in /dist/data/news.json.
+// D1 is the primary content source. Static JSON stays as a setup preview.
 async function loadNews() {
   const list = $("[data-news-list]");
   if (!list) return;
   try {
-    const response = await fetch("/data/news.json", { cache: "no-cache" });
-    if (!response.ok) throw new Error("news");
-    const data = await response.json();
+    const api = await fetch('/api/news', { headers: { Accept: 'application/json' } });
+    let data = api.ok ? await api.json() : null;
+    if (!data?.configured) {
+      const fallback = await fetch('/data/news.json', { cache: 'no-cache' });
+      if (!fallback.ok) throw new Error('news');
+      data = await fallback.json();
+    }
     const items = Array.isArray(data.items) ? data.items : [];
     list.replaceChildren(...items.map((item) => {
       const article = document.createElement("article");
@@ -452,6 +458,39 @@ async function loadNews() {
 }
 loadNews();
 
+async function loadWikiUpdates() {
+  const host = $('[data-wiki-updates]');
+  if (!host) return;
+  try {
+    const response = await fetch('/api/wiki/entries', { headers: { Accept: 'application/json' } });
+    if (!response.ok) return;
+    const data = await response.json();
+    if (!data.configured || !Array.isArray(data.entries) || !data.entries.length) return;
+    host.hidden = false;
+    const title = document.createElement('h2'); title.textContent = '最新補充條目';
+    host.append(title);
+    for (const entry of data.entries) {
+      const section = document.createElement('section'); section.className = 'wiki-live-entry';
+      const heading = document.createElement('h3'); heading.textContent = entry.title;
+      const summary = document.createElement('p'); summary.textContent = entry.summary || entry.body;
+      section.append(heading, summary); host.append(section);
+    }
+  } catch {}
+}
+loadWikiUpdates();
+
+async function loadPassSummary() {
+  const host = $('[data-pass-summary]');
+  if (!host) return;
+  try {
+    const response = await fetch('/api/pass/summary');
+    if (!response.ok) return;
+    const data = await response.json();
+    if (data.season) host.textContent = `${data.season.title} · 最高 ${data.season.max_level} 級 · 每級 ${data.season.xp_per_level} 經驗`;
+  } catch {}
+}
+loadPassSummary();
+
 const search = $("#wiki-search");
 if (search) search.addEventListener("input", (event) => {
   const query = event.target.value.trim().toLowerCase();
@@ -473,350 +512,6 @@ if (page === "wiki.html") {
       if (chapter) chapter.append(node);
     });
   }
-}
-
-// Gallery: API-backed collaborative carousel with static fallback.
-const galleryRail = $("[data-gallery-rail]");
-if (galleryRail) {
-  const current = $("[data-gallery-current]");
-  const total = $("[data-gallery-total]");
-  const progress = $("[data-gallery-progress]");
-  const prev = $("[data-gallery-prev]");
-  const next = $("[data-gallery-next]");
-  const commentsBox = $("[data-gallery-comments]");
-  const commentCount = $("[data-gallery-comment-count]");
-  const commentForm = $("[data-gallery-comment-form]");
-  const createButton = $("[data-gallery-create]");
-  const uploadDialog = $("#gallery-upload");
-  const uploadForm = $("[data-gallery-upload-form]");
-  const uploadStatus = $("[data-gallery-upload-status]");
-  let posts = [];
-  const COOLDOWN_MS = 48 * 60 * 60 * 1000;
-  let activeIndex = 0;
-  function cooldownUntil() {
-    const userId = authState.user?.id;
-    if (!userId) return 0;
-    const stored = Number(localStorage.getItem(`teacafe-gallery-last-${userId}`) || 0);
-    const ownPosts = posts.filter(post => String(post.author_id || '') === String(userId));
-    const lastOnline = Math.max(0, ...ownPosts.map(post => +new Date(post.created_at) || 0));
-    return Math.max(stored, lastOnline) + COOLDOWN_MS;
-  }
-  function getCooldownRemaining() {
-    const userId = authState.user?.id;
-    if (!userId) return 0;
-    return Math.max(0, cooldownUntil() - Date.now());
-  }
-  function updateCooldownHint() {
-    const hint = $('[data-gallery-cooldown]');
-    if (!hint) return;
-    const left = getCooldownRemaining();
-    if (!left) { hint.textContent = '每 48 小時最多發布一張照片。'; return; }
-    const hours = Math.floor(left / 3600000);
-    const minutes = Math.ceil(left % 3600000 / 60000);
-    hint.textContent = `距離下次可發布約 ${hours} 小時 ${minutes} 分鐘（前端提示）`;
-  }
-  let galleryConfigured = false;
-  let commentLoadToken = 0;
-  let drag = null;
-  let dragFrame = 0;
-  let pendingScrollLeft = 0;
-
-  const formatTime = (value) => {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "";
-    return date.toLocaleString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
-  };
-
-  function makeSlide(post) {
-    const article = document.createElement("article");
-    article.className = "gallery-slide";
-    article.dataset.postId = post.id;
-
-    const media = document.createElement("div");
-    media.className = "gallery-shot";
-    const image = document.createElement("img");
-    image.src = post.image_url;
-    image.alt = post.title || "茶咖暖居遊戲畫面";
-    image.loading = "lazy";
-    image.decoding = "async";
-    image.addEventListener("error", () => {
-      image.remove();
-      media.classList.add("image-missing");
-      const label = document.createElement("span");
-      label.textContent = post.title || "TeaCafe";
-      media.append(label);
-    }, { once: true });
-    media.append(image);
-
-    const meta = document.createElement("div");
-    meta.className = "gallery-caption";
-    const author = document.createElement("div");
-    author.className = "gallery-author";
-    const avatar = document.createElement("img");
-    avatar.src = post.author_avatar_url || "/image/favicon.svg";
-    avatar.alt = "";
-    const who = document.createElement("div");
-    const name = document.createElement("strong");
-    name.textContent = post.author_name || post.author_username || "TeaCafe";
-    const time = document.createElement("time");
-    time.dateTime = post.created_at || "";
-    time.textContent = formatTime(post.created_at);
-    const level = document.createElement('span');
-    level.className = 'level-pill';
-    level.textContent = `Lv.${Math.max(0, Number(post.level) || 0)}`;
-    who.append(name, level, time);
-    author.append(avatar, who);
-
-    const text = document.createElement("div");
-    text.className = "gallery-caption-copy";
-    const title = document.createElement("h2");
-    title.textContent = post.title || "未命名照片";
-    const body = document.createElement("p");
-    body.textContent = post.body || "";
-    text.append(title, body);
-    meta.append(author, text);
-    article.append(media, meta);
-    return article;
-  }
-
-  function nearestIndex(scrollLeft = galleryRail.scrollLeft) {
-    if (!posts.length) return 0;
-    let best = 0;
-    let distance = Infinity;
-    const target = scrollLeft + galleryRail.clientWidth / 2;
-    $$(".gallery-slide", galleryRail).forEach((slide, index) => {
-      const center = slide.offsetLeft + slide.offsetWidth / 2;
-      const d = Math.abs(center - target);
-      if (d < distance) { distance = d; best = index; }
-    });
-    return best;
-  }
-
-  function updateGalleryUi(loadCommentsNow = false) {
-    activeIndex = nearestIndex();
-    if (current) current.textContent = String(posts.length ? activeIndex + 1 : 0).padStart(2, "0");
-    if (total) total.textContent = String(posts.length).padStart(2, "0");
-    if (progress) progress.style.width = posts.length ? `${((activeIndex + 1) / posts.length) * 100}%` : "0%";
-    if (prev) prev.disabled = activeIndex <= 0;
-    if (next) next.disabled = activeIndex >= posts.length - 1;
-    if (loadCommentsNow) loadComments(posts[activeIndex]);
-  }
-
-  function goTo(index, behavior = "smooth") {
-    const slides = $$(".gallery-slide", galleryRail);
-    const clamped = Math.max(0, Math.min(slides.length - 1, index));
-    const slide = slides[clamped];
-    if (!slide) return;
-    galleryRail.scrollTo({
-      left: slide.offsetLeft - Math.max(0, (galleryRail.clientWidth - slide.offsetWidth) / 2),
-      behavior: motionReduced ? "auto" : behavior
-    });
-  }
-
-  async function loadComments(post) {
-    const token = ++commentLoadToken;
-    commentsBox.replaceChildren();
-    if (!post) { if (commentCount) commentCount.textContent = ""; return; }
-    if (!galleryConfigured) {
-      if (commentCount) commentCount.textContent = "";
-      commentForm?.querySelector("textarea")?.setAttribute("disabled", "");
-      commentForm?.querySelector("button")?.setAttribute("disabled", "");
-      return;
-    }
-    commentForm?.querySelector("textarea")?.removeAttribute("disabled");
-    commentForm?.querySelector("button")?.removeAttribute("disabled");
-    try {
-      const response = await fetch(`/api/gallery/comments?post=${encodeURIComponent(post.id)}`, { headers: { Accept: "application/json" } });
-      const data = await response.json();
-      if (token !== commentLoadToken) return;
-      const comments = Array.isArray(data.comments) ? data.comments : [];
-      if (commentCount) commentCount.textContent = comments.length ? `${comments.length} 則` : "0 則";
-      if (!comments.length) {
-        const empty = document.createElement('p');
-        empty.className = 'gallery-comments-empty';
-        empty.textContent = '還沒有留言。';
-        commentsBox.replaceChildren(empty);
-        return;
-      }
-      commentsBox.replaceChildren(...comments.map((comment) => {
-        const row = document.createElement("article");
-        row.className = "gallery-comment";
-        const avatar = document.createElement("img");
-        avatar.src = comment.author_avatar_url || "/image/favicon.svg";
-        avatar.alt = "";
-        const content = document.createElement("div");
-        const line = document.createElement("p");
-        line.className = 'social-comment-text';
-        const name = document.createElement("strong");
-        name.textContent = comment.author_name || comment.author_username || "Discord 使用者";
-        line.append(name, document.createTextNode('  ' + comment.body));
-        const time = document.createElement("time");
-        time.dateTime = comment.created_at || '';
-        time.textContent = formatTime(comment.created_at);
-        content.append(line, time);
-        row.append(avatar, content);
-        return row;
-      }));
-    } catch {
-      if (token === commentLoadToken) commentsBox.replaceChildren();
-    }
-  }
-
-  async function loadGallery() {
-    let data = null;
-    try {
-      const response = await fetch("/api/gallery/posts", { headers: { Accept: "application/json" } });
-      if (response.ok) data = await response.json();
-    } catch {}
-    galleryConfigured = Boolean(data?.configured);
-    posts = Array.isArray(data?.posts) ? data.posts : [];
-
-    if (!posts.length) {
-      try {
-        const fallback = await fetch("/data/gallery.json", { cache: "no-cache" });
-        const fallbackData = await fallback.json();
-        posts = Array.isArray(fallbackData.posts) ? fallbackData.posts : [];
-      } catch { posts = []; }
-    }
-
-    galleryRail.replaceChildren(...posts.map(makeSlide));
-    updateCooldownHint();
-    activeIndex = 0;
-    requestAnimationFrame(() => {
-      updateGalleryUi(true);
-      goTo(0, "auto");
-    });
-  }
-
-  let scrollTimer;
-  galleryRail.addEventListener("scroll", () => {
-    cancelAnimationFrame(dragFrame);
-    dragFrame = requestAnimationFrame(() => updateGalleryUi(false));
-    clearTimeout(scrollTimer);
-    scrollTimer = setTimeout(() => updateGalleryUi(true), 130);
-  }, { passive: true });
-  addEventListener("resize", () => updateGalleryUi(false), { passive: true });
-  prev?.addEventListener("click", () => goTo(activeIndex - 1));
-  next?.addEventListener("click", () => goTo(activeIndex + 1));
-
-  galleryRail.addEventListener("pointerdown", (event) => {
-    if (event.pointerType === "touch" || event.button !== 0) return;
-    drag = {
-      id: event.pointerId,
-      startX: event.clientX,
-      startScroll: galleryRail.scrollLeft,
-      lastX: event.clientX,
-      lastTime: performance.now(),
-      velocity: 0
-    };
-    pendingScrollLeft = galleryRail.scrollLeft;
-    galleryRail.classList.add("dragging");
-    galleryRail.setPointerCapture(event.pointerId);
-  });
-  galleryRail.addEventListener("pointermove", (event) => {
-    if (!drag || event.pointerId !== drag.id) return;
-    const now = performance.now();
-    const dt = Math.max(1, now - drag.lastTime);
-    drag.velocity = (event.clientX - drag.lastX) / dt;
-    drag.lastX = event.clientX;
-    drag.lastTime = now;
-    pendingScrollLeft = drag.startScroll - (event.clientX - drag.startX);
-    if (!dragFrame) {
-      dragFrame = requestAnimationFrame(() => {
-        galleryRail.scrollLeft = pendingScrollLeft;
-        dragFrame = 0;
-      });
-    }
-  });
-  const finishDrag = (event) => {
-    if (!drag || (event?.pointerId != null && event.pointerId !== drag.id)) return;
-    const projected = galleryRail.scrollLeft - drag.velocity * 180;
-    const targetIndex = nearestIndex(projected);
-    drag = null;
-    galleryRail.classList.remove("dragging");
-    goTo(targetIndex);
-  };
-  galleryRail.addEventListener("pointerup", finishDrag);
-  galleryRail.addEventListener("pointercancel", finishDrag);
-  galleryRail.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowRight") { event.preventDefault(); goTo(activeIndex + 1); }
-    if (event.key === "ArrowLeft") { event.preventDefault(); goTo(activeIndex - 1); }
-  });
-
-  createButton?.addEventListener("click", async () => {
-    await authReady;
-    if (!authState.authenticated) {
-      location.href = "/api/auth/login?return=" + encodeURIComponent(location.pathname);
-      return;
-    }
-    if (getCooldownRemaining() > 0) {
-      updateCooldownHint();
-      toast('目前尚未達到下一次照片發布時間。');
-      return;
-    }
-    if (!galleryConfigured) {
-      toast("相冊後端尚未設定");
-      return;
-    }
-    uploadDialog.showModal();
-  });
-  $("[data-gallery-upload-close]")?.addEventListener("click", () => uploadDialog.close());
-  uploadForm?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    await authReady;
-    if (!authState.authenticated) { openAuth(event); return; }
-    uploadStatus.textContent = "上傳中…";
-    const formData = new FormData(uploadForm);
-    try {
-      const response = await fetch("/api/gallery/posts", { method: "POST", body: formData });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        if (response.status === 503) throw new Error("相冊儲存空間尚未設定");
-        if (response.status === 413) throw new Error("圖片大小超過 12 MB");
-        throw new Error("發布失敗");
-      }
-      if (authState.user?.id) {
-        localStorage.setItem(`teacafe-gallery-last-${authState.user.id}`, String(Date.now()));
-      }
-      uploadForm.reset();
-      uploadDialog.close();
-      uploadStatus.textContent = "";
-      await loadGallery();
-      toast("照片已發布");
-    } catch (error) {
-      uploadStatus.textContent = error.message || "發布失敗";
-    }
-  });
-
-  commentForm?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const post = posts[activeIndex];
-    if (!post) return;
-    await authReady;
-    if (!authState.authenticated) {
-      location.href = "/api/auth/login?return=" + encodeURIComponent(location.pathname);
-      return;
-    }
-    const textarea = commentForm.querySelector("textarea");
-    const body = textarea.value.trim();
-    if (!body) return;
-    const response = await fetch("/api/gallery/comments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ postId: post.id, body })
-    });
-    if (response.ok) {
-      textarea.value = "";
-      await loadComments(post);
-      toast("留言已送出");
-    } else if (response.status === 503) {
-      toast("相冊資料庫尚未設定");
-    } else {
-      toast("留言失敗");
-    }
-  });
-
-  loadGallery();
 }
 
 // Keep the rule index pressed on the section closest to the reading position.
