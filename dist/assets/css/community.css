@@ -1,0 +1,116 @@
+/* TeaCafe community UI — permanent asset naming; Minecraft-inspired, minimal motion. */
+:root{--community-bg:#e9e7de;--community-green:#527f43;--community-border:#30392d;--community-ink:#1f271e;--community-muted:#566355}
+/* All desktop pages use a concealed navigation bar. Touch devices retain persistent navigation. */
+.topbar{position:fixed!important;left:0;right:0;top:0;z-index:90;min-height:76px;transition:transform .22s cubic-bezier(.2,.78,.22,1),opacity .18s ease}
+.topbar-hidden{transform:translate3d(0,calc(-100% - 8px),0);opacity:0;pointer-events:none}
+.topbar .topnav{gap:7px}
+.topbar .mc-nav{font-size:var(--type-nav,15px);white-space:nowrap}
+.topbar .brand{flex:0 0 auto}
+.topbar-auth{max-width:240px}
+.topbar-level{display:inline-flex;align-items:center;justify-content:center;min-width:47px;padding:3px 5px;border:2px solid #253625;background:#79a667;color:#101c11;font-weight:900;font-size:13px;text-shadow:none;white-space:nowrap}
+.profile-level-row{display:flex;align-items:center;justify-content:center;gap:12px;margin:15px auto;font-size:18px}
+.profile-level-row b{display:inline-flex;align-items:center;padding:4px 11px;border:3px solid #273926;background:#739b63;color:#111d10}
+.profile-exp-track{height:12px;width:min(260px,100%);margin:9px auto;background:#353b34;border:2px solid #141914;box-shadow:inset 0 2px #171b16}
+.profile-exp-track span{display:block;height:100%;width:0;background:#84b966}
+.profile-level-explanation{max-width:320px;margin:8px auto;line-height:1.7;font-size:14px;color:#596459;text-align:center}
+.wiki-related-forum{display:block;margin:14px 0 24px}
+.wiki-forum-link{display:inline-flex;align-items:center;border:2px solid #527b44;background:#e4efdc;color:#274623;font-size:15px;font-weight:800;padding:10px 16px;box-shadow:inset 2px 2px #fff,inset -2px -2px #a6bba0}
+.wiki-forum-link:hover,.wiki-forum-link:focus-visible{background:#cfe4c2}
+/* Forum: roomy full-width layout with stone panels and accessible text. */
+.forum-main{background:var(--community-bg)}
+.forum-main .page-title-inner{width:100%;max-width:none;padding-inline:clamp(20px,4vw,78px)}
+.forum-title-layout{display:flex;justify-content:space-between;align-items:end;gap:24px}
+.forum-title-layout h1{margin-bottom:10px}
+.forum-create{min-width:154px;flex:0 0 auto}
+.forum-layout{display:grid;grid-template-columns:minmax(230px,300px) minmax(0,1fr);gap:clamp(18px,3vw,48px);padding:32px clamp(20px,4vw,78px) 90px;width:100%;max-width:1920px;margin:auto;align-items:start}
+.forum-sidebar{position:sticky;top:26px;min-width:0}
+.forum-sidebar>h2{font-size:24px;margin:0 0 16px}
+.forum-sidebar nav{display:grid;gap:6px}
+.forum-sidebar nav a{display:block;padding:13px 17px;background:#f4f3eb;border:2px solid #afb4a6;font-size:16px;font-weight:800;box-shadow:inset 1px 1px #fff}
+.forum-sidebar nav a:hover,.forum-sidebar nav a.active{color:#fff;background:#536f4a;border-color:#283624;box-shadow:inset 2px 2px #86a27c,inset -2px -2px #31432d}
+.forum-profile-card{background:#293629;color:#f4f7f1;padding:23px;margin-top:22px;border:3px solid #111711;box-shadow:inset 2px 2px #4e5b4d,inset -3px -3px #192019}
+.forum-profile-card>strong,.forum-profile-level{display:block;font-size:32px;color:#b7e19e;margin:14px 0 8px}
+.forum-profile-heading{font-size:16px;font-weight:800}
+.forum-profile-card p{line-height:1.65;font-size:14px;color:#d3dfcc;margin:10px 0 0}
+.forum-profile-user{display:flex;align-items:center;gap:10px;min-width:0;overflow-wrap:anywhere}
+.forum-profile-user .forum-user-avatar{width:40px;height:40px}
+.forum-exp-track{height:13px;background:#141c16;border:2px solid #111;margin:8px 0}
+.forum-exp-track span{width:0;background:#95c475;display:block;height:100%}
+.forum-feed{min-width:0}
+.forum-toolbar{display:flex;gap:12px;justify-content:space-between;align-items:center;margin-bottom:20px}
+.forum-search{display:flex;align-items:center;gap:12px;min-width:160px;flex:1;background:#fff;border:3px solid #424c3d;padding:8px 15px}
+.forum-search input{width:100%;min-width:0;border:0;background:transparent;outline:none;font-size:16px}
+.forum-search:focus-within{outline:3px solid #86ad6d;outline-offset:1px}
+.forum-toolbar select{min-width:160px;background:#f5f5ee;border:3px solid #424c3d;padding:10px;font-weight:700;font-size:16px}
+.forum-notice{display:flex;align-items:center;gap:16px;padding:16px 18px;background:#f0ead6;border-left:5px solid #a18b47;color:#443e2f;line-height:1.5;font-size:15px;margin-bottom:20px}
+.forum-notice strong{white-space:nowrap}
+.forum-feed-list{display:grid;gap:17px}
+.forum-post-card{background:#f9f8f1;border:3px solid #3a4036;box-shadow:inset 3px 3px #fff,inset -3px -3px #bcc0b5,4px 4px rgba(22,31,22,.10);padding:clamp(21px,2.5vw,32px);min-width:0}
+.forum-post-head{display:flex;align-items:center;gap:14px;min-width:0}
+.forum-user-avatar{width:48px;height:48px;object-fit:cover;border-radius:50%;border:3px solid #30392d;background:#737a70;flex:0 0 auto}
+.forum-post-byline{display:flex;flex-direction:column;gap:5px;min-width:0}
+.forum-post-user{display:flex;align-items:center;gap:9px;min-width:0;flex-wrap:wrap}
+.forum-post-user strong{font-size:17px;white-space:normal;overflow-wrap:anywhere}
+.level-pill{font:800 13px/1.3 'Noto Sans TC',sans-serif;color:#35552c;background:#dfead9;border:2px solid #6e8862;padding:2px 8px}
+.forum-post-time{font-size:14px;color:var(--community-muted)}
+.forum-post-badges{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-left:auto;flex-wrap:wrap}
+.forum-category-pill,.forum-demo-tag,.forum-draft-tag{font-size:13px;font-weight:800;line-height:1.4;padding:5px 9px;border:2px solid #82907e;background:#e2eadd;color:#334a2f;white-space:nowrap}
+.forum-demo-tag{background:#e7e4d4;color:#76694d;border-color:#b5a783}
+.forum-draft-tag{background:#f5dfc0;color:#705225;border-color:#b49a68}
+.forum-post-title{font-size:clamp(22px,2.2vw,30px);margin:24px 0 10px;line-height:1.3;overflow-wrap:anywhere}
+.forum-post-body{font-size:17px;white-space:pre-wrap;line-height:1.85;overflow-wrap:anywhere;margin:0}
+.forum-media-note{font-size:14px;color:#88683e;margin:12px 0}
+.forum-post-footer{border-top:2px solid #dddcd1;margin-top:24px;padding-top:15px;display:flex;justify-content:space-between;align-items:center;gap:15px;color:#687066;font-size:14px}
+.forum-text-action{border:0;background:transparent;color:#426d32;font-weight:900;padding:5px 3px;cursor:pointer;text-decoration:underline}
+.forum-empty{padding:58px 25px;text-align:center;border:3px dashed #8f9989;background:#f6f6ee}
+.forum-empty h2{font-size:24px}.forum-empty p{color:#647063}
+.forum-compose-dialog{width:min(740px,calc(100% - 26px));max-height:90dvh;overflow-y:auto;background:#eeeee6;border:4px solid #1e281d;padding:clamp(22px,4vw,36px);color:#243021;box-shadow:0 16px 60px rgba(0,0,0,.45)}
+.forum-compose-dialog::backdrop{background:rgba(9,13,10,.80)}
+.forum-compose-dialog form{display:grid;gap:18px}
+.compose-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.compose-header h2{font-size:30px;margin:0}
+.forum-compose-dialog .dialog-close{position:static;flex:0 0 auto}
+.compose-context{margin:0;color:#4f624a;font-size:15px;line-height:1.7}
+.forum-compose-dialog label{display:grid;gap:8px;font-weight:800;font-size:16px}
+.forum-compose-dialog input,.forum-compose-dialog textarea,.forum-compose-dialog select{width:100%;background:#fff;color:#243021;border:3px solid #7e8a79;padding:12px;font-size:16px}
+.forum-compose-dialog textarea{resize:vertical;min-height:160px}
+.forum-compose-dialog input:focus-visible,.forum-compose-dialog textarea:focus-visible,.forum-compose-dialog select:focus-visible{outline:3px solid #75a357;outline-offset:1px}
+.field-optional{font-size:13px;font-weight:500;color:#646e62}
+.forum-media-previews{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.forum-preview-media{margin:0;min-width:0;background:#d6dbd1;border:2px solid #5e695a;padding:8px}
+.forum-preview-media img,.forum-preview-media video{width:100%;height:140px;object-fit:contain;background:#1d241c}
+.forum-preview-media figcaption{font-size:13px;overflow-wrap:anywhere;color:#334332}
+.compose-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.compose-feedback{font-size:14px;color:#9a452e;min-height:1em;margin:0}
+/* Gallery community details: Instagram-inspired flowing comments rather than boxes. */
+.gallery-cooldown-note{margin:0 0 20px;padding:0 var(--screen-pad);color:#f4fbea;font-size:15px}
+.social-discussion{background:#f7f6ef;color:#1c251c;border-top:4px solid #253321}
+.social-discussion .gallery-discussion-inner{max-width:min(1050px,92vw);margin:auto;padding:34px 0 66px}
+.social-discussion .gallery-discussion-inner>header{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid #cbd1c6;padding-bottom:14px;margin-bottom:12px}
+.social-discussion .gallery-discussion-inner>header h2{font-size:clamp(24px,3vw,32px);margin:0}
+.social-discussion .gallery-comments{display:flex;flex-direction:column;gap:4px;max-height:430px;overflow-y:auto;margin-bottom:15px}
+.social-discussion .gallery-comment{display:flex;align-items:start;gap:13px;border:0;background:transparent;padding:13px 2px;box-shadow:none}
+.social-discussion .gallery-comment>img{border-radius:50%;width:38px;height:38px;object-fit:cover;border:2px solid #586852;flex:0 0 auto}
+.social-discussion .gallery-comment>div{min-width:0;flex:1}
+.social-discussion .gallery-comment header{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.social-discussion .gallery-comment header strong{font-size:15px}
+.social-discussion .gallery-comment header time{font-size:13px;color:#6c766b}
+.social-discussion .gallery-comment p{margin:4px 0 0;font-size:16px;line-height:1.65;overflow-wrap:anywhere;white-space:pre-wrap}
+.social-comment-form{display:flex;gap:10px;align-items:center;border-top:1px solid #cbd1c6;padding-top:17px}
+.social-comment-form textarea{flex:1;min-width:0;resize:vertical;min-height:45px;height:55px;border:2px solid #8b9786;background:#fff;padding:12px 13px;font-size:15px}
+.social-comment-form button{min-width:80px;flex:0 0 auto}
+.upload-policy{font-size:14px;color:#65725f;line-height:1.7;margin:0}
+@media(max-width:1130px){.topbar{gap:9px;padding-inline:18px}.topnav{gap:3px!important}.topnav .mc-nav{padding:10px 9px;font-size:14px}.brand{min-width:auto}.topbar-auth-copy{max-width:110px}}
+@media(max-width:940px){.forum-layout{grid-template-columns:1fr}.forum-sidebar{position:static}.forum-sidebar nav{display:flex;gap:7px;overflow-x:auto;padding-bottom:12px}.forum-sidebar nav a{flex:0 0 auto}.forum-profile-card{display:none}.topbar .topnav{display:none}.topbar .topnav.mobile-open{display:grid;position:absolute;left:12px;right:12px;top:calc(100% + 4px);background:#171b16;padding:15px;border:3px solid #51402a;grid-template-columns:repeat(2,minmax(0,1fr));z-index:5}.mobile-menu{display:inline-block}}
+@media(max-width:740px){.forum-title-layout{align-items:flex-start;flex-direction:column}.forum-create{width:100%}.forum-toolbar{flex-wrap:wrap}.forum-search,.forum-toolbar select{width:100%;flex-basis:100%}.forum-notice{align-items:flex-start;flex-direction:column;gap:6px}.forum-post-head{flex-wrap:wrap}.forum-post-badges{width:100%;justify-content:flex-start;margin-left:0}.forum-post-card{padding:18px}.forum-post-body{font-size:16px}.social-comment-form button{min-width:70px}.forum-main .page-title-inner{padding-bottom:28px}}
+@media(hover:none),(pointer:coarse){.topbar,.topbar.topbar-hidden{transform:none!important;opacity:1!important;pointer-events:auto!important}.page:not(.home-page-main)>.page-title .page-title-inner{padding-top:130px}}
+@media(prefers-reduced-motion:reduce){.topbar{transition:none!important}}
+
+.social-discussion .gallery-comment .social-comment-text{font-size:16px;margin:0 0 6px;line-height:1.7;white-space:pre-wrap}
+.social-discussion .gallery-comment .social-comment-text strong{font-size:16px;margin-right:7px;font-weight:900}
+.social-discussion .gallery-comment time{display:block;font-size:13px;color:#647363;margin:0}
+.social-discussion .gallery-comments-empty{font-size:15px;color:#778072;padding:14px 2px}
+.gallery-author .level-pill{display:inline-flex;margin-top:5px;margin-right:8px;background:#d4e6c9;color:#1e361b}
+.gallery-author>img{border-radius:50%}
+.social-discussion .gallery-comment-form{display:flex;grid-template-columns:none}
+@media(max-width:700px){.social-discussion .gallery-comment-form button{width:auto;align-self:stretch}}
