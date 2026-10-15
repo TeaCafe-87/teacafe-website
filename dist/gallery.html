@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="zh-Hant"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
@@ -25,29 +26,29 @@
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700;900&amp;display=swap" rel="stylesheet"/>
 <link href="/assets/css/styles.css" rel="stylesheet"/>
-</head><body class="gallery-page"><div data-header=""></div><main class="page">
-<section class="page-title gallery-heading"><div class="page-title-inner"><span class="crumb">首頁 / 玩家相冊</span><div class="gallery-title-row"><div><h1>玩家相冊</h1><p>玩家可以使用 Discord 登入後分享遊戲畫面，也可以在照片底下留言。</p></div><div aria-live="polite" class="gallery-count"><b data-gallery-current="">00</b><span>/</span><small data-gallery-total="">00</small></div></div></div></section>
+<link href="/assets/css/community.css" rel="stylesheet"/></head><body class="gallery-page"><div data-header=""></div><main class="page">
+<section class="page-title gallery-heading"><div class="page-title-inner"><span class="crumb">首頁 / 玩家相冊</span><div class="gallery-title-row"><div><h1>玩家相冊</h1><p>分享每一段旅程。登入 Discord 後，最多每 48 小時發布一張照片。</p></div><div aria-live="polite" class="gallery-count"><b data-gallery-current="">00</b><span>/</span><small data-gallery-total="">00</small></div></div></div></section>
 <section aria-label="茶咖暖居遊戲畫面輪播" class="gallery-stage">
 <div class="gallery-stage-head">
 <div class="gallery-controls"><button aria-label="上一張" class="gallery-arrow" data-gallery-prev="" type="button">←</button><button aria-label="下一張" class="gallery-arrow" data-gallery-next="" type="button">→</button></div>
 <button class="mc-button" data-gallery-create="" type="button">發布照片</button>
-</div>
+</div><p class="gallery-cooldown-note" data-gallery-cooldown="">每 48 小時最多發布一張照片。</p>
 <div aria-live="polite" class="gallery-rail" data-gallery-rail="" tabindex="0"></div>
 <div aria-hidden="true" class="gallery-progress"><i data-gallery-progress=""></i></div>
 </section>
-<section aria-label="相冊留言" class="gallery-discussion">
+<section aria-label="相冊留言" class="gallery-discussion social-discussion">
 <div class="gallery-discussion-inner">
-<header><h2>留言</h2><span data-gallery-comment-count=""></span></header>
+<header><h2>大家的留言</h2><span data-gallery-comment-count=""></span></header>
 <div class="gallery-comments" data-gallery-comments=""></div>
-<form class="gallery-comment-form" data-gallery-comment-form="">
-<textarea maxlength="500" name="body" placeholder="留下留言" rows="3"></textarea>
-<button class="mc-button" type="submit">送出留言</button>
+<form class="gallery-comment-form social-comment-form" data-gallery-comment-form="">
+<textarea aria-label="新增相冊留言" maxlength="500" name="body" placeholder="新增留言…" rows="2"></textarea>
+<button class="mc-button" type="submit">發布</button>
 </form>
 </div>
 </section>
 </main><div data-footer=""></div>
 <dialog class="gallery-upload-dialog" id="gallery-upload"><form data-gallery-upload-form="">
-<button aria-label="關閉" class="dialog-close" data-gallery-upload-close="" type="button">×</button>
+<button aria-label="關閉" class="dialog-close" data-gallery-upload-close="" type="button">×</button><p class="upload-policy">每 48 小時僅能發布一張照片。正式限制須由後端驗證。</p>
 <h2>發布照片</h2>
 <label>圖片<input accept="image/png,image/jpeg,image/webp,image/gif" name="image" required="" type="file"/></label>
 <label>標題<input maxlength="80" name="title" required="" type="text"/></label>
