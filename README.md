@@ -8,6 +8,16 @@ TeaCafe Minecraft Server 的官方網站專案。
 
 提供伺服器資訊、最新消息、玩家服務，以及未來 TeaCafe 各項 Web 功能的統一入口。
 
+## 目前網站架構
+
+- `dist/`：Cloudflare Pages 靜態頁面與前端程式；Pages 專案輸出目錄設為 `dist`。
+- `functions/`：Discord 登入、伺服器狀態與社群 API。
+- `migrations/`：Cloudflare D1 資料表。
+- `docs/backend.md`：D1、R2 綁定、資料契約與接線流程。
+- `docs/plugin-source-map.md`：Wiki 條目與插件資料的對照。
+
+相冊與論壇使用相同的貼文格式，可上傳不限件數的圖片或影片，合計上限 20 MiB，並支援按讚、留言及分享。資料寫入需要 Pages 綁定 `DB`（D1）與 `GALLERY_MEDIA`（R2），以及 Discord OAuth 環境變數；在綁定之前畫面會明確顯示靜態提案或空狀態。
+
 <br>
 
 ![Status](https://img.shields.io/badge/Status-In%20Development-yellow?style=for-the-badge)

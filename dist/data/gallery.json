@@ -1,34 +1,22 @@
 {
   "posts": [
     {
-      "id": "spawn",
-      "title": "抵達茶咖暖居",
-      "body": "從主城出發，開始自己的生活。",
-      "image_url": "/image/gallery/spawn.webp",
-      "author_name": "TeaCafe",
-      "author_avatar_url": "/image/favicon.svg",
-      "created_at": "2026-08-07T00:00:00+08:00",
-      "comment_count": 0
-    },
-    {
-      "id": "homes",
-      "title": "每個人的家",
-      "body": "木屋、庭院與居民親手搭建的小角落。",
-      "image_url": "/image/gallery/homes.webp",
-      "author_name": "TeaCafe",
-      "author_avatar_url": "/image/favicon.svg",
-      "created_at": "2026-08-07T00:00:00+08:00",
-      "comment_count": 0
-    },
-    {
-      "id": "events",
-      "title": "一起留下的時刻",
-      "body": "活動與節慶，總有人陪你入鏡。",
-      "image_url": "/image/gallery/events.webp",
-      "author_name": "TeaCafe",
-      "author_avatar_url": "/image/favicon.svg",
-      "created_at": "2026-08-07T00:00:00+08:00",
-      "comment_count": 0
+      "id": "gallery-preview",
+      "kind": "gallery",
+      "title": "你的下一張冒險紀錄",
+      "body": "在茶咖暖居拍下建築、活動或旅行，登入後就能與大家分享。",
+      "author_name": "TeaCafe · 版型預覽",
+      "author_avatar_url": "/image/logo.png",
+      "created_at": null,
+      "demo": true,
+      "like_count": 0,
+      "comment_count": 0,
+      "media": [
+        {
+          "url": "/image/logo.png",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

@@ -85,9 +85,6 @@
 /* Gallery community details: Instagram-inspired flowing comments rather than boxes. */
 .gallery-cooldown-note{margin:0 0 20px;padding:0 var(--screen-pad);color:#f4fbea;font-size:15px}
 .social-discussion{background:#f7f6ef;color:#1c251c;border-top:4px solid #253321}
-.social-discussion .gallery-discussion-inner{max-width:min(1050px,92vw);margin:auto;padding:34px 0 66px}
-.social-discussion .gallery-discussion-inner>header{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid #cbd1c6;padding-bottom:14px;margin-bottom:12px}
-.social-discussion .gallery-discussion-inner>header h2{font-size:clamp(24px,3vw,32px);margin:0}
 .social-discussion .gallery-comments{display:flex;flex-direction:column;gap:4px;max-height:430px;overflow-y:auto;margin-bottom:15px}
 .social-discussion .gallery-comment{display:flex;align-items:start;gap:13px;border:0;background:transparent;padding:13px 2px;box-shadow:none}
 .social-discussion .gallery-comment>img{border-radius:50%;width:38px;height:38px;object-fit:cover;border:2px solid #586852;flex:0 0 auto}
@@ -114,3 +111,65 @@
 .gallery-author>img{border-radius:50%}
 .social-discussion .gallery-comment-form{display:flex;grid-template-columns:none}
 @media(max-width:700px){.social-discussion .gallery-comment-form button{width:auto;align-self:stretch}}
+
+/* Community posts use a Minecraft inventory and stone panel language. */
+.community-main{background:#d9d8cf}
+.community-main .page-title-inner{max-width:1180px;padding-bottom:36px}
+.community-main .page-title h1{letter-spacing:-.035em}
+.community-main .page-title .mc-button{margin-top:12px}
+.community-shell{width:min(760px,100%);margin:0 auto;padding:28px 16px 80px;min-width:0}
+.community-layout{display:grid;grid-template-columns:230px minmax(0,760px);justify-content:center;gap:24px;padding:0 20px}
+.community-layout .community-shell{padding-inline:0}
+.community-topics{position:sticky;top:24px;align-self:start;margin-top:28px;background:#272c25;border:4px solid #131711;box-shadow:inset 2px 2px #596354,inset -3px -3px #151915;padding:16px;color:#f0f0e8}
+.community-topics h2{font:800 18px var(--pixel);margin:4px 0 14px;color:#bfd79d}
+.community-topics nav{display:grid;gap:6px}
+.community-topics nav button{width:100%;text-align:left;background:#5c6058;color:#fff;border:2px solid #171a15;box-shadow:inset 2px 2px #858a80,inset -2px -2px #393c37;padding:9px 12px;font-weight:800}
+.community-topics nav button.active,.community-topics nav button:hover{background:#4d783e;outline:2px solid #e5d374;outline-offset:-5px}
+.community-topic-note{border-top:2px solid #5b6558;margin-top:16px;padding-top:12px;color:#c4cdbf;font-size:13px;line-height:1.7}
+.community-intro,.community-toolbar{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:16px;color:#42503f}
+.community-intro strong{font:800 18px var(--pixel)}
+.community-toolbar label{display:grid;gap:5px;flex:1;font-weight:800}
+.community-toolbar input{width:100%;padding:10px 12px;background:#f8f8f1;border:3px solid #525b4d;font-size:16px}
+.community-toolbar span,.community-intro span{font-size:13px}
+.community-status{font-size:14px;color:#536450;line-height:1.6;margin:10px 0}
+.community-feed{display:grid;gap:22px}
+.community-post{background:#f0efe6;color:#202820;border:4px solid #3b4237;box-shadow:inset 3px 3px #fff,inset -3px -3px #aaa99e,6px 6px #b5b7ac;min-width:0;scroll-margin-top:80px}
+.post-head{display:flex;gap:12px;align-items:center;padding:14px 16px;border-bottom:3px solid #c1c6b8;min-width:0}
+.post-avatar{width:42px;height:42px;object-fit:cover;image-rendering:pixelated;border:3px solid #40483c;background:#868d81}
+.post-byline{display:grid;gap:2px;min-width:0}
+.post-byline strong,.post-byline small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.post-byline strong{font-size:16px}.post-byline small{font-size:12px;color:#667362}
+.post-category{margin-left:auto;flex:0 0 auto;background:#d5e5c9;border:2px solid #638555;color:#35522c;padding:4px 8px;font-size:12px;font-weight:900}
+.post-media-shell{position:relative;background:#191e18;min-height:250px;display:grid;place-items:center}
+.post-media-stage{width:100%;min-height:250px;display:grid;place-items:center}
+.post-media{display:block;width:100%;max-height:680px;object-fit:contain;background:#191e18}
+.post-media-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:1;width:38px;height:45px;background:#4e5649d9;color:#fff;border:2px solid #ccd2c6;font-size:30px;line-height:1}
+.post-media-arrow:nth-child(2){left:10px}.post-media-arrow:nth-child(3){right:10px}
+.post-media-count{position:absolute;right:12px;top:12px;background:#1c241bd9;color:#fff;border:2px solid #aab6a3;padding:4px 8px;font:800 12px var(--pixel)}
+.post-content{padding:17px 18px 12px;min-width:0}
+.post-content h2{margin:0 0 8px;font-size:22px;line-height:1.35;overflow-wrap:anywhere}
+.post-content p{margin:0;line-height:1.75;white-space:pre-wrap;overflow-wrap:anywhere}
+.post-actions{display:flex;gap:3px;border-top:2px solid #c5c9bc;margin:10px 16px 0;padding:8px 0}
+.post-action{background:transparent;border:0;color:#354232;padding:9px 12px;font-weight:900;min-height:40px}
+.post-action:hover,.post-action[aria-pressed="true"]{color:#356f29;background:#dce8d4}
+.post-comments{border-top:2px solid #c5c9bc;padding:12px 18px 18px}
+.post-comments[hidden]{display:none}
+.post-comment-list{display:grid;gap:11px;max-height:300px;overflow:auto}
+.post-comment{display:flex;gap:8px;line-height:1.6;overflow-wrap:anywhere}.post-comment strong{flex:0 0 auto}.post-comment-empty{color:#667262;margin:3px 0 10px}
+.post-comment-form{display:flex;gap:8px;margin-top:14px}.post-comment-form textarea{flex:1;min-width:0;resize:vertical;border:2px solid #707b69;padding:9px;background:#fff}.post-comment-form .mc-button{align-self:start}
+.community-empty{padding:36px;background:#f0efe6;border:3px dashed #8a9485;text-align:center}
+.community-more{display:block;margin:24px auto 0}.community-more[hidden]{display:none}
+.community-compose{width:min(700px,calc(100vw - 24px));max-height:90dvh;overflow:auto;background:#deded3;border:4px solid #1a2118}
+.community-compose::backdrop{background:#10150fbd}.community-compose form{display:grid;gap:14px}.community-compose .compose-header{display:flex;justify-content:space-between;align-items:center}
+.community-compose .compose-header h2{margin:0;font:900 26px var(--pixel)}.community-compose .dialog-close{float:none}
+.community-compose p{line-height:1.6;margin:0}.community-compose label{display:grid;gap:7px;font-weight:800}
+.community-compose input,.community-compose select,.community-compose textarea{width:100%;background:#fafaf6;border:3px solid #687264;padding:11px;font-size:16px}
+.community-compose textarea{resize:vertical}.community-file-summary{font:800 13px var(--pixel);color:#3e6038}
+.community-previews{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.community-preview{margin:0;padding:5px;border:2px solid #667361;background:#cfd5c9;min-width:0}.community-preview img,.community-preview video{width:100%;height:115px;object-fit:contain;background:#202620}.community-preview figcaption{font-size:12px;overflow-wrap:anywhere}
+.community-compose .compose-actions{display:flex;justify-content:flex-end;gap:8px}.community-compose .compose-feedback{color:#944a2a;min-height:1.4em}
+/* Keep server values on one line even when the live response is long. */
+.server-info-card strong,.server-uptime{white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal!important;word-break:normal;max-width:100%;font-size:clamp(16px,2vw,34px)!important}
+.uptime-card .server-uptime{font-size:clamp(15px,2vw,32px)!important;letter-spacing:-.04em}
+@media(max-width:920px){.community-layout{grid-template-columns:minmax(0,760px)}.community-topics{position:static;margin:20px 0 0}.community-topics nav{display:flex;overflow-x:auto}.community-topics nav button{white-space:nowrap;width:auto;flex:0 0 auto}.community-layout .community-shell{padding-top:10px}}
+@media(max-width:620px){.community-intro,.community-toolbar{align-items:flex-start;flex-direction:column}.community-shell{padding-inline:10px}.community-layout{padding-inline:10px}.post-content h2{font-size:19px}.post-head{padding:10px}.post-category{max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.post-comment-form{flex-direction:column}.post-comment-form .mc-button{align-self:stretch}.server-info-card strong,.server-uptime{font-size:clamp(14px,5vw,24px)!important}}

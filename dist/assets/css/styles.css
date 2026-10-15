@@ -260,7 +260,6 @@ p,li,td,th,label,textarea,input{font-size:var(--type-body)}
 .gallery-caption-copy p{font-size:var(--type-body);line-height:1.65;margin:0;color:#e8efe3;max-width:760px}
 .gallery-progress{margin-top:6px}
 .gallery-discussion{background:#deddd3;border-top:6px solid #3f5035;padding:clamp(44px,6vw,82px) var(--screen-pad)}
-.gallery-discussion-inner{width:min(100%,1180px);margin:auto}
 .gallery-discussion header{display:flex;align-items:baseline;justify-content:space-between;gap:20px;border-bottom:3px solid #8f9188;padding-bottom:14px;margin-bottom:18px}
 .gallery-discussion h2{margin:0}
 .gallery-comments{display:grid;gap:10px}
