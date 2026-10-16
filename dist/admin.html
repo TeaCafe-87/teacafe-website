@@ -14,6 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/styles.css?v=20261017">
   <link rel="stylesheet" href="/assets/css/community.css?v=20261017">
+  <link rel="stylesheet" href="/assets/css/integrations.css?v=20261017">
 </head>
 <body class="moderation-page admin-page community-page">
   <div data-header></div>
@@ -22,7 +23,7 @@
     <section class="community-shell" aria-label="官方工作區">
       <div data-moderation-gate class="moderation-login" role="status">正在確認官方身分…</div>
       <div data-moderation-workspace hidden>
-        <nav class="admin-sections" aria-label="後台區域"><a href="#review">文章審核</a><a href="#official">官方發文</a><a href="#members">網站成員</a></nav>
+        <nav class="admin-sections" aria-label="後台區域"><a href="#review">文章審核</a><a href="#official">官方發文</a><a href="#members">網站成員</a><a href="#supporters">感謝支持名單</a></nav>
         <section class="moderation-compose" id="official"><h2>官方發文</h2><p>官方貼文會顯示在論壇的「官方公告」，發布後直接公開。</p>
           <form data-official-form class="moderation-form">
             <label>標題<input name="title" maxlength="100" required></label>
@@ -35,6 +36,7 @@
         </section>
         <section class="moderation-queue" id="review"><h2>待審貼文</h2><p data-moderation-count role="status">讀取中…</p><div data-moderation-posts class="community-feed"></div></section>
         <section class="admin-members" id="members"><h2>網站成員</h2><p>顯示啟用會員紀錄後登入過網站的 Discord 帳號，以及舊貼文中已知的發文者。</p><label>搜尋成員<input data-member-search type="search" placeholder="Discord 名稱、ID 或 Minecraft 名稱"></label><p data-member-count role="status"></p><div data-member-list class="admin-member-list"></div><button data-member-more class="mc-button" type="button" hidden>載入更多成員</button><div data-member-posts class="admin-member-posts" hidden></div></section>
+        <section class="admin-supporters" id="supporters"><h2>感謝支持名單</h2><p>只加入願意公開名稱的玩家。新增後會顯示在「感謝支持」頁面。</p><form class="admin-supporter-form" data-supporter-form><label>玩家名稱<input name="player_name" maxlength="32" required></label><label>支持日期<input name="supported_at" type="date" required></label><label>想留下的話（選填）<input name="note" maxlength="160"></label><button class="mc-button green" type="submit">加入名單</button></form><p data-supporter-message role="status"></p><div class="admin-supporter-list" data-supporter-list></div></section>
       </div>
     </section>
   </main>

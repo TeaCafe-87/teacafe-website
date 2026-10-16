@@ -19,6 +19,9 @@
   const memberSearch = $('[data-member-search]');
   const memberMore = $('[data-member-more]');
   const memberPosts = $('[data-member-posts]');
+  const supporterForm = $('[data-supporter-form]');
+  const supporterList = $('[data-supporter-list]');
+  const supporterMessage = $('[data-supporter-message]');
   let memberPage = 0;
   let activeMember = null;
   let postPage = 0;
@@ -142,15 +145,55 @@
   memberSearch.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => loadMembers(true), 250); });
   memberMore.addEventListener('click', () => loadMembers());
 
+  async function loadSupporters() {
+    try {
+      const response = await fetch('/api/admin/supporters', { cache: 'no-store' });
+      if (!response.ok) throw new Error();
+      const data = await response.json();
+      supporterList.replaceChildren();
+      for (const row of data.supporters || []) {
+        const item = make('article', 'admin-supporter-row');
+        item.append(make('span', '', `${row.player_name} · ${row.supported_at}${row.note ? ' · ' + row.note : ''}`));
+        const remove = make('button', 'mc-button', '移除'); remove.type = 'button';
+        remove.addEventListener('click', async () => {
+          if (!confirm(`確定從感謝名單移除 ${row.player_name}？`)) return;
+          remove.disabled = true;
+          const result = await fetch('/api/admin/supporters', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: row.id }) });
+          if (result.ok) { supporterMessage.textContent = '已從名單移除。'; await loadSupporters(); }
+          else { supporterMessage.textContent = '移除失敗。'; remove.disabled = false; }
+        });
+        item.append(remove); supporterList.append(item);
+      }
+      if (!data.supporters?.length) supporterMessage.textContent = '目前還沒有公開的支持者。';
+    } catch { supporterMessage.textContent = '名單無法讀取，請先執行 0005_supporters.sql。'; }
+  }
+  supporterForm.elements.supported_at.value = new Date().toISOString().slice(0, 10);
+  supporterForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = supporterForm.querySelector('[type="submit"]'); button.disabled = true;
+    try {
+      const body = Object.fromEntries(new FormData(supporterForm));
+      const response = await fetch('/api/admin/supporters', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (!response.ok) throw new Error();
+      supporterMessage.textContent = '已加入感謝名單。'; supporterForm.reset();
+      supporterForm.elements.supported_at.value = new Date().toISOString().slice(0, 10);
+      await loadSupporters();
+    } catch { supporterMessage.textContent = '新增失敗，請確認資料與 D1 migration。'; }
+    finally { button.disabled = false; }
+  });
+
   form.elements.media.addEventListener('change', () => {
     const files = [...form.elements.media.files];
     const size = files.reduce((sum, file) => sum + file.size, 0);
-    filesStatus.textContent = `${files.length} 個檔案 · ${(size / 1048576).toFixed(1)} / 20 MiB${size > 20 * 1048576 ? '，已超過限制' : ''}`;
+    const invalid = files.find(file => !['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm'].includes(file.type) || !file.size);
+    filesStatus.textContent = `${files.length} 個檔案 · ${(size / 1048576).toFixed(2)} / 20 MiB${size > 20 * 1048576 ? '，已超過限制，請移除或壓縮檔案' : invalid ? `，「${invalid.name}」格式不支援或檔案為空` : ''}`;
   });
   form.addEventListener('submit', async event => {
     event.preventDefault();
-    const size = [...form.elements.media.files].reduce((sum, file) => sum + file.size, 0);
+    const files = [...form.elements.media.files];
+    const size = files.reduce((sum, file) => sum + file.size, 0);
     if (size > 20 * 1048576) { filesStatus.textContent = '附件總大小超過 20 MiB。'; return; }
+    if (files.some(file => !['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm'].includes(file.type) || !file.size)) { filesStatus.textContent = '附件格式不支援或檔案為空。'; return; }
     const button = form.querySelector('[type=submit]'); button.disabled = true;
     const data = new FormData(form); data.set('kind', 'forum'); data.set('category', 'official');
     try {
@@ -167,6 +210,6 @@
     const state = await window.TeaCafeAuth.ready;
     if (!state.authenticated) { gate.innerHTML = '<a class="mc-button green" href="/api/auth/login?return=%2Fadmin">使用 Discord 登入</a>'; return; }
     if (!state.is_official) { gate.textContent = '這個頁面只開放官方審核員使用。'; return; }
-    gate.hidden = true; workspace.hidden = false; await Promise.all([loadQueue(), loadMembers(true)]);
+    gate.hidden = true; workspace.hidden = false; await Promise.all([loadQueue(), loadMembers(true), loadSupporters()]);
   })();
 })();

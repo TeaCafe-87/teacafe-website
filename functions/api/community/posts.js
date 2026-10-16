@@ -4,7 +4,7 @@ const select = `SELECT p.*, (SELECT COUNT(*) FROM community_likes l WHERE l.post
   (SELECT COUNT(*) FROM community_comments c WHERE c.post_id=p.id) comment_count,
   (SELECT COUNT(*) FROM community_shares s WHERE s.post_id=p.id) share_count,
   EXISTS(SELECT 1 FROM community_likes l WHERE l.post_id=p.id AND l.author_id=?) liked
-  FROM community_posts p WHERE p.kind=? AND p.status='published'`;
+  FROM community_posts p WHERE p.kind=? AND p.status='published' AND NOT (p.author_id='teacafe-system' AND p.id LIKE 'discussion-%')`;
 
 export async function onRequestGet({ request, env }) {
   if (!env.DB) return json({ configured: false, posts: [], next_cursor: null });
@@ -44,7 +44,7 @@ export async function onRequestPost({ request, env }) {
   const user = await userOrError(request, env);
   if (!user) return json({ error: 'authentication_required' }, 401);
   const declared = Number(request.headers.get('Content-Length') || 0);
-  if (declared > MAX_TOTAL_BYTES + 100000) return json({ error: 'files_too_large', max_bytes: MAX_TOTAL_BYTES }, 413);
+  if (declared > MAX_TOTAL_BYTES + 2 * 1024 * 1024) return json({ error: 'files_too_large', max_bytes: MAX_TOTAL_BYTES }, 413);
   let form;
   try { form = await request.formData(); } catch { return json({ error: 'invalid_form' }, 400); }
   const kind = String(form.get('kind') || '');
@@ -55,7 +55,9 @@ export async function onRequestPost({ request, env }) {
   const official = isOfficialUser(user, env);
   if (category === 'official' && (!official || kind !== 'forum')) return json({ error: 'official_only' }, 403);
   if (!title || title.length > 100 || body.length > 5000 || category.length > 40 || !/^[a-z0-9-]+$/.test(category)) return json({ error: 'invalid_post' }, 400);
-  const files = form.getAll('media').filter(value => value instanceof File && value.size > 0);
+  const attachments = form.getAll('media').filter(value => value instanceof File);
+  if (attachments.some(file => file.size === 0 && file.name)) return json({ error: 'empty_media' }, 400);
+  const files = attachments.filter(file => file.size > 0);
   const total = files.reduce((sum, file) => sum + file.size, 0);
   if (total > MAX_TOTAL_BYTES) return json({ error: 'files_too_large', max_bytes: MAX_TOTAL_BYTES }, 413);
   if (files.some(file => !MEDIA_TYPES.has(file.type))) return json({ error: 'unsupported_media_type' }, 415);
