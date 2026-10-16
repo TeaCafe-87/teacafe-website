@@ -29,6 +29,12 @@ export async function userOrError(request, env) {
   return user || null;
 }
 
+export function isOfficialUser(user, env) {
+  if (!user?.id) return false;
+  const reviewers = ['891516136464723998', '969660268265226251', ...String(env.OFFICIAL_DISCORD_IDS || '').split(',')];
+  return reviewers.some(id => id.trim() === String(user.id));
+}
+
 export function sameOrigin(request) {
   const origin = request.headers.get('Origin');
   return !origin || origin === new URL(request.url).origin;
@@ -37,6 +43,7 @@ export function sameOrigin(request) {
 export function publicPost(row, media = []) {
   return {
     id: row.id, kind: row.kind, category: row.category,
+    is_official: row.kind === 'forum' && row.category === 'official',
     title: row.title, body: row.body,
     author_id: row.author_id, author_username: row.author_username,
     author_name: row.author_name || row.author_username,

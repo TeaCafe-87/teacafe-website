@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#171b16">
+  <title>管理後台｜TeaCafe 茶咖暖居</title>
+  <link rel="icon" type="image/png" href="/image/server_icon.png">
+  <link rel="apple-touch-icon" href="/image/server_icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/styles.css?v=20261017">
+  <link rel="stylesheet" href="/assets/css/community.css?v=20261017">
+</head>
+<body class="moderation-page admin-page community-page">
+  <div data-header></div>
+  <main class="page community-main">
+    <section class="page-title"><div class="page-title-inner"><span class="crumb">首頁 / 管理後台</span><h1>管理後台</h1><p>查看會員與文章，處理投稿，也可以發布官方公告。</p></div></section>
+    <section class="community-shell" aria-label="官方工作區">
+      <div data-moderation-gate class="moderation-login" role="status">正在確認官方身分…</div>
+      <div data-moderation-workspace hidden>
+        <nav class="admin-sections" aria-label="後台區域"><a href="#review">文章審核</a><a href="#official">官方發文</a><a href="#members">網站成員</a></nav>
+        <section class="moderation-compose" id="official"><h2>官方發文</h2><p>官方貼文會顯示在論壇的「官方公告」，發布後直接公開。</p>
+          <form data-official-form class="moderation-form">
+            <label>標題<input name="title" maxlength="100" required></label>
+            <label>內容<textarea name="body" maxlength="5000" rows="6" required></textarea></label>
+            <label>圖片或影片<input name="media" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" multiple></label>
+            <p>附件不限件數，總大小最多 20 MiB。</p>
+            <div data-official-files role="status"></div>
+            <button class="mc-button green" type="submit">發布官方貼文</button>
+          </form>
+        </section>
+        <section class="moderation-queue" id="review"><h2>待審貼文</h2><p data-moderation-count role="status">讀取中…</p><div data-moderation-posts class="community-feed"></div></section>
+        <section class="admin-members" id="members"><h2>網站成員</h2><p>顯示啟用會員紀錄後登入過網站的 Discord 帳號，以及舊貼文中已知的發文者。</p><label>搜尋成員<input data-member-search type="search" placeholder="Discord 名稱、ID 或 Minecraft 名稱"></label><p data-member-count role="status"></p><div data-member-list class="admin-member-list"></div><button data-member-more class="mc-button" type="button" hidden>載入更多成員</button><div data-member-posts class="admin-member-posts" hidden></div></section>
+      </div>
+    </section>
+  </main>
+  <div data-footer></div>
+  <dialog class="community-lightbox" data-moderation-lightbox><button class="community-lightbox-close" type="button" aria-label="關閉圖片">×</button><img class="community-lightbox-image" alt="待審圖片"></dialog>
+  <script src="/assets/js/app.js?v=20261017"></script>
+  <script defer src="/assets/js/admin.js?v=20261017"></script>
+</body>
+</html>

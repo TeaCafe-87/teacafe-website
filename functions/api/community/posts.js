@@ -1,4 +1,4 @@
-import { MAX_TOTAL_BYTES, MEDIA_TYPES, hasValidSignature, json, userOrError, sameOrigin, publicPost, authorFields } from '../../_lib/community.js';
+import { MAX_TOTAL_BYTES, MEDIA_TYPES, hasValidSignature, json, userOrError, sameOrigin, publicPost, authorFields, isOfficialUser } from '../../_lib/community.js';
 
 const select = `SELECT p.*, (SELECT COUNT(*) FROM community_likes l WHERE l.post_id=p.id) like_count,
   (SELECT COUNT(*) FROM community_comments c WHERE c.post_id=p.id) comment_count,
@@ -52,6 +52,8 @@ export async function onRequestPost({ request, env }) {
   const title = String(form.get('title') || '').trim();
   const body = String(form.get('body') || '').trim();
   const category = kind === 'forum' ? String(form.get('category') || 'general').trim() : 'gallery';
+  const official = isOfficialUser(user, env);
+  if (category === 'official' && (!official || kind !== 'forum')) return json({ error: 'official_only' }, 403);
   if (!title || title.length > 100 || body.length > 5000 || category.length > 40 || !/^[a-z0-9-]+$/.test(category)) return json({ error: 'invalid_post' }, 400);
   const files = form.getAll('media').filter(value => value instanceof File && value.size > 0);
   const total = files.reduce((sum, file) => sum + file.size, 0);
@@ -63,6 +65,7 @@ export async function onRequestPost({ request, env }) {
   if (recent) return json({ error: 'post_rate_limited' }, 429);
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
+  const postStatus = official && category === 'official' ? 'published' : 'pending';
   const stored = [];
   try {
     for (let i = 0; i < files.length; i++) {
@@ -74,7 +77,7 @@ export async function onRequestPost({ request, env }) {
     }
     const author = authorFields(user);
     const statements = [env.DB.prepare(`INSERT INTO community_posts (id,kind,category,title,body,author_id,author_username,author_name,author_avatar_url,status,created_at,updated_at)
-      VALUES (?,?,?,?,?,?,?,?,?,'published',?,?)`).bind(id, kind, category, title, body, ...author, now, now)];
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id, kind, category, title, body, ...author, postStatus, now, now)];
     for (const item of stored) {
       statements.push(env.DB.prepare('INSERT INTO community_media (id,post_id,object_key,mime_type,byte_size,position,created_at) VALUES (?,?,?,?,?,?,?)').bind(item.id, id, item.key, item.type, item.size, item.position, now));
     }
@@ -83,5 +86,5 @@ export async function onRequestPost({ request, env }) {
     await Promise.all(stored.map(item => env.GALLERY_MEDIA.delete(item.key).catch(() => {})));
     return json({ error: 'storage_failed' }, 500);
   }
-  return json({ ok: true, post: publicPost({ id, kind, category, title, body, author_id: String(user.id), author_username: user.username, author_name: user.global_name, author_avatar_url: user.avatar_url, created_at: now }, stored.map(item => ({ id: item.id, type: item.type, size: item.size, url: `/api/community/media/${item.id}` }))) }, 201);
+  return json({ ok: true, status: postStatus, post: publicPost({ id, kind, category, title, body, author_id: String(user.id), author_username: user.username, author_name: user.global_name, author_avatar_url: user.avatar_url, created_at: now }, stored.map(item => ({ id: item.id, type: item.type, size: item.size, url: `/api/community/media/${item.id}` }))) }, 201);
 }

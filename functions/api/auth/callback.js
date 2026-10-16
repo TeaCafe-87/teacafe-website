@@ -26,6 +26,16 @@ export async function onRequestGet({ request, env }) {
   if(!userRes.ok) return new Response("Discord user lookup failed.",{status:502});
   const user = await userRes.json();
   const avatarUrl = user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128` : null;
+  if (env.DB) {
+    const now = new Date().toISOString();
+    try {
+      await env.DB.prepare(`INSERT INTO site_members (discord_id,username,global_name,avatar_url,first_login_at,last_login_at,login_count)
+        VALUES (?,?,?,?,?,?,1)
+        ON CONFLICT(discord_id) DO UPDATE SET username=excluded.username,global_name=excluded.global_name,
+          avatar_url=excluded.avatar_url,last_login_at=excluded.last_login_at,login_count=site_members.login_count+1`)
+        .bind(String(user.id),String(user.username),user.global_name||null,avatarUrl,now,now).run();
+    } catch (error) { console.error('Could not record site member login', error); }
+  }
   const sessionData = {id:user.id,username:user.username,global_name:user.global_name||null,avatar_url:avatarUrl,exp:Math.floor(Date.now()/1000)+604800};
   const payload = b64url(enc.encode(JSON.stringify(sessionData))); const signature = await sign(payload, env.SESSION_SECRET);
   const retRaw = getCookie(request,"teacafe_return"); let returnTo="/"; try{returnTo=decodeURIComponent(retRaw||"/")}catch{}

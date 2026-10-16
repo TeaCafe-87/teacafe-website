@@ -15,7 +15,7 @@
   const MAX_BYTES = 20 * 1024 * 1024;
   const TYPES = new Set(['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm']);
   const categories = [
-    ['all','全部'], ['general','閒聊交流'], ['help','新手提問'],
+    ['all','全部'], ['official','官方公告'], ['general','閒聊交流'], ['help','新手提問'],
     ['professions','職業與料理'], ['homes','家園與建築'],
     ['economy','交易與經濟'], ['pets','寵物與冒險'],
     ['pass','季節通行證'], ['suggestions','玩法建議']
@@ -35,6 +35,7 @@
   };
   let configured = false;
   let cursor = null;
+  let loadVersion = 0;
   let posts = [];
   let activeCategory = new URL(location.href).searchParams.get('category') || 'all';
   let search = '';
@@ -83,7 +84,7 @@
     if (!await auth()) return;
     if (!configured) { say('資料庫與媒體儲存空間尚未連接'); return; }
     form.reset(); feedback.textContent=''; fileSummary.textContent=''; cleanupPreviews();
-    if (kind === 'forum') form.elements.category.value = activeCategory === 'all' ? 'general' : activeCategory;
+    if (kind === 'forum') form.elements.category.value = ['all','official'].includes(activeCategory) ? 'general' : activeCategory;
     dialog.showModal();
   });
   form.addEventListener('submit', async event => {
@@ -97,11 +98,22 @@
     try {
       const response = await fetch('/api/community/posts',{method:'POST',body:data});
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error === 'files_too_large' ? '檔案總大小超過 20 MiB。' : result.error === 'post_rate_limited' ? '請稍等 30 秒再發布。' : '發布失敗，請稍後再試。');
-      dialog.close(); form.reset(); await load(true); say('貼文已發布');
+      if (!response.ok) throw new Error(result.error === 'files_too_large' ? '檔案總大小超過 20 MiB。' : result.error === 'post_rate_limited' ? '請稍等 30 秒再發文。' : result.error === 'moderation_not_configured' ? '官方尚未設定審核人員，暫時無法發文。' : '送出失敗，請稍後再試。');
+      dialog.close(); form.reset(); await load(true); say(result.status === 'pending' ? '已送出審核，通過後會公開。' : '貼文已發布');
     } catch (error) { feedback.textContent=error.message; }
     finally { submit.disabled=false; }
   });
+
+  const lightbox = el('dialog','community-lightbox');
+  const lightboxClose = el('button','community-lightbox-close','×');
+  lightboxClose.type = 'button'; lightboxClose.setAttribute('aria-label','關閉圖片');
+  const lightboxImage = el('img','community-lightbox-image');
+  lightbox.append(lightboxClose,lightboxImage); document.body.append(lightbox);
+  lightboxClose.addEventListener('click',()=>lightbox.close());
+  lightbox.addEventListener('click',event=>{if(event.target===lightbox)lightbox.close()});
+  function openLightbox(url, title) {
+    lightboxImage.src=url; lightboxImage.alt=title || '玩家上傳的圖片'; lightbox.showModal();
+  }
 
   function mediaPanel(post) {
     const items = Array.isArray(post.media) ? post.media : post.image_url ? [{url:post.image_url,type:'image/webp'}] : [];
@@ -118,7 +130,10 @@
       media.src=item.url; media.className='post-media';
       if (media.tagName==='VIDEO') { media.controls=true; media.preload='metadata'; }
       else { media.alt=post.title || '玩家上傳的圖片'; media.loading='lazy'; }
-      stage.replaceChildren(media);
+      if (media.tagName==='IMG') {
+        const zoom=el('button','post-media-zoom'); zoom.type='button'; zoom.setAttribute('aria-label','放大圖片');
+        zoom.append(media); zoom.addEventListener('click',()=>openLightbox(item.url,post.title)); stage.replaceChildren(zoom);
+      } else stage.replaceChildren(media);
       counter.textContent=`${index+1} / ${items.length}`;
       previous.hidden=next.hidden=items.length<2;
     }
@@ -150,13 +165,16 @@
     const head=el('header','post-head');
     const avatar=el('img','post-avatar'); avatar.src=post.author_avatar_url||'/image/logo.png'; avatar.alt=''; avatar.loading='lazy';
     const byline=el('div','post-byline');
-    byline.append(el('strong','',post.author_name||post.author_username||'TeaCafe'),el('small','',fmt(post.created_at)||(kind==='gallery'?'版型預覽':'討論提案')));
-    head.append(avatar,byline);
-    if (kind==='forum') head.append(el('span','post-category',post.demo ? '討論提案 · ' + categoryName(post.category) : categoryName(post.category)));
+    byline.append(el('strong','',post.author_name||post.author_username||'TeaCafe'),el('small','',fmt(post.created_at)));
+    const headMain=el('div','post-head-main'); headMain.append(byline);
+    if (kind==='forum') headMain.append(el('h2','post-title',post.title));
+    head.append(avatar,headMain);
+    if (kind==='forum') head.append(el('span','post-category',categoryName(post.category)));
     article.append(head);
     const media=mediaPanel(post); if (media) article.append(media);
     const content=el('div','post-content');
-    content.append(el('h2','',post.title),el('p','',post.body||'')); article.append(content);
+    if(kind==='gallery') content.append(el('h2','',post.title));
+    content.append(el('p','',post.body||'')); article.append(content);
     const actions=el('div','post-actions');
     const like=el('button','post-action',`♥ ${Number(post.like_count)||0}`); like.type='button';
     like.setAttribute('aria-label','按讚'); like.setAttribute('aria-pressed',post.liked?'true':'false');
@@ -194,33 +212,33 @@
     if(kind==='forum'&&activeCategory!=='all')visible=visible.filter(post=>post.category===activeCategory);
     if(search)visible=visible.filter(post=>`${post.title} ${post.body}`.toLocaleLowerCase().includes(search));
     feed.replaceChildren(...visible.map(card));
-    if(!visible.length)feed.append(el('div','community-empty',configured?'這裡還沒有貼文。':'還沒有可顯示的貼文。'));
+    if(!visible.length)feed.append(el('div','community-empty',configured?'這裡還沒有貼文，等玩家分享第一篇。':'目前無法讀取貼文。'));
     const focus=new URL(location.href).searchParams.get('post');
     if(focus)document.getElementById(`post-${focus}`)?.scrollIntoView({block:'center'});
   }
   async function load(reset=false) {
-    if(reset){cursor=null;posts=[];}
+    if(reset){cursor=null;posts=[];loadVersion++;}
+    const version=loadVersion;
     status.textContent='讀取貼文中…';
     try {
       const url=new URL('/api/community/posts',location.origin);url.searchParams.set('kind',kind);if(cursor)url.searchParams.set('cursor',cursor);
+      if(kind==='forum'&&activeCategory!=='all')url.searchParams.set('category',activeCategory);
       const response=await fetch(url,{headers:{Accept:'application/json'}});
-      const data=response.ok?await response.json():{configured:false,posts:[]};configured=Boolean(data.configured);
+      const data=response.ok?await response.json():{configured:false,posts:[]};
+      if(version!==loadVersion)return;
+      configured=Boolean(data.configured);
       posts.push(...(Array.isArray(data.posts)?data.posts:[]));cursor=data.next_cursor||null;
-      if(!configured) {
-        const fallback=await fetch(kind==='forum'?'/data/forum.json':'/data/gallery.json',{cache:'no-store'});
-        const examples=await fallback.json();posts=examples.posts||[];
-        status.textContent=kind==='forum'?'目前顯示玩法討論提案；連接 D1 和 R2 後即可發文互動。':'目前顯示相冊版型預覽；連接 D1 和 R2 後即可分享作品。';
-      } else status.textContent=posts.length?'':'目前還沒有貼文。';
+      status.textContent=!configured?'資料庫目前無法使用。':posts.length?'':'目前還沒有貼文。';
       more.hidden=!cursor;redraw();
-    } catch {status.textContent='貼文暫時無法載入。';feed.replaceChildren();}
+    } catch {if(version!==loadVersion)return;status.textContent='貼文暫時無法載入。';feed.replaceChildren();}
   }
   more.addEventListener('click',()=>load());
   $('[data-community-search]')?.addEventListener('input',event=>{search=event.target.value.trim().toLocaleLowerCase();redraw()});
   const nav=$('[data-community-categories]');
   if(nav){
     const select=$('[data-community-category]');
-    select.replaceChildren(...categories.filter(x=>x[0]!=='all').map(([id,name])=>{const option=el('option','',name);option.value=id;return option}));
-    for(const [id,name] of categories){const button=el('button',activeCategory===id?'active':'',name);button.type='button';button.addEventListener('click',()=>{activeCategory=id;nav.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));redraw()});nav.append(button)}
+    select.replaceChildren(...categories.filter(x=>!['all','official'].includes(x[0])).map(([id,name])=>{const option=el('option','',name);option.value=id;return option}));
+    for(const [id,name] of categories){const button=el('button',activeCategory===id?'active':'',name);button.type='button';button.addEventListener('click',()=>{activeCategory=id;nav.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));const pageUrl=new URL(location.href);if(id==='all')pageUrl.searchParams.delete('category');else pageUrl.searchParams.set('category',id);history.replaceState(null,'',pageUrl);load(true)});nav.append(button)}
   }
   load(true);
 })();
