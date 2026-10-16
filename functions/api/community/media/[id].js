@@ -1,9 +1,13 @@
-import { json } from '../../../_lib/community.js';
+import { json, userOrError, isOfficialUser } from '../../../_lib/community.js';
 
 export async function onRequestGet({ params, request, env }) {
   if (!env.DB || !env.GALLERY_MEDIA) return json({ error: 'storage_not_configured' }, 503);
-  const row = await env.DB.prepare("SELECT m.object_key,m.mime_type,m.byte_size FROM community_media m JOIN community_posts p ON p.id=m.post_id WHERE m.id=? AND p.status='published'").bind(params.id).first();
+  const row = await env.DB.prepare("SELECT m.object_key,m.mime_type,m.byte_size,p.status,p.author_id FROM community_media m JOIN community_posts p ON p.id=m.post_id WHERE m.id=?").bind(params.id).first();
   if (!row) return json({ error: 'media_not_found' }, 404);
+  if (row.status !== 'published') {
+    const user = await userOrError(request, env);
+    if (row.status !== 'pending' || (!isOfficialUser(user, env) && String(user?.id) !== row.author_id)) return json({ error: 'media_not_found' }, 404);
+  }
   const rangeHeader = request.headers.get('Range');
   let options = {};
   if (rangeHeader) {
@@ -16,7 +20,7 @@ export async function onRequestGet({ params, request, env }) {
   }
   const object = await env.GALLERY_MEDIA.get(row.object_key, options);
   if (!object) return json({ error: 'media_not_found' }, 404);
-  const headers = new Headers({ 'Content-Type': row.mime_type, 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox", 'Cache-Control': 'public, max-age=3600', 'Accept-Ranges': 'bytes' });
+  const headers = new Headers({ 'Content-Type': row.mime_type, 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox", 'Cache-Control': row.status === 'published' ? 'public, max-age=3600' : 'private, no-store', 'Accept-Ranges': 'bytes' });
   if (rangeHeader) {
     const offset = object.range?.offset || 0;
     const length = object.range?.length || row.byte_size;

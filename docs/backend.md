@@ -6,11 +6,11 @@
 
 1. 在 Cloudflare Pages 專案設定中，將 D1 綁定變數命名為 `DB`。
 2. 將 R2 bucket 綁定變數命名為 `GALLERY_MEDIA`。這個名稱沿用原有相冊設定，但同時儲存論壇媒體。
-3. 依序執行 `migrations/0001_community.sql`、`0002_content.sql`、`0003_discussion_seed.sql`，分別套用到正式與預覽環境的 D1。若使用 Wrangler，可執行 `wrangler d1 execute <資料庫名稱> --remote --file=migrations/0001_community.sql`，再依序執行後兩個檔案。
+3. 已有資料庫（包含先前的示範討論文）：在 Cloudflare D1 Studio 的 Query 頁面執行 `migrations/0004_admin.sql`。它只隱藏八篇官方示範討論文，保留玩家貼文，並建立 `site_members`。新資料庫依序執行 `0001_community.sql`、`0002_content.sql`、`0004_admin.sql`；不必執行舊的 `0003_discussion_seed.sql`。
 4. 在 Pages 設定中提供 `DISCORD_CLIENT_ID`、`DISCORD_CLIENT_SECRET`、`DISCORD_REDIRECT_URI`、`SESSION_SECRET`，並於 Discord Developer Portal 登記回呼網址。
-5. 重新部署 Pages。先開啟 `/api/community/posts?kind=forum`，確認回傳 `configured: true`；再以 Discord 登入測試發文。
+5. 重新部署 Pages。先開啟 `/api/community/posts?kind=forum`，確認回傳 `configured: true`；再以 Discord 登入測試投稿，管理員到 `/admin` 審核。
 
-設定綁定後，**公開貼文會立即顯示**。若要管理員審核，需在正式開放前加入審核流程及管理端；目前沒有管理員審核介面。建議另行規劃刪文、檢舉與備份流程。
+玩家新貼文進入 `pending`，只有管理員核准後才會公開。兩位首批管理員的 Discord ID 已加入伺服器端白名單；日後可用 Pages 環境變數 `OFFICIAL_DISCORD_IDS`（多個 ID 以逗號分隔）增加管理員。官方貼文在 `/admin` 發布，分類為「官方公告」，直接公開。請將管理頁視為私人後台，勿分享成員資料截圖。
 
 ## 資料契約
 
@@ -18,7 +18,9 @@
 | --- | --- | --- | --- |
 | 伺服器線上狀態、玩家數、版本 | `GET /api/server/status` | 外部狀態服務，短暫快取 | 首頁即時資訊 |
 | Discord 身分 | `GET /api/auth/me` 與 OAuth 路由 | HMAC 簽章 cookie | 發文、留言、按讚 |
+| 網站成員 | `GET /api/admin/members`、`GET /api/admin/posts` | `site_members`、`player_links`、`community_posts` | 管理員查看 Discord 身分、登入時間、Minecraft 名稱與文章 |
 | 相冊／論壇貼文 | `GET/POST /api/community/posts` | `community_posts`、`community_media` | `kind=gallery` 或 `kind=forum`；每頁 20 篇，`next_cursor` 分頁 |
+| 審核 | `GET/POST /api/community/moderation` | `community_posts.status` | 管理員查看待審投稿、核准或退回 |
 | 媒體 | `GET /api/community/media/:id` | D1 索引、R2 物件 | 圖片、影片串流與 Range 請求 |
 | 留言 | `GET/POST /api/community/comments` | `community_comments` | 每篇貼文留言 |
 | 讚 | `POST /api/community/likes` | `community_likes` | 使用者每篇最多一個讚 |
@@ -30,7 +32,7 @@
 
 貼文 `POST` 使用 `multipart/form-data`：`kind`、`category`、`title`、`body` 與重複的 `media` 欄位。媒體類型限 JPG、PNG、WebP、GIF、MP4、WebM；**件數不限，合計最多 20 MiB**，前後端均驗證。相冊至少需一個媒體檔。由於 Pages Function 會解析 multipart，請勿將上限調高到接近 Worker 的記憶體上限；較大影片應改用 R2 直傳流程。
 
-論壇的靜態提案位於 `dist/data/forum.json`，只在 D1 尚未連接時顯示；`0003_discussion_seed.sql` 會將同一批提案建立為正式論壇貼文。相冊未連接時顯示一篇標明版型預覽的示範貼文。舊版 `gallery_posts`／`gallery_comments` 若已有正式資料，須另行做資料遷移後再切換新 API。
+論壇與相冊不再顯示示範貼文。新投稿待審期間，只有投稿者與管理員能讀取其媒體；公開 Feed、按讚、留言與分享只針對已核准貼文。`site_members` 從這次部署後的 Discord 登入開始記錄；舊貼文作者可由遷移補入，但更早只瀏覽網站、沒有發文的訪客無法回溯。舊版 `gallery_posts`／`gallery_comments` 若已有正式資料，須另行做資料遷移後再切換新 API。
 
 ## 公開內容與安全
 

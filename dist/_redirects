@@ -1,2 +1,3 @@
 /pass.html / 301
 /board.html /forum.html 301
+/admin /admin.html 200
