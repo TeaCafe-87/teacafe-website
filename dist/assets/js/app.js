@@ -2,22 +2,21 @@ const $ = (selector, parent = document) => parent.querySelector(selector);
 const $$ = (selector, parent = document) => [...parent.querySelectorAll(selector)];
 const pathPage = (location.pathname.split("/").pop() || "index.html").toLowerCase();
 const page = pathPage.includes('.') ? pathPage : `${pathPage}.html`;
-const reducedBySystem = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const nav = [
   ["index.html", "主頁"],
   ["rules.html", "規則"],
   ["news.html", "公告"],
-  ["gallery.html", "玩家相冊"],
+  ["wiki.html", "Wiki"],
   ["forum.html", "論壇"],
-  ["wiki.html", "Wiki"]
+  ["gallery.html", "玩家相冊"]
 ];
 
 const header = $("[data-header]");
 if (header) {
   header.innerHTML = `<header class="topbar topbar-hidden ${page === "index.html" ? "home-topbar" : ""}">
     <a class="brand" href="/"><img class="brand-icon" src="/image/server_icon.png" alt=""><span><b>茶咖暖居</b><small>TEACAFE</small></span></a>
-    <nav class="topnav">${nav.map(([url, name]) => `<a class="mc-nav ${page === url ? "active" : ""}" href="/${url}">${name}</a>`).join("")}<a class="mc-nav ${page === 'admin.html' ? 'active' : ''}" data-official-link href="/admin" hidden>管理後台</a></nav>
+    <nav class="topnav">${nav.map(([url, name]) => `<a class="mc-nav ${page === url ? "active" : ""}" href="/${url}">${name}</a>`).join("")}<details class="nav-more"><summary class="mc-nav">更多</summary><div><a href="/supporters.html">感謝支持</a><a href="/careers.html">職業指南</a><a href="/market.html">月映茶行</a><a data-official-link href="/admin" hidden>管理後台</a></div></details></nav>
     <div class="top-tools">
       <button class="discord-button topbar-auth" data-auth>Discord 登入</button>
       <button class="mc-nav settings-button" data-settings aria-label="設定">⚙</button>
@@ -30,7 +29,7 @@ const footer = $("[data-footer]");
 if (footer) {
   footer.innerHTML = `<footer class="site-footer">
     <a class="brand" href="/"><img class="brand-icon" src="/image/server_icon.png" alt=""><span><b>茶咖暖居</b><small>TEACAFE</small></span></a>
-    <nav><a href="/">主頁</a><a href="/rules.html">規則</a><a href="/news.html">公告</a><a href="/gallery.html">玩家相冊</a><a href="/forum.html">論壇</a><a href="/wiki.html">Wiki</a><a data-official-link href="/admin" hidden>管理後台</a></nav>
+    <nav><a href="/">主頁</a><a href="/rules.html">規則</a><a href="/news.html">公告</a><a href="/wiki.html">Wiki</a><a href="/forum.html">論壇</a><a href="/gallery.html">玩家相冊</a><a href="/supporters.html">感謝支持</a><a href="/careers.html">職業指南</a><a href="/market.html">月映茶行</a><a data-official-link href="/admin" hidden>管理後台</a></nav>
   </footer>`;
 }
 
@@ -55,9 +54,8 @@ document.body.insertAdjacentHTML("beforeend", `
   </section>
   <section class="mc-settings-panel" id="interface-panel">
     <h3>介面設定</h3>
-    <div class="mc-settings-row compact"><div><b>文字大小</b><small>標題與內文同步調整</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="text-size-switch">標準</button></div>
-    <div class="mc-settings-row compact"><div><b>文字樣式</b><small>網站文字的顯示方式</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="font-style-switch">一般文字</button></div>
-    <div class="mc-settings-row compact"><div><b>介面動畫</b><small>頁面與選單移動效果</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="motion-switch">一般</button></div>
+    <div class="mc-settings-row compact"><div><b>文字大小</b><small>標題與內文按比例調整</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="text-size-switch">標準</button></div>
+    <div class="mc-settings-row compact"><div><b>文字樣式</b><small>網站文字的顯示方式</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="font-style-switch">像素風文字</button></div>
     <button type="button" class="mc-menu-button wide" data-settings-back>完成</button>
   </section>
 </div></form></dialog>
@@ -71,6 +69,13 @@ const toast = (message) => {
   clearTimeout(window.toastTimer);
   window.toastTimer = setTimeout(() => el.classList.remove("show"), 1900);
 };
+const authResult = new URL(location.href);
+const authNotice = { cancelled: "已取消 Discord 授權。", expired: "登入已過期，請重新嘗試。", failed: "Discord 登入暫時失敗，請稍後重試。" }[authResult.searchParams.get("auth")];
+if (authNotice) {
+  authResult.searchParams.delete("auth");
+  history.replaceState(null, "", authResult.pathname + authResult.search + authResult.hash);
+  queueMicrotask(() => toast(authNotice));
+}
 
 // Audio is wired to files under /audio. Copyrighted Minecraft audio is not bundled.
 const AUDIO_PATHS = {
@@ -122,18 +127,16 @@ document.addEventListener("click", (event) => {
 });
 
 // Functional interface settings.
-let textLarge = localStorage.getItem("teacafe-text-size") === "large";
-let motionReduced = localStorage.getItem("teacafe-motion") === "reduced" || reducedBySystem;
-let pixelText = localStorage.getItem("teacafe-font-style") === "pixel";
+const textScaleOptions = ["normal", "125", "150", "200"];
+const savedScale = localStorage.getItem("teacafe-text-size");
+let textScale = textScaleOptions.includes(savedScale) ? savedScale : savedScale === "large" ? "125" : "normal";
+let pixelText = localStorage.getItem("teacafe-font-style") !== "normal";
 function applyInterfaceSettings() {
-  document.documentElement.dataset.textSize = textLarge ? "large" : "normal";
-  document.documentElement.dataset.motion = motionReduced ? "reduced" : "normal";
+  document.documentElement.dataset.textSize = textScale;
   document.documentElement.dataset.fontStyle = pixelText ? "pixel" : "normal";
   const textButton = $("#text-size-switch");
-  const motionButton = $("#motion-switch");
   const fontButton = $("#font-style-switch");
-  if (textButton) textButton.textContent = textLarge ? "放大" : "標準";
-  if (motionButton) motionButton.textContent = motionReduced ? "減少" : "一般";
+  if (textButton) textButton.textContent = textScale === "normal" ? "標準" : `${textScale}%`;
   if (fontButton) fontButton.textContent = pixelText ? "像素風文字" : "一般文字";
 }
 applyInterfaceSettings();
@@ -194,18 +197,13 @@ soundVolume?.addEventListener("input", (event) => {
   localStorage.setItem("teacafe-sound-vol", String(soundVol));
 });
 $("#text-size-switch")?.addEventListener("click", () => {
-  textLarge = !textLarge;
-  localStorage.setItem("teacafe-text-size", textLarge ? "large" : "normal");
+  textScale = textScaleOptions[(textScaleOptions.indexOf(textScale) + 1) % textScaleOptions.length];
+  localStorage.setItem("teacafe-text-size", textScale);
   applyInterfaceSettings();
 });
 $("#font-style-switch")?.addEventListener("click", () => {
   pixelText = !pixelText;
   localStorage.setItem("teacafe-font-style", pixelText ? "pixel" : "normal");
-  applyInterfaceSettings();
-});
-$("#motion-switch")?.addEventListener("click", () => {
-  motionReduced = !motionReduced;
-  localStorage.setItem("teacafe-motion", motionReduced ? "reduced" : "normal");
   applyInterfaceSettings();
 });
 
@@ -403,7 +401,7 @@ if (topbar) {
     if (touchPointer.matches) return;
     clearTimeout(hideTimer);
     if (immediate) topbar.classList.add('topbar-hidden');
-    else hideTimer = setTimeout(() => topbar.classList.add('topbar-hidden'), 90);
+    else hideTimer = setTimeout(() => topbar.classList.add('topbar-hidden'), 850);
   };
   document.addEventListener('pointermove', event => {
     if (event.pointerType === 'touch' || touchPointer.matches) return;

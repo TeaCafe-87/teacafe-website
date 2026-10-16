@@ -57,16 +57,17 @@
   function selectedFiles() {
     const files = [...fileInput.files];
     const total = files.reduce((sum,file) => sum + file.size,0);
-    const valid = total <= MAX_BYTES && files.every(file => TYPES.has(file.type));
-    fileSummary.textContent = `${files.length} 個檔案 · ${(total / 1048576).toFixed(1)} / 20 MiB`;
-    feedback.textContent = !valid ? (total > MAX_BYTES ? '檔案總大小超過 20 MiB。' : '檔案格式不支援。') : '';
+    const invalid = files.find(file => !TYPES.has(file.type) || !file.size);
+    const valid = total <= MAX_BYTES && !invalid;
+    fileSummary.textContent = `${files.length} 個檔案 · ${(total / 1048576).toFixed(2)} / 20 MiB（${Math.max(0,(MAX_BYTES-total)/1048576).toFixed(2)} MiB 可用）`;
+    feedback.textContent = total > MAX_BYTES ? '附件合計不得超過 20 MiB，請移除部分檔案或壓縮影片後再送出。' : invalid ? `「${invalid.name}」不是支援的照片／影片，或檔案為空。` : '';
     return valid;
   }
   fileInput.addEventListener('change', () => {
     cleanupPreviews();
     selectedFiles();
     for (const file of fileInput.files) {
-      if (!TYPES.has(file.type)) continue;
+      if (!TYPES.has(file.type) || !file.size || file.size > MAX_BYTES) continue;
       const url = URL.createObjectURL(file);
       objectUrls.push(url);
       const figure = el('figure','community-preview');
@@ -97,8 +98,8 @@
     data.set('kind',kind);
     try {
       const response = await fetch('/api/community/posts',{method:'POST',body:data});
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error === 'files_too_large' ? '檔案總大小超過 20 MiB。' : result.error === 'post_rate_limited' ? '請稍等 30 秒再發文。' : result.error === 'moderation_not_configured' ? '官方尚未設定審核人員，暫時無法發文。' : '送出失敗，請稍後再試。');
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(response.status === 413 || result.error === 'files_too_large' ? '附件合計不得超過 20 MiB。' : result.error === 'post_rate_limited' ? '請稍等 30 秒再發文。' : result.error === 'moderation_not_configured' ? '官方尚未設定審核人員，暫時無法發文。' : result.error === 'unsupported_media_type' || result.error === 'invalid_media_content' ? '照片或影片格式不支援，請使用 JPG、PNG、WebP、GIF、MP4 或 WebM。' : '送出失敗，請稍後再試。');
       dialog.close(); form.reset(); await load(true); say(result.status === 'pending' ? '已送出審核，通過後會公開。' : '貼文已發布');
     } catch (error) { feedback.textContent=error.message; }
     finally { submit.disabled=false; }

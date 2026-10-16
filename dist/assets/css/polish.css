@@ -64,3 +64,49 @@ html[data-font-style="pixel"] :is(input,textarea,select){line-height:1.65}
 @media(max-width:620px){.post-head{flex-wrap:wrap}.post-head-main{flex-basis:calc(100% - 58px)}.post-category{margin-left:54px;margin-top:0}.community-lightbox{height:90dvh}}
 @media(prefers-reduced-motion:reduce){.community-post,.wiki-card,.block-card,.community-topics nav button,.sidebar a{transition:none;transform:none!important}}
 html[data-motion="reduced"] :is(.community-post,.wiki-card,.block-card,.community-topics nav button,.sidebar a){transition:none;transform:none!important}
+
+/* Shared typography, category navigation, and page entrances. */
+html{--text-scale:1}
+html[data-text-size="125"]{--text-scale:1.25}
+html[data-text-size="150"]{--text-scale:1.5}
+html[data-text-size="200"]{--text-scale:2}
+:root{--type-body:calc(17px * var(--text-scale));--type-small:calc(14px * var(--text-scale));--type-label:calc(18px * var(--text-scale));--type-nav:calc(15px * var(--text-scale));--type-h1:clamp(calc(42px * var(--text-scale)),calc(5.6vw * var(--text-scale)),calc(70px * var(--text-scale)));--type-h2:clamp(calc(32px * var(--text-scale)),calc(4.2vw * var(--text-scale)),calc(52px * var(--text-scale)));--type-h3:clamp(calc(21px * var(--text-scale)),calc(2.4vw * var(--text-scale)),calc(28px * var(--text-scale)))}
+.sidebar h3,.community-topics h2{font-size:calc(18px * var(--text-scale))!important;line-height:1.4;margin:0 0 12px;padding:7px 10px 13px}
+.sidebar a,.community-topics nav button{font-size:calc(15px * var(--text-scale))!important;line-height:1.45;min-height:50px;padding:10px 13px;margin:5px 0}
+.community-topics{position:sticky;top:24px;background:#272b26;border:3px solid #111;box-shadow:inset 2px 2px #4e534d,inset -3px -3px #171916;padding:10px;color:#fff}
+.community-layout{width:100%;max-width:1200px;margin:auto;grid-template-columns:240px minmax(0,1fr);gap:28px;padding:35px 30px 80px;justify-content:stretch}
+.community-topics{margin-top:0;align-self:start}
+.community-topics nav{display:grid;gap:0}
+.community-topics nav button{width:100%;text-align:left;border:2px solid #222;background:#555852;color:#fff;box-shadow:inset 2px 2px #7c8078,inset -2px -2px #363834}
+.community-topics nav button.active,.community-topics nav button:hover{background:#89ad74;color:#14220f;box-shadow:inset 3px 3px #4f7041,inset -2px -2px #d9ecd1}
+.community-topic-note{font-size:var(--type-small);line-height:1.5}
+.rules-layout{grid-template-columns:240px minmax(0,1fr)}
+.rule-sidebar .sidebar-links{display:block}
+.rule-sidebar a{margin:5px 0}
+.rule-section{min-height:auto;padding:42px 0;scroll-margin-top:30px}
+.rule-content{padding:24px clamp(22px,4vw,58px)}
+.page-title-inner>h1,.home-hero-content>h1{animation:tea-title-reveal .9s cubic-bezier(.18,.7,.22,1) both}
+@keyframes tea-title-reveal{from{clip-path:inset(0 100% 0 0);opacity:.5}to{clip-path:inset(0 0 0 0);opacity:1}}
+.home-hero-content>.home-hero-tagline{animation:tea-tagline-out 3.6s ease .9s both}
+@keyframes tea-tagline-out{0%,45%{opacity:1}100%{opacity:0}}
+.mc-button.secondary,.mc-menu-button.secondary{background:#e5e9da;color:#26402a;border-color:#355436;text-shadow:none;box-shadow:inset 2px 2px #fff,inset -3px -3px #9db097,0 3px #223423}
+.mc-button.secondary:hover,.mc-menu-button.secondary:hover{background:#cfe1c6}
+.wiki-guide-links{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 24px}.wiki-guide-links a{font-size:var(--type-body)}
+.topnav{min-width:0;flex-wrap:wrap;align-content:center}
+.topnav .mc-nav{padding:8px 10px}
+.nav-more{position:relative}.nav-more summary{list-style:none;cursor:pointer}.nav-more summary::-webkit-details-marker{display:none}.nav-more>div{position:absolute;right:0;top:calc(100% + 8px);min-width:170px;display:grid;padding:8px;background:#272b26;border:3px solid #111;box-shadow:5px 5px rgba(0,0,0,.25);z-index:100}.nav-more>div a{padding:10px;color:#fff;font-size:var(--type-nav);white-space:nowrap}.nav-more>div a:hover{background:#607954}
+@media(max-width:1100px){.community-topics{position:static}.community-topics nav{display:flex;gap:6px;overflow-x:auto}.community-topics nav button{flex:0 0 auto;width:auto;white-space:nowrap}.rule-sidebar{position:static}.rule-sidebar .sidebar-links{display:flex;gap:6px;overflow-x:auto}.rule-sidebar h3{display:block}.rule-sidebar a{flex:0 0 auto;white-space:nowrap}.rules-layout{grid-template-columns:1fr}}
+@media(max-width:700px){.rule-content{padding:16px}.rule-section{padding:36px 0}.topnav .mc-nav{white-space:normal}}
+@media(prefers-reduced-motion:reduce){.page-title-inner>h1,.home-hero-content>h1,.home-hero-content>.home-hero-tagline{animation:none!important;clip-path:none;opacity:1}}
+@media(max-width:1100px){.sidebar .sidebar-links,.rule-sidebar .sidebar-links,.community-topics nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;overflow:visible}.sidebar .sidebar-links a,.rule-sidebar .sidebar-links a,.community-topics nav button{width:100%;margin:0;white-space:normal;min-width:0}.community-layout{grid-template-columns:1fr}.community-topics{margin:0}}
+@media(max-width:620px){.sidebar .sidebar-links,.rule-sidebar .sidebar-links,.community-topics nav{grid-template-columns:1fr}}
+html[data-text-size] :is(body,p,li,td,th,label,input,textarea,select,button){font-size:var(--type-body)}
+html[data-text-size] :is(small,.crumb,.kicker,.site-footer,.community-topic-note,.compose-feedback){font-size:var(--type-small)}
+html[data-text-size] :is(.mc-button,.discord-button,.mc-menu-button,.community-action,.community-toolbar input,.community-toolbar select){font-size:var(--type-body)}
+html[data-text-size] :is(.page-title h1,.home-hero-content h1){font-size:var(--type-h1)}
+html[data-text-size] :is(.content-panel h2,.rule-section h2,.section-head h2,.supporters-intro h2){font-size:var(--type-h2)}
+html[data-text-size] :is(.content-panel h3,.post-title,.community-post h3,.block-card h3){font-size:var(--type-h3)}
+html[data-text-size="150"] .topnav,html[data-text-size="200"] .topnav{display:none}
+html[data-text-size="150"] .mobile-menu,html[data-text-size="200"] .mobile-menu{display:block}
+html[data-text-size="150"] .topnav.mobile-open,html[data-text-size="200"] .topnav.mobile-open{display:grid;position:absolute;top:100%;left:12px;right:12px;padding:14px;background:#171b16;border:3px solid #51402a;grid-template-columns:repeat(2,minmax(0,1fr));z-index:99}
+html[data-text-size="150"] .nav-more>div,html[data-text-size="200"] .nav-more>div{right:auto;left:0}

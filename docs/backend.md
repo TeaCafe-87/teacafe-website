@@ -6,7 +6,7 @@
 
 1. 在 Cloudflare Pages 專案設定中，將 D1 綁定變數命名為 `DB`。
 2. 將 R2 bucket 綁定變數命名為 `GALLERY_MEDIA`。這個名稱沿用原有相冊設定，但同時儲存論壇媒體。
-3. 已有資料庫（包含先前的示範討論文）：在 Cloudflare D1 Studio 的 Query 頁面執行 `migrations/0004_admin.sql`。它只隱藏八篇官方示範討論文，保留玩家貼文，並建立 `site_members`。新資料庫依序執行 `0001_community.sql`、`0002_content.sql`、`0004_admin.sql`；不必執行舊的 `0003_discussion_seed.sql`。
+3. 已有資料庫：在 Cloudflare D1 Studio 的 Query 頁面執行 `migrations/0004_admin.sql`，再執行 `migrations/0005_supporters.sql`。`0004` 會隱藏八篇舊的示範討論文，保留玩家貼文，並建立 `site_members`。新資料庫依序執行 `0001_community.sql`、`0002_content.sql`、`0004_admin.sql`、`0005_supporters.sql`。舊的討論種子檔已移除。
 4. 在 Pages 設定中提供 `DISCORD_CLIENT_ID`、`DISCORD_CLIENT_SECRET`、`DISCORD_REDIRECT_URI`、`SESSION_SECRET`，並於 Discord Developer Portal 登記回呼網址。
 5. 重新部署 Pages。先開啟 `/api/community/posts?kind=forum`，確認回傳 `configured: true`；再以 Discord 登入測試投稿，管理員到 `/admin` 審核。
 
@@ -29,10 +29,18 @@
 | Wiki 補充條目 | `GET /api/wiki/entries` | `wiki_entries` | Wiki 顯示已發布的補充條目 |
 | 通行證摘要 | `GET /api/pass/summary` | `pass_seasons` | 顯示當季名稱、等級、經驗需求 |
 | Minecraft 帳號關聯 | 尚無公開 API | `player_links` | 預留 Discord 與 Minecraft UUID 關聯；不能只憑網頁登入建立驗證關係 |
+| 感謝支持名單 | `GET /api/supporters`、`GET/POST/DELETE /api/admin/supporters` | `supporters` | 官方手動新增已同意公開的支持者；網站只公開名稱、日期與備註 |
+| 月映茶行行情 | `GET /api/market` | `stock.teacafe.xyz/api/market` | 官網同網域代理即時唯讀行情 |
 
 貼文 `POST` 使用 `multipart/form-data`：`kind`、`category`、`title`、`body` 與重複的 `media` 欄位。媒體類型限 JPG、PNG、WebP、GIF、MP4、WebM；**件數不限，合計最多 20 MiB**，前後端均驗證。相冊至少需一個媒體檔。由於 Pages Function 會解析 multipart，請勿將上限調高到接近 Worker 的記憶體上限；較大影片應改用 R2 直傳流程。
 
 論壇與相冊不再顯示示範貼文。新投稿待審期間，只有投稿者與管理員能讀取其媒體；公開 Feed、按讚、留言與分享只針對已核准貼文。`site_members` 從這次部署後的 Discord 登入開始記錄；舊貼文作者可由遷移補入，但更早只瀏覽網站、沒有發文的訪客無法回溯。舊版 `gallery_posts`／`gallery_comments` 若已有正式資料，須另行做資料遷移後再切換新 API。
+
+## Discord 回呼與自訂網域
+
+Discord Developer Portal 中的 Redirect URI 與 Pages 正式環境變數 `DISCORD_REDIRECT_URI` 必須逐字相同，建議都設為 `https://teacafe.xyz/api/auth/callback`。`teacafe-website.pages.dev` 登入時會先切至正式網域，再產生 state cookie。取消授權會回原頁顯示提示；state 過期或交換失敗也會回原頁，且不建立登入 session。
+
+若自訂網域出現 502，但 `pages.dev` 正常，請在 Cloudflare 的 Pages 專案確認 `teacafe.xyz` 已列在 Custom domains；檢查 DNS、Redirect Rules、Page Rules、Worker Routes，尤其不要用其他 origin 覆蓋 `/api/auth/callback`。Pages 的 D1/R2 綁定與 Discord secrets 應同時設定在 Production 環境，改完後重新部署。Chrome 若顯示「危險網站」，先在 Google Search Console 的 Security issues／Safe Browsing Site Status 查原因並修復，切勿要求玩家略過警告；這與 OAuth state 錯誤是兩件事。
 
 ## 公開內容與安全
 
