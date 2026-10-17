@@ -85,10 +85,12 @@ html[data-text-size="200"]{--text-scale:2}
 .rule-sidebar a{margin:5px 0}
 .rule-section{min-height:auto;padding:42px 0;scroll-margin-top:30px}
 .rule-content{padding:24px clamp(22px,4vw,58px)}
-.page-title-inner>h1,.home-hero-content>h1{animation:tea-title-reveal .9s cubic-bezier(.18,.7,.22,1) both}
+.page-title-inner>h1,.home-hero-content>h1,.career-hero h1,.market-dashboard .top h1{animation:tea-title-reveal 1.25s cubic-bezier(.18,.7,.22,1) both}
+.home-hero-content>h1{animation-duration:2.2s}
 @keyframes tea-title-reveal{from{clip-path:inset(0 100% 0 0);opacity:.5}to{clip-path:inset(0 0 0 0);opacity:1}}
-.home-hero-content>.home-hero-tagline{animation:tea-tagline-out 3.6s ease .9s both}
-@keyframes tea-tagline-out{0%,45%{opacity:1}100%{opacity:0}}
+.page-title-inner>p,.career-hero h1+p{animation:tea-copy-in 1.3s ease-out .65s both}
+.home-hero-content>.home-hero-tagline{animation:tea-copy-in 1.5s ease-out 1.7s both}
+@keyframes tea-copy-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .mc-button.secondary,.mc-menu-button.secondary{background:#e5e9da;color:#26402a;border-color:#355436;text-shadow:none;box-shadow:inset 2px 2px #fff,inset -3px -3px #9db097,0 3px #223423}
 .mc-button.secondary:hover,.mc-menu-button.secondary:hover{background:#cfe1c6}
 .wiki-guide-links{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 24px}.wiki-guide-links a{font-size:var(--type-body)}
@@ -97,13 +99,14 @@ html[data-text-size="200"]{--text-scale:2}
 .nav-more{position:relative}.nav-more summary{list-style:none;cursor:pointer}.nav-more summary::-webkit-details-marker{display:none}.nav-more>div{position:absolute;right:0;top:calc(100% + 8px);min-width:170px;display:grid;padding:8px;background:#272b26;border:3px solid #111;box-shadow:5px 5px rgba(0,0,0,.25);z-index:100}.nav-more>div a{padding:10px;color:#fff;font-size:var(--type-nav);white-space:nowrap}.nav-more>div a:hover{background:#607954}
 @media(max-width:1100px){.community-topics{position:static}.community-topics nav{display:flex;gap:6px;overflow-x:auto}.community-topics nav button{flex:0 0 auto;width:auto;white-space:nowrap}.rule-sidebar{position:static}.rule-sidebar .sidebar-links{display:flex;gap:6px;overflow-x:auto}.rule-sidebar h3{display:block}.rule-sidebar a{flex:0 0 auto;white-space:nowrap}.rules-layout{grid-template-columns:1fr}}
 @media(max-width:700px){.rule-content{padding:16px}.rule-section{padding:36px 0}.topnav .mc-nav{white-space:normal}}
-@media(prefers-reduced-motion:reduce){.page-title-inner>h1,.home-hero-content>h1,.home-hero-content>.home-hero-tagline{animation:none!important;clip-path:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.page-title-inner>h1,.home-hero-content>h1,.career-hero h1,.market-dashboard .top h1,.page-title-inner>p,.career-hero h1+p,.home-hero-content>.home-hero-tagline{animation:none!important;clip-path:none;opacity:1;transform:none}}
 @media(max-width:1100px){.sidebar .sidebar-links,.rule-sidebar .sidebar-links,.community-topics nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;overflow:visible}.sidebar .sidebar-links a,.rule-sidebar .sidebar-links a,.community-topics nav button{width:100%;margin:0;white-space:normal;min-width:0}.community-layout{grid-template-columns:1fr}.community-topics{margin:0}}
 @media(max-width:620px){.sidebar .sidebar-links,.rule-sidebar .sidebar-links,.community-topics nav{grid-template-columns:1fr}}
 html[data-text-size] :is(body,p,li,td,th,label,input,textarea,select,button){font-size:var(--type-body)}
 html[data-text-size] :is(small,.crumb,.kicker,.site-footer,.community-topic-note,.compose-feedback){font-size:var(--type-small)}
 html[data-text-size] :is(.mc-button,.discord-button,.mc-menu-button,.community-action,.community-toolbar input,.community-toolbar select){font-size:var(--type-body)}
 html[data-text-size] :is(.page-title h1,.home-hero-content h1){font-size:var(--type-h1)}
+html[data-text-size] .home-hero-content>h1{font-size:clamp(72px,min(calc(11vw * var(--text-scale)),22vw),calc(164px * var(--text-scale)))}
 html[data-text-size] :is(.content-panel h2,.rule-section h2,.section-head h2,.supporters-intro h2){font-size:var(--type-h2)}
 html[data-text-size] :is(.content-panel h3,.post-title,.community-post h3,.block-card h3){font-size:var(--type-h3)}
 html[data-text-size="150"] .topnav,html[data-text-size="200"] .topnav{display:none}
