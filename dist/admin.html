@@ -28,13 +28,13 @@
           <a href="#members"><span>已載入成員</span><strong data-admin-members>—</strong><small>搜尋登入者與文章</small></a>
           <a href="#supporters"><span>感謝支持</span><strong data-admin-supporters>—</strong><small>管理公開名單</small></a>
         </div>
-        <nav class="admin-sections" aria-label="後台區域"><a href="#review">文章審核</a><a href="#official">官方發文</a><a href="#members">網站成員</a><a href="#supporters">感謝支持名單</a></nav>
+        <nav class="admin-sections" aria-label="後台區域"><a href="#review">文章審核</a><a href="#official">官方發文</a><a href="#members">網站成員</a><a href="#supporters">感謝支持名單</a><a href="#content">網站內容</a></nav>
         <section class="moderation-compose" id="official"><h2>官方發文</h2><p>官方貼文會顯示在論壇的「官方公告」，發布後直接公開。</p>
           <form data-official-form class="moderation-form">
             <label>標題<input name="title" maxlength="100" required></label>
             <label>內容<textarea name="body" maxlength="5000" rows="6" required></textarea></label>
             <label>圖片或影片<input name="media" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" multiple></label>
-            <p>附件不限件數，總大小最多 20 MiB。</p>
+            <p>附件最多 30 個，總大小最多 20 MiB。</p>
             <div data-official-files role="status"></div>
             <button class="mc-button green" type="submit">發布官方貼文</button>
           </form>
@@ -42,12 +42,42 @@
         <section class="moderation-queue" id="review"><div class="admin-section-head"><h2>待審貼文</h2><button class="mc-button" data-moderation-refresh type="button">重新整理</button></div><p data-moderation-count role="status">讀取中…</p><div data-moderation-posts class="community-feed"></div></section>
         <section class="admin-members" id="members"><div class="admin-section-head"><h2>網站成員</h2><button class="mc-button" data-member-refresh type="button">重新整理</button></div><p>顯示啟用會員紀錄後登入過網站的 Discord 帳號，以及舊貼文中已知的發文者。</p><label>搜尋成員<input data-member-search type="search" placeholder="Discord 名稱、ID 或 Minecraft 名稱"></label><p data-member-count role="status"></p><div data-member-list class="admin-member-list"></div><button data-member-more class="mc-button" type="button" hidden>載入更多成員</button><div data-member-posts class="admin-member-posts" hidden></div></section>
         <section class="admin-supporters" id="supporters"><div class="admin-section-head"><h2>感謝支持名單</h2><button class="mc-button" data-supporter-refresh type="button">重新整理</button></div><p>只加入願意公開名稱的玩家。新增後會顯示在「感謝支持」頁面。</p><form class="admin-supporter-form" data-supporter-form><label>玩家名稱<input name="player_name" maxlength="32" required></label><label>支持日期<input name="supported_at" type="date" required></label><label>想留下的話（選填）<input name="note" maxlength="160"></label><button class="mc-button green" type="submit">加入名單</button></form><p data-supporter-message role="status"></p><div data-supporter-list class="admin-supporter-list"></div></section>
+        <section class="admin-content" id="content" aria-label="網站內容管理">
+          <h2>網站內容</h2><p>公告和 Wiki 條目可先存草稿，確認後再公開；通行證同時只會有一個啟用中的季節。</p>
+          <div class="admin-content-grid">
+            <section class="admin-content-card" data-content-type="news"><h3>公告</h3><form data-content-form="news">
+              <input name="id" type="hidden"><label>標題<input name="title" maxlength="120" required></label>
+              <label>內容<textarea name="body" maxlength="10000" rows="5" required></textarea></label>
+              <label>Discord 原文連結（選填）<input name="discord_url" type="url" placeholder="https://"></label>
+              <label>發布時間<input name="published_at" type="datetime-local" required></label>
+              <label>狀態<select name="status"><option value="draft">草稿</option><option value="published">公開</option><option value="hidden">隱藏</option></select></label>
+              <div class="admin-content-actions"><button class="mc-button green" type="submit">儲存公告</button><button class="mc-button" data-content-new type="button">建立新公告</button></div>
+            </form><p data-content-status="news" role="status"></p><div data-content-list="news" class="admin-content-list"></div></section>
+            <section class="admin-content-card" data-content-type="wiki"><h3>Wiki 條目</h3><form data-content-form="wiki">
+              <label>網址代號（英文小寫、數字、連字號）<input name="slug" maxlength="100" pattern="[a-z0-9-]+" required></label>
+              <label>分類<select name="section"><option value="start">入門與帳號</option><option value="travel">移動與家園</option><option value="progress">職業與成長</option><option value="economy">經濟與道具</option><option value="activities">活動與探索</option><option value="extras">更多玩法</option></select></label>
+              <label>標題<input name="title" maxlength="120" required></label><label>摘要<input name="summary" maxlength="500"></label>
+              <label>內文<textarea name="body" maxlength="20000" rows="7" required></textarea></label><label>資料來源備註（選填）<input name="source_note" maxlength="500"></label>
+              <label>狀態<select name="status"><option value="draft">草稿</option><option value="published">公開</option><option value="hidden">隱藏</option></select></label>
+              <div class="admin-content-actions"><button class="mc-button green" type="submit">儲存條目</button><button class="mc-button" data-content-new type="button">建立新條目</button></div>
+            </form><p data-content-status="wiki" role="status"></p><div data-content-list="wiki" class="admin-content-list"></div></section>
+            <section class="admin-content-card" data-content-type="pass"><h3>通行證季節</h3><form data-content-form="pass">
+              <input name="id" type="hidden"><label>名稱<input name="title" maxlength="120" required></label>
+              <label>開始時間<input name="starts_at" type="datetime-local"></label><label>結束時間<input name="ends_at" type="datetime-local"></label>
+              <label>每級所需經驗<input name="xp_per_level" type="number" min="1" max="100000" value="1000" required></label>
+              <label>最高等級<input name="max_level" type="number" min="1" max="1000" value="30" required></label>
+              <label>狀態<select name="active"><option value="0">未啟用</option><option value="1">啟用並顯示於網站</option></select></label>
+              <div class="admin-content-actions"><button class="mc-button green" type="submit">儲存季節</button><button class="mc-button" data-content-new type="button">建立新季節</button></div>
+            </form><p data-content-status="pass" role="status"></p><div data-content-list="pass" class="admin-content-list"></div></section>
+          </div>
+        </section>
       </div>
     </section>
   </main>
   <div data-footer></div>
   <dialog class="community-lightbox" data-moderation-lightbox><button class="community-lightbox-close" type="button" aria-label="關閉圖片">×</button><img class="community-lightbox-image" alt="待審圖片"></dialog>
-  <script src="/assets/js/app.js?v=20261018-2"></script>
-  <script defer src="/assets/js/admin.js?v=20261018-2"></script>
+  <script src="/assets/js/app.js?v=20261018-3"></script>
+  <script defer src="/assets/js/admin.js?v=20261018-3"></script>
+  <script defer src="/assets/js/admin-content.js?v=1"></script>
 </body>
 </html>

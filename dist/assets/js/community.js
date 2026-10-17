@@ -14,6 +14,7 @@
   const authError = $('[data-community-auth-error]');
   const more = $('[data-community-more]');
   const MAX_BYTES = 20 * 1024 * 1024;
+  const MAX_FILES = 30;
   const TYPES = new Set(['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm']);
   const categories = [
     ['all','全部'], ['official','官方公告'], ['general','閒聊交流'], ['help','新手提問'],
@@ -69,9 +70,9 @@
     const files = [...fileInput.files];
     const total = files.reduce((sum,file) => sum + file.size,0);
     const invalid = files.find(file => !TYPES.has(file.type) || !file.size);
-    const valid = total <= MAX_BYTES && !invalid;
-    fileSummary.textContent = `${files.length} 個檔案 · ${(total / 1048576).toFixed(2)} / 20 MiB（${Math.max(0,(MAX_BYTES-total)/1048576).toFixed(2)} MiB 可用）`;
-    feedback.textContent = total > MAX_BYTES ? '附件合計不得超過 20 MiB，請移除部分檔案或壓縮影片後再送出。' : invalid ? `「${invalid.name}」不是支援的照片／影片，或檔案為空。` : '';
+    const valid = files.length <= MAX_FILES && total <= MAX_BYTES && !invalid;
+    fileSummary.textContent = `${files.length} / ${MAX_FILES} 個檔案 · ${(total / 1048576).toFixed(2)} / 20 MiB（${Math.max(0,(MAX_BYTES-total)/1048576).toFixed(2)} MiB 可用）`;
+    feedback.textContent = files.length > MAX_FILES ? `每篇最多可附上 ${MAX_FILES} 個檔案。` : total > MAX_BYTES ? '附件合計不得超過 20 MiB，請移除部分檔案或壓縮影片後再送出。' : invalid ? `「${invalid.name}」不是支援的照片／影片，或檔案為空。` : '';
     return valid;
   }
   fileInput.addEventListener('change', () => {
@@ -113,7 +114,7 @@
       const response = await fetch('/api/community/posts',{method:'POST',body:data});
       const result = await response.json().catch(() => ({}));
       if (response.status === 401) { showLoginError(feedback); return; }
-      if (!response.ok) throw new Error(response.status === 413 || result.error === 'files_too_large' ? '附件合計不得超過 20 MiB。' : result.error === 'post_rate_limited' ? '請稍等 30 秒再發文。' : result.error === 'moderation_not_configured' ? '官方尚未設定審核人員，暫時無法發文。' : result.error === 'unsupported_media_type' || result.error === 'invalid_media_content' ? '照片或影片格式不支援，請使用 JPG、PNG、WebP、GIF、MP4 或 WebM。' : '送出失敗，請稍後再試。');
+      if (!response.ok) throw new Error(result.error === 'too_many_files' ? `每篇最多可附上 ${MAX_FILES} 個檔案。` : response.status === 413 || result.error === 'files_too_large' ? '附件合計不得超過 20 MiB。' : result.error === 'post_rate_limited' ? '請稍等 30 秒再發文。' : result.error === 'moderation_not_configured' ? '官方尚未設定審核人員，暫時無法發文。' : result.error === 'unsupported_media_type' || result.error === 'invalid_media_content' ? '照片或影片格式不支援，請使用 JPG、PNG、WebP、GIF、MP4 或 WebM。' : '送出失敗，請稍後再試。');
       dialog.close(); form.reset(); await load(true); say(result.status === 'pending' ? '已送出審核，通過後會公開。' : '貼文已發布');
     } catch (error) { feedback.textContent=error.message; }
     finally { submit.disabled=false; }
@@ -218,7 +219,7 @@
     });
     share.addEventListener('click',async()=>{
       const url=new URL(location.pathname,location.origin);url.searchParams.set('post',post.id);
-      try {if(navigator.share)await navigator.share({title:post.title,url:url.href});else {await navigator.clipboard.writeText(url.href);say('貼文連結已複製')}if(configured&&!post.demo)fetch('/api/community/shares',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({postId:post.id})}).catch(()=>{})}catch(error){if(error.name!=='AbortError')say('無法分享連結')}
+      try {if(navigator.share)await navigator.share({title:post.title,url:url.href});else {await navigator.clipboard.writeText(url.href);say('貼文連結已複製')}if(configured&&!post.demo&&window.TeaCafeAuth?.getState()?.authenticated)fetch('/api/community/shares',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({postId:post.id})}).catch(()=>{})}catch(error){if(error.name!=='AbortError')say('無法分享連結')}
     });
     return article;
   }
@@ -236,7 +237,7 @@
     const version=loadVersion;
     status.textContent='讀取貼文中…';
     try {
-      const url=new URL('/api/community/posts',location.origin);url.searchParams.set('kind',kind);if(cursor)url.searchParams.set('cursor',cursor);
+      const url=new URL('/api/community/posts',location.origin);url.searchParams.set('kind',kind);if(cursor)url.searchParams.set('cursor',cursor);if(search)url.searchParams.set('q',search);
       if(kind==='forum'&&activeCategory!=='all')url.searchParams.set('category',activeCategory);
       const response=await fetch(url,{headers:{Accept:'application/json'}});
       const data=response.ok?await response.json():{configured:false,posts:[]};
@@ -248,7 +249,8 @@
     } catch {if(version!==loadVersion)return;status.textContent='貼文暫時無法載入。';feed.replaceChildren();}
   }
   more.addEventListener('click',()=>load());
-  $('[data-community-search]')?.addEventListener('input',event=>{search=event.target.value.trim().toLocaleLowerCase();redraw()});
+  let searchTimer;
+  $('[data-community-search]')?.addEventListener('input',event=>{search=event.target.value.trim().slice(0,80).toLocaleLowerCase();clearTimeout(searchTimer);searchTimer=setTimeout(()=>load(true),300)});
   const nav=$('[data-community-categories]');
   if(nav){
     const select=$('[data-community-category]');

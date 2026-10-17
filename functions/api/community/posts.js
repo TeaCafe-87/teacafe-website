@@ -1,4 +1,4 @@
-import { MAX_TOTAL_BYTES, MEDIA_TYPES, hasValidSignature, json, userOrError, sameOrigin, publicPost, authorFields, isOfficialUser } from '../../_lib/community.js';
+import { MAX_TOTAL_BYTES, MAX_MEDIA_FILES, MEDIA_TYPES, hasValidSignature, json, userOrError, sameOrigin, publicPost, authorFields, isOfficialUser } from '../../_lib/community.js';
 
 const select = `SELECT p.*, (SELECT COUNT(*) FROM community_likes l WHERE l.post_id=p.id) like_count,
   (SELECT COUNT(*) FROM community_comments c WHERE c.post_id=p.id) comment_count,
@@ -13,12 +13,25 @@ export async function onRequestGet({ request, env }) {
   if (!['gallery', 'forum'].includes(kind)) return json({ error: 'invalid_kind' }, 400);
   const cursor = url.searchParams.get('cursor');
   const category = url.searchParams.get('category');
+  const query = (url.searchParams.get('q') || '').trim().slice(0, 80);
   const user = await userOrError(request, env);
   const clauses = [];
   const values = [user ? String(user.id) : '', kind];
-  if (cursor) { clauses.push('p.created_at < ?'); values.push(cursor); }
+  if (cursor) {
+    const split = cursor.lastIndexOf('|');
+    if (split > 0 && split < cursor.length - 1) {
+      const createdAt = cursor.slice(0, split);
+      clauses.push('(p.created_at < ? OR (p.created_at = ? AND p.id < ?))');
+      values.push(createdAt, createdAt, cursor.slice(split + 1));
+    } else { clauses.push('p.created_at < ?'); values.push(cursor); }
+  }
   if (kind === 'forum' && category && category !== 'all') { clauses.push('p.category = ?'); values.push(category); }
-  const sql = `${select} ${clauses.length ? 'AND ' + clauses.join(' AND ') : ''} ORDER BY p.created_at DESC LIMIT 21`;
+  if (query) {
+    const pattern = `%${query.replace(/[!%_]/g, '!$&')}%`;
+    clauses.push("(p.title LIKE ? ESCAPE '!' OR p.body LIKE ? ESCAPE '!')");
+    values.push(pattern, pattern);
+  }
+  const sql = `${select} ${clauses.length ? 'AND ' + clauses.join(' AND ') : ''} ORDER BY p.created_at DESC, p.id DESC LIMIT 21`;
   const result = await env.DB.prepare(sql).bind(...values).all();
   const rows = result.results || [];
   const more = rows.length > 20;
@@ -35,7 +48,7 @@ export async function onRequestGet({ request, env }) {
     group.push({ id: item.id, type: item.mime_type, size: item.byte_size, url: `/api/community/media/${encodeURIComponent(item.id)}` });
     byPost.set(item.post_id, group);
   }
-  return json({ configured: true, posts: visible.map(row => publicPost(row, byPost.get(row.id) || [])), next_cursor: more ? visible.at(-1).created_at : null });
+  return json({ configured: true, posts: visible.map(row => publicPost(row, byPost.get(row.id) || [])), next_cursor: more ? `${visible.at(-1).created_at}|${visible.at(-1).id}` : null });
 }
 
 export async function onRequestPost({ request, env }) {
@@ -56,6 +69,7 @@ export async function onRequestPost({ request, env }) {
   if (category === 'official' && (!official || kind !== 'forum')) return json({ error: 'official_only' }, 403);
   if (!title || title.length > 100 || body.length > 5000 || category.length > 40 || !/^[a-z0-9-]+$/.test(category)) return json({ error: 'invalid_post' }, 400);
   const attachments = form.getAll('media').filter(value => value instanceof File);
+  if (attachments.length > MAX_MEDIA_FILES) return json({ error: 'too_many_files', max_files: MAX_MEDIA_FILES }, 413);
   if (attachments.some(file => file.size === 0 && file.name)) return json({ error: 'empty_media' }, 400);
   const files = attachments.filter(file => file.size > 0);
   const total = files.reduce((sum, file) => sum + file.size, 0);

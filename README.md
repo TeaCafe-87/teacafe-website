@@ -16,7 +16,9 @@ TeaCafe Minecraft Server 的官方網站專案。
 - `docs/backend.md`：D1、R2 綁定、資料契約與接線流程。
 - `docs/plugin-source-map.md`：Wiki 條目與插件資料的對照。
 
-相冊與論壇使用相同的貼文格式，可上傳不限件數的圖片或影片，合計上限 20 MiB，並支援按讚、留言及分享。資料寫入需要 Pages 綁定 `DB`（D1）與 `GALLERY_MEDIA`（R2），以及 Discord OAuth 環境變數；在綁定之前畫面會明確顯示靜態提案或空狀態。
+相冊與論壇使用相同的貼文格式，每篇最多可附 30 個圖片或影片，合計上限 20 MiB，並支援按讚、留言及分享。資料寫入需要 Pages 綁定 `DB`（D1）與 `GALLERY_MEDIA`（R2），以及 Discord OAuth 環境變數；在綁定之前畫面會顯示清楚的空狀態。
+
+原創網站音效可用 `python scripts/generate-audio.py` 重新產生。首頁目前使用輕微動畫背景；若未來有正式影片素材，再加入影片來源。推送或提出 PR 時，`.github/workflows/check.yml` 會執行 JavaScript 語法與整合測試。
 
 <br>
 

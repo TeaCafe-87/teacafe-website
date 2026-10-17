@@ -207,12 +207,13 @@
     const files = [...form.elements.media.files];
     const size = files.reduce((sum, file) => sum + file.size, 0);
     const invalid = files.find(file => !['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm'].includes(file.type) || !file.size);
-    filesStatus.textContent = `${files.length} 個檔案 · ${(size / 1048576).toFixed(2)} / 20 MiB${size > 20 * 1048576 ? '，已超過限制，請移除或壓縮檔案' : invalid ? `，「${invalid.name}」格式不支援或檔案為空` : ''}`;
+    filesStatus.textContent = `${files.length} / 30 個檔案 · ${(size / 1048576).toFixed(2)} / 20 MiB${files.length > 30 ? '，已超過件數上限' : size > 20 * 1048576 ? '，已超過大小限制，請移除或壓縮檔案' : invalid ? `，「${invalid.name}」格式不支援或檔案為空` : ''}`;
   });
   form.addEventListener('submit', async event => {
     event.preventDefault();
     const files = [...form.elements.media.files];
     const size = files.reduce((sum, file) => sum + file.size, 0);
+    if (files.length > 30) { filesStatus.textContent = '每篇最多可附上 30 個檔案。'; return; }
     if (size > 20 * 1048576) { filesStatus.textContent = '附件總大小超過 20 MiB。'; return; }
     if (files.some(file => !['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm'].includes(file.type) || !file.size)) { filesStatus.textContent = '附件格式不支援或檔案為空。'; return; }
     const button = form.querySelector('[type=submit]'); button.disabled = true;

@@ -34,11 +34,10 @@ export async function getSessionUser(request, env) {
   if (!env.SESSION_SECRET) return null;
   const value = readCookie(request, "teacafe_session");
   if (!value) return null;
-  const [payload, signature] = value.split(".");
-  if (!payload || !signature) return null;
-  if (!(await verify(payload, signature, env.SESSION_SECRET))) return null;
-
   try {
+    const [payload, signature, extra] = value.split(".");
+    if (!payload || !signature || extra) return null;
+    if (!(await verify(payload, signature, env.SESSION_SECRET))) return null;
     const user = JSON.parse(dec.decode(fromBase64Url(payload)));
     if (!user.exp || user.exp < Math.floor(Date.now() / 1000)) return null;
     return user;

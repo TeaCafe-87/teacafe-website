@@ -1,6 +1,7 @@
 import { getSessionUser } from './session.js';
 
 export const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
+export const MAX_MEDIA_FILES = 30;
 export const MEDIA_TYPES = new Map([
   ['image/jpeg', 'jpg'], ['image/png', 'png'], ['image/webp', 'webp'],
   ['image/gif', 'gif'], ['video/mp4', 'mp4'], ['video/webm', 'webm']

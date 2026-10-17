@@ -10,16 +10,23 @@ html[data-text-size] .topbar .settings-button,html[data-text-size] .topbar .mobi
 .discord-invite:focus-visible{outline:3px solid #e5d374;outline-offset:3px}
 .discord-invite img{display:block;width:25px;height:25px}
 html[data-text-size] .home-video-hero .home-hero-content>h1{font-size:clamp(64px,10vw,150px)}
-html[data-text-size] .home-video-hero .home-hero-tagline{font-size:clamp(17px,2vw,30px);animation:tea-copy-in 1.6s ease-out 1.8s both}
+html[data-text-size] .home-video-hero .home-hero-tagline{font-size:clamp(17px,2vw,30px);animation:tea-copy-in 2.25s ease-out .95s both}
+html .home-hero-content>h1{animation-duration:3.2s}
+html :is(.page-title-inner>h1,.career-hero h1,.market-dashboard .top h1){animation-duration:2.1s}
+html :is(.page-title-inner>p,.career-hero h1+p){animation-duration:1.45s;animation-delay:.65s}
+.home-hero-fallback{background-size:100% 120%;animation:tea-hero-drift 18s ease-in-out infinite alternate}
+@keyframes tea-hero-drift{from{background-position:center top}to{background-position:center bottom}}
 
 /* Rules, Wiki, and forum share one Minecraft-style index. */
-:root{--index-width:240px}
-.content-layout,.community-layout{grid-template-columns:var(--index-width) minmax(0,1fr);max-width:1200px;margin-inline:auto}
-body :is(.sidebar,.community-topics){width:100%;min-width:0;height:max-content;position:sticky;top:24px;align-self:start;margin:0;padding:10px;background:#272b26;border:3px solid #111;box-shadow:inset 2px 2px #4e534d,inset -3px -3px #171916;color:#fff}
-body :is(.sidebar h3,.community-topics h2){min-height:46px;margin:0;padding:7px 10px 12px;font-family:inherit;font-size:calc(18px * var(--text-scale))!important;line-height:1.4;font-weight:900;color:#b8d9a8}
+:root{--index-width:clamp(280px,23vw,330px)}
+.content-layout,.community-layout{width:100%;grid-template-columns:var(--index-width) minmax(0,1fr);max-width:none;margin-inline:auto;gap:clamp(24px,3vw,48px);padding-left:var(--screen-pad,3vw);padding-right:var(--screen-pad,3vw)}
+body :is(.sidebar,.community-topics){width:100%;min-width:0;height:max-content;position:sticky;top:24px;align-self:start;margin:0;padding:15px;background:#272b26;border:3px solid #111;box-shadow:inset 2px 2px #4e534d,inset -3px -3px #171916;color:#fff}
+body :is(.sidebar h3,.community-topics h2){min-height:52px;margin:0;padding:8px 12px 14px;font-family:inherit;font-size:calc(21px * var(--text-scale))!important;line-height:1.4;font-weight:900;color:#b8d9a8}
 body :is(.sidebar .sidebar-links,.community-topics nav){display:grid;grid-template-columns:minmax(0,1fr);gap:5px;overflow:visible}
-body :is(.sidebar .sidebar-links a,.community-topics nav button){display:flex;align-items:center;width:100%;min-height:50px;margin:0!important;padding:10px 13px;background:#555852;color:#fff;border:2px solid #222;border-radius:0;box-shadow:inset 2px 2px #7c8078,inset -2px -2px #363834;font-size:calc(15px * var(--text-scale))!important;font-weight:800;line-height:1.45;text-align:left;white-space:normal;outline:0;transform:none;transition:transform .15s ease,background-color .15s ease,box-shadow .15s ease}
+body :is(.sidebar .sidebar-links a,.community-topics nav button){display:flex;align-items:center;width:100%;min-height:60px;margin:0!important;padding:13px 16px;background:#555852;color:#fff;border:2px solid #222;border-radius:0;box-shadow:inset 2px 2px #7c8078,inset -2px -2px #363834;font-size:calc(17px * var(--text-scale))!important;font-weight:800;line-height:1.45;text-align:left;white-space:normal;outline:0;transform:none;transition:transform .15s ease,background-color .15s ease,box-shadow .15s ease}
 body :is(.sidebar .sidebar-links a,.community-topics nav button):is(:hover,:focus-visible,.scroll-active,.active){background:#89ad74;color:#14220f;box-shadow:inset 3px 3px #4f7041,inset -2px -2px #d9ecd1;transform:translateX(2px);outline:2px solid #d9ecd1;outline-offset:-5px}
+.content-layout .content-panel{min-width:0;padding:clamp(28px,3vw,52px)}
+.rules-layout .rule-content{min-width:0;padding:30px clamp(28px,4vw,64px)}
 body .community-topic-note{margin-top:14px;border-top:1px solid #64705e;padding:12px 8px 4px;line-height:1.6}
 
 /* Text links use the guide's quiet underlined treatment. */
@@ -38,6 +45,11 @@ body .community-topic-note{margin-top:14px;border-top:1px solid #64705e;padding:
 .wiki-faq summary::after{content:'＋';color:#3e5946;font-size:22px;line-height:1}
 .wiki-faq details[open] summary::after{content:'－'}
 .wiki-faq details[open] p{animation:tea-copy-in .35s ease-out both;margin:12px 0 2px}
+.wiki-live-entry{margin:18px 0;padding:18px 20px;background:#e7eadf;border:2px solid #798974}
+.wiki-live-entry[hidden]{display:none}
+.wiki-live-entry h3{margin:0 0 7px}
+.wiki-live-entry small{display:block;color:#52634c}
+.wiki-live-entry p{white-space:pre-wrap;overflow-wrap:anywhere}
 
 .community-create-error{display:grid;justify-items:start;gap:5px;width:max-content;max-width:100%;margin-top:15px;padding:12px 16px;background:#f1e4cc;color:#362a1f;border:3px solid #8a6838;box-shadow:inset 2px 2px #fff3db}
 .community-create-error[hidden]{display:none}
@@ -64,6 +76,23 @@ body .page-title .community-create-error p{color:#362a1f}
 .admin-section-head h2{margin:0}
 .admin-section-head .mc-button{padding:8px 12px;font-size:14px}
 .admin-page :is(#review,#official,#members,#supporters){scroll-margin-top:20px}
+.admin-content{margin-top:38px;padding-top:30px;border-top:4px solid #66705e;scroll-margin-top:20px}
+.admin-content-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
+.admin-content-card{min-width:0;padding:18px;background:#f0efe6;border:3px solid #4a5446;box-shadow:inset 2px 2px #fff,inset -3px -3px #b7bdaf}
+.admin-content-card h3{margin:0 0 15px;font-size:23px}
+.admin-content-card form{display:grid;gap:12px}
+.admin-content-card label{display:grid;gap:6px;font-weight:800}
+.admin-content-card :is(input,textarea,select){width:100%;min-width:0;padding:9px 10px;background:#fff;border:2px solid #687264;color:#20291e}
+.admin-content-card textarea{resize:vertical}
+.admin-content-actions{display:flex;gap:8px;flex-wrap:wrap}
+.admin-content-card [data-content-status]{min-height:1.6em;color:#415d3a}
+.admin-content-list{display:grid;gap:8px;margin-top:15px}
+.admin-content-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;background:#e4e9dc;border:2px solid #8a9a82}
+.admin-content-row div{min-width:0;overflow-wrap:anywhere}
+.admin-content-row :is(strong,small){display:block}
+.admin-content-row small{color:#54634f}
+.admin-content-row .mc-button{flex:0 0 auto;padding:8px 11px}
+@media(max-width:1180px){.admin-content-grid{grid-template-columns:1fr}}
 
 @media(max-width:1100px){.topbar .topnav{display:none}.topbar .mobile-menu{display:inline-block}.topbar .topnav.mobile-open{display:grid;position:absolute;top:100%;left:12px;right:12px;padding:14px;background:#171b16;border:3px solid #51402a;grid-template-columns:repeat(2,minmax(0,1fr));z-index:99}.content-layout,.community-layout{grid-template-columns:1fr}body :is(.sidebar,.community-topics){position:static}body :is(.sidebar .sidebar-links,.community-topics nav){grid-template-columns:repeat(2,minmax(0,1fr))}}
 html[data-text-size="150"] :is(.content-layout,.community-layout),html[data-text-size="200"] :is(.content-layout,.community-layout){grid-template-columns:1fr}
