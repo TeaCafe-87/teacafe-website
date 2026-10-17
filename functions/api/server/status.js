@@ -1,6 +1,6 @@
 export async function onRequestGet(context) {
   const { request } = context;
-  const address = "teacafe.xyz";
+  const address = String(context.env.MINECRAFT_SERVER_ADDRESS || "mc.teacafe.xyz").trim();
   const cache = caches.default;
   const cacheKey = new Request(new URL("/api/server/status", request.url).toString(), { method: "GET" });
   const cached = await cache.match(cacheKey);

@@ -1,0 +1,22 @@
+name: Check site
+
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: find dist/assets/js functions -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Run integration tests
+        run: |
+          node tests/site-integration.mjs
+          node tests/community-moderation.mjs
+          node tests/site-regressions.mjs

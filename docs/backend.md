@@ -32,7 +32,11 @@
 | 感謝支持名單 | `GET /api/supporters`、`GET/POST/DELETE /api/admin/supporters` | `supporters` | 官方手動新增已同意公開的支持者；網站只公開名稱、日期與備註 |
 | 月映茶行行情 | `GET /api/market` | `stock.teacafe.xyz/api/market` | 官網同網域代理即時唯讀行情 |
 
-貼文 `POST` 使用 `multipart/form-data`：`kind`、`category`、`title`、`body` 與重複的 `media` 欄位。媒體類型限 JPG、PNG、WebP、GIF、MP4、WebM；**件數不限，合計最多 20 MiB**，前後端均驗證。相冊至少需一個媒體檔。由於 Pages Function 會解析 multipart，請勿將上限調高到接近 Worker 的記憶體上限；較大影片應改用 R2 直傳流程。
+貼文 `POST` 使用 `multipart/form-data`：`kind`、`category`、`title`、`body` 與重複的 `media` 欄位。媒體類型限 JPG、PNG、WebP、GIF、MP4、WebM；**每篇最多 30 個檔案、合計最多 20 MiB**，前後端均驗證。相冊至少需一個媒體檔。由於 Pages Function 會解析 multipart，請勿將上限調高到接近 Worker 的記憶體上限；較大影片應改用 R2 直傳流程。
+
+論壇與相冊的 `GET /api/community/posts` 支援 `q` 搜尋標題／內文，以及包含時間和貼文 ID 的 `cursor` 分頁。分享連結不需要登入；寫入分享計數需要 Discord 登入，同一使用者對同一貼文每 24 小時最多記錄一次。
+
+管理員可在 `/admin` 編輯公告、Wiki 補充條目與通行證季節。`GET/POST /api/admin/content` 僅接受官方 Discord 身分，POST 需同源請求；草稿不會出現在公開 API。Minecraft 狀態預設查詢 `mc.teacafe.xyz`，需要改址時可設定 Pages 環境變數 `MINECRAFT_SERVER_ADDRESS`。
 
 論壇與相冊不再顯示示範貼文。新投稿待審期間，只有投稿者與管理員能讀取其媒體；公開 Feed、按讚、留言與分享只針對已核准貼文。`site_members` 從這次部署後的 Discord 登入開始記錄；舊貼文作者可由遷移補入，但更早只瀏覽網站、沒有發文的訪客無法回溯。舊版 `gallery_posts`／`gallery_comments` 若已有正式資料，須另行做資料遷移後再切換新 API。
 
