@@ -4,7 +4,49 @@
   let refresh=5000,lastData=null,selectedFrame='5m',hoverIndex=-1,chartState={candles:[],centers:[]};
   const frameNames={'5m':'5 分鐘','15m':'15 分鐘','1h':'1 小時'};
   function selectedCandles(data){return data?.['candles'+selectedFrame]||data?.candles||[]}
-  async function update(){try{const r=await fetch('/api/market',{cache:'no-store'});if(!r.ok)throw new Error();const d=await r.json();lastData=d;refresh=Math.max(5000,Number(d.refreshSeconds||5)*1000);el('name').textContent=d.serverName;document.title=d.serverName+' · 即時行情';el('price').textContent=fmt(d.price);el('buys').textContent=fmt(d.buyShares24h);el('sells').textContent=fmt(d.sellShares24h);el('count').textContent=fmt(d.tradeCount24h);el('reserveStatus').textContent=d.reserveStatus;el('reserveStatus').className=d.reserveStatus==='充足'?'buy':d.reserveStatus==='偏低'?'sell':'';el('reserve').textContent=fmt(d.reserve);el('reserveRatio').textContent=fmt(d.reserveRatio);el('status').textContent='行情更新 '+time(d.generatedAt);renderPressure(d);renderTrades(d.trades);el('event').textContent=d.event?d.event.title+'｜'+d.event.description:'目前沒有掌櫃事件';el('kdText').textContent='K '+fmt(d.k)+'／D '+fmt(d.d);draw(d)}catch(e){el('status').textContent='暫時無法取得行情'}finally{setTimeout(update,refresh)}}
+  let refreshTimer = 0;
+  let loading = false;
+  const marketError = document.querySelector('[data-market-error]');
+  const marketErrorMessage = document.querySelector('[data-market-error-message]');
+  document.querySelector('[data-market-retry]')?.addEventListener('click', () => { clearTimeout(refreshTimer); update(); });
+  async function update() {
+    if (loading) return;
+    loading = true;
+    clearTimeout(refreshTimer);
+    try {
+      const response = await fetch('/api/market', { cache: 'no-store' });
+      if (!response.ok) throw new Error('market_unavailable');
+      const data = await response.json();
+      if (!data || !Number.isFinite(Number(data.price))) throw new Error('invalid_market_data');
+      lastData = data;
+      refresh = Math.max(5000, Number(data.refreshSeconds || 5) * 1000);
+      el('name').textContent = data.serverName || '月映茶行';
+      document.title = `${el('name').textContent} · 即時行情`;
+      el('price').textContent = fmt(data.price);
+      el('buys').textContent = fmt(data.buyShares24h);
+      el('sells').textContent = fmt(data.sellShares24h);
+      el('count').textContent = fmt(data.tradeCount24h);
+      el('reserveStatus').textContent = data.reserveStatus || '—';
+      el('reserveStatus').className = data.reserveStatus === '充足' ? 'buy' : data.reserveStatus === '偏低' ? 'sell' : '';
+      el('reserve').textContent = fmt(data.reserve);
+      el('reserveRatio').textContent = fmt(data.reserveRatio);
+      el('status').textContent = `行情更新 ${time(data.generatedAt)}`;
+      marketError.hidden = true;
+      renderPressure(data);
+      renderTrades(Array.isArray(data.trades) ? data.trades : []);
+      el('event').textContent = data.event ? `${data.event.title}｜${data.event.description}` : '目前沒有掌櫃事件';
+      el('kdText').textContent = `K ${fmt(data.k)}／D ${fmt(data.d)}`;
+      draw(data);
+    } catch {
+      el('status').textContent = '行情暫時離線';
+      marketErrorMessage.textContent = lastData ? '暫時無法取得即時行情，已顯示最後一次成功讀取的資料；你可以稍後重試。' : '暫時無法取得即時行情，請稍後重試。';
+      marketError.hidden = false;
+      if (!lastData) el('trades').innerHTML = '<tr><td class="empty" colspan="6">行情暫時無法讀取</td></tr>';
+    } finally {
+      loading = false;
+      refreshTimer = setTimeout(update, refresh);
+    }
+  }
   function renderPressure(d){const b=Number(d.buyShares24h),s=Number(d.sellShares24h),total=b+s,p=total?Math.round(b/total*100):50;el('bar').style.width=p+'%';el('buyPct').textContent=p+'%';el('sellPct').textContent=(100-p)+'%';const dir=el('direction');dir.className='';if(!total)dir.textContent='等待成交';else if(b>s){dir.textContent='買盤較強';dir.className='buy'}else if(s>b){dir.textContent='賣盤較強';dir.className='sell'}else dir.textContent='買賣平衡'}
   function renderTrades(rows){const body=el('trades');body.textContent='';if(!rows.length){body.innerHTML='<tr><td class="empty" colspan="6">目前還沒有成交紀錄</td></tr>';return}for(const x of rows){const tr=document.createElement('tr');const cells=[time(x.time),x.player,x.side==='BUY'?'買入':'賣出',fmt(x.shares)+' 股',fmt(x.price)+' 咖豆',fmt(x.settledAmount)+' 咖豆'];cells.forEach((v,i)=>{const td=document.createElement('td');if(i===2){const span=document.createElement('span');span.className='badge '+(x.side==='BUY'?'buy':'sell');span.textContent=v;td.append(span)}else td.textContent=v;tr.append(td)});body.append(tr)}}
   function draw(data){const candles=(selectedCandles(data).length?selectedCandles(data):[{open:Number(data?.price)||100,high:Number(data?.price)||100,low:Number(data?.price)||100,close:Number(data?.price)||100,volume:0}]);const currentPrice=Number(data?.price)||100,c=el('chart'),rect=c.getBoundingClientRect(),dpr=devicePixelRatio||1;c.width=Math.max(1,rect.width*dpr);c.height=Math.max(1,rect.height*dpr);const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);const w=rect.width,h=rect.height,pad=30,top=pad,priceBottom=Math.floor(h*.70),volumeTop=priceBottom+22,bottom=h-pad;x.clearRect(0,0,w,h);let min=Math.min(...candles.map(v=>Number(v.low))),max=Math.max(...candles.map(v=>Number(v.high)));if(min===max){min-=1;max+=1}const range=max-min,padValue=range*.08;min-=padValue;max+=padValue;const px=i=>pad+(w-pad*2)*(candles.length===1?.5:i/(candles.length-1)),py=v=>priceBottom-(Number(v)-min)/(max-min)*(priceBottom-top),step=(w-pad*2)/Math.max(1,candles.length),body=Math.max(3,Math.min(12,step*.72)),volMax=Math.max(1,...candles.map(v=>Number(v.volume)||0));for(let i=0;i<5;i++){const y=top+(priceBottom-top)*i/4;x.strokeStyle='#343a3f';x.lineWidth=1;x.beginPath();x.moveTo(pad,y);x.lineTo(w-pad,y);x.stroke()}x.strokeStyle='#343a3f';x.beginPath();x.moveTo(pad,volumeTop-8);x.lineTo(w-pad,volumeTop-8);x.stroke();x.fillStyle='#aab1b7';x.font='12px system-ui';x.fillText('成交量',pad, h-8);chartState={candles,centers:candles.map((_,i)=>px(i)),rect,py};candles.forEach((v,i)=>{const cx=px(i),cmp=Number(v.close)-Number(v.open),color=cmp>0?'#67d391':cmp<0?'#ff7d7d':'#aab1b7';const vh=Math.max(1,(Number(v.volume)||0)/volMax*(bottom-volumeTop));x.fillStyle=color+'99';x.fillRect(cx-body/2,bottom-vh,body,vh);x.strokeStyle=color;x.lineWidth=cmp===0?1.5:2;x.beginPath();x.moveTo(cx,py(v.high));x.lineTo(cx,py(v.low));x.stroke();const y=Math.min(py(v.open),py(v.close)),bh=Math.max(2,Math.abs(py(v.close)-py(v.open)));x.fillStyle=color;x.fillRect(cx-body/2,y,body,bh);x.strokeStyle='#4d3527aa';x.lineWidth=1;x.strokeRect(cx-body/2,y,body,bh)});const period=5;x.strokeStyle='#e7bd66';x.lineWidth=2.5;x.lineJoin='round';x.beginPath();candles.forEach((v,i)=>{const from=Math.max(0,i-period+1),avg=candles.slice(from,i+1).reduce((sum,q)=>sum+Number(q.close),0)/(i-from+1);i?x.lineTo(px(i),py(avg)):x.moveTo(px(i),py(avg))});x.stroke();x.fillStyle='#e7bd66';x.fillText('MA5 · '+frameNames[selectedFrame],w-pad-95,pad-8);x.fillStyle='#aab1b7';x.fillText('高 '+fmt(max),4,pad+4);x.fillText('低 '+fmt(min),4,priceBottom+4);if(hoverIndex>=0&&hoverIndex<candles.length){const hx=px(hoverIndex);x.strokeStyle='#e7bd6699';x.setLineDash([4,4]);x.beginPath();x.moveTo(hx,top);x.lineTo(hx,bottom);x.stroke();x.setLineDash([])}}

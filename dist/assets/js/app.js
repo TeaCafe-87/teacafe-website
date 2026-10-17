@@ -18,7 +18,7 @@ if (header) {
     <a class="brand" href="/"><img class="brand-icon" src="/image/server_icon.png" alt=""><span><b>茶咖暖居</b><small>TEACAFE</small></span></a>
     <nav class="topnav">${nav.map(([url, name]) => `<a class="mc-nav ${page === url ? "active" : ""}" href="/${url}">${name}</a>`).join("")}<details class="nav-more"><summary class="mc-nav">更多</summary><div><a href="/supporters.html">感謝支持</a><a href="/careers.html">職業指南</a><a href="/market.html">月映茶行</a><a data-official-link href="/admin" hidden>管理後台</a></div></details></nav>
     <div class="top-tools">
-      <button class="discord-button topbar-auth" data-auth>Discord 登入</button>
+      <a class="discord-invite" href="https://discord.gg/FHCSjfD9Fq" target="_blank" rel="noopener noreferrer" aria-label="加入茶咖暖居 Discord 伺服器" title="加入 Discord 伺服器"><img src="/image/discord.svg" alt=""></a>
       <button class="mc-nav settings-button" data-settings aria-label="設定">⚙</button>
       <button class="mc-nav mobile-menu" data-mobile aria-label="選單">☰</button>
     </div>
@@ -35,6 +35,7 @@ if (footer) {
 
 document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/effects.css?v=20261017">');
 document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/polish.css?v=20261018">');
+document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-refresh.css?v=20261018">');
 document.body.insertAdjacentHTML("beforeend", `
 <div class="toast" id="toast" role="status"></div>
 <dialog id="settings"><form method="dialog"><div class="mc-menu-screen">
@@ -43,7 +44,7 @@ document.body.insertAdjacentHTML("beforeend", `
     <button type="button" class="mc-menu-button wide green" data-settings-resume>返回網站</button>
     <button type="button" class="mc-menu-button" data-settings-sound>音樂與音效</button>
     <button type="button" class="mc-menu-button" data-settings-interface>介面設定</button>
-    <button type="button" class="mc-menu-button discord" data-settings-discord>Discord</button>
+    <button type="button" class="mc-menu-button" data-settings-discord>Discord 登入</button>
     <button type="button" class="mc-menu-button" data-settings-home>回到首頁</button>
   </div>
   <section class="mc-settings-panel" id="sound-panel">
@@ -145,13 +146,21 @@ const settings = $("#settings");
 const auth = $("#auth");
 $("[data-settings]")?.addEventListener("click", () => settings.showModal());
 $$('[data-mobile]').forEach((button) => button.addEventListener("click", () => $(".topnav")?.classList.toggle("mobile-open")));
-const closeSettingPanels = () => $$('.mc-settings-panel').forEach((panel) => panel.classList.remove('open'));
+const closeSettingPanels = () => {
+  $$('.mc-settings-panel').forEach((panel) => panel.classList.remove('open'));
+  $$('[data-settings-sound],[data-settings-interface]').forEach((button) => button.setAttribute('aria-expanded', 'false'));
+};
+const toggleSettingPanel = (selector, button) => {
+  const panel = $(selector);
+  const opening = !panel?.classList.contains('open');
+  closeSettingPanels();
+  if (opening) { panel.classList.add('open'); button.setAttribute('aria-expanded', 'true'); }
+};
 $('[data-settings-resume]')?.addEventListener('click', () => settings.close());
-$('[data-settings-sound]')?.addEventListener('click', () => { closeSettingPanels(); $('#sound-panel')?.classList.add('open'); });
-$('[data-settings-interface]')?.addEventListener('click', () => { closeSettingPanels(); $('#interface-panel')?.classList.add('open'); });
+$('[data-settings-sound]')?.addEventListener('click', (event) => toggleSettingPanel('#sound-panel', event.currentTarget));
+$('[data-settings-interface]')?.addEventListener('click', (event) => toggleSettingPanel('#interface-panel', event.currentTarget));
 $$('[data-settings-back]').forEach((button) => button.addEventListener('click', closeSettingPanels));
 $('[data-settings-home]')?.addEventListener('click', () => location.href = '/');
-$('[data-settings-discord]')?.addEventListener('click', () => { settings.close(); $('[data-auth]')?.click(); });
 
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
@@ -285,34 +294,8 @@ async function loadAuth() {
     authState = { authenticated: false };
   }
   $$('[data-official-link]').forEach(link => { link.hidden = !authState.is_official; });
-  $$('[data-auth]').forEach((button) => {
-    button.replaceChildren();
-    button.classList.toggle("is-authenticated", Boolean(authState.authenticated));
-    if (!authState.authenticated) {
-      button.textContent = "Discord 登入";
-      return;
-    }
-    const user = authState.user;
-    if (user?.avatar_url) {
-      const avatar = document.createElement("img");
-      avatar.className = "topbar-auth-avatar";
-      avatar.src = user.avatar_url;
-      avatar.alt = "";
-      button.append(avatar);
-    }
-    const copy = document.createElement("span");
-    copy.className = "topbar-auth-copy";
-    const name = document.createElement("b");
-    name.textContent = authName(user);
-    copy.append(name);
-    const level = document.createElement("span");
-    level.className = "topbar-level";
-    level.textContent = "Lv.0";
-    const caret = document.createElement("span");
-    caret.className = "topbar-auth-caret";
-    caret.textContent = "▾";
-    button.append(copy, level, caret);
-  });
+  const menuAuth = $('[data-settings-discord]');
+  if (menuAuth) menuAuth.textContent = authState.authenticated ? 'Discord 帳號' : 'Discord 登入';
   return authState;
 }
 const authReady = loadAuth();
@@ -377,7 +360,7 @@ async function openAuth(event) {
 // Shared read-only auth state for front-end components.
 window.TeaCafeAuth = { ready: authReady, open: openAuth, getState: () => authState };
 window.addEventListener('teacafe-toast', (event) => toast(String(event.detail || '')));
-$$('[data-auth]').forEach((button) => button.addEventListener("click", openAuth));
+$('[data-settings-discord]')?.addEventListener('click', (event) => { settings.close(); openAuth(event); });
 $$('.auth-required').forEach((button) => button.addEventListener("click", async (event) => {
   event.preventDefault();
   await authReady;

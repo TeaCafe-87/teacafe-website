@@ -11,6 +11,7 @@
   const previews = $('[data-community-previews]');
   const fileSummary = $('[data-community-file-summary]');
   const feedback = $('[data-community-feedback]');
+  const authError = $('[data-community-auth-error]');
   const more = $('[data-community-more]');
   const MAX_BYTES = 20 * 1024 * 1024;
   const TYPES = new Set(['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm']);
@@ -41,10 +42,20 @@
   let search = '';
   let objectUrls = [];
 
-  async function auth() {
+  const loginUrl = '/api/auth/login?return=' + encodeURIComponent(location.pathname + location.search);
+  function showLoginError(container) {
+    if (!container) return;
+    container.replaceChildren();
+    const message = el(container.tagName === 'P' ? 'span' : 'p', '', '創建失敗，請先登入網站後再嘗試');
+    const link = el('a', '', '要登入嗎？點我登入');
+    link.href = loginUrl;
+    container.append(message, link);
+    container.hidden = false;
+  }
+  async function auth(redirect = true) {
     const state = await window.TeaCafeAuth?.ready;
     if (!state?.authenticated) {
-      location.href = '/api/auth/login?return=' + encodeURIComponent(location.pathname + location.search);
+      if (redirect) location.href = loginUrl;
       return false;
     }
     return true;
@@ -82,7 +93,8 @@
   dialog.addEventListener('close',cleanupPreviews);
   document.querySelectorAll('[data-community-close]').forEach(button => button.addEventListener('click',()=>dialog.close()));
   $('[data-community-create]')?.addEventListener('click',async()=>{
-    if (!await auth()) return;
+    if (!await auth(false)) { showLoginError(authError); return; }
+    if (authError) authError.hidden = true;
     if (!configured) { say('資料庫與媒體儲存空間尚未連接'); return; }
     form.reset(); feedback.textContent=''; fileSummary.textContent=''; cleanupPreviews();
     if (kind === 'forum') form.elements.category.value = ['all','official'].includes(activeCategory) ? 'general' : activeCategory;
@@ -90,7 +102,8 @@
   });
   form.addEventListener('submit', async event => {
     event.preventDefault();
-    if (!await auth() || !selectedFiles()) return;
+    if (!await auth(false)) { showLoginError(feedback); return; }
+    if (!selectedFiles()) return;
     if (kind === 'gallery' && !fileInput.files.length) { feedback.textContent = '相冊貼文至少需要一張圖片或一段影片。'; return; }
     const submit = form.querySelector('[type="submit"]');
     submit.disabled = true; feedback.textContent='上傳中…';
@@ -99,6 +112,7 @@
     try {
       const response = await fetch('/api/community/posts',{method:'POST',body:data});
       const result = await response.json().catch(() => ({}));
+      if (response.status === 401) { showLoginError(feedback); return; }
       if (!response.ok) throw new Error(response.status === 413 || result.error === 'files_too_large' ? '附件合計不得超過 20 MiB。' : result.error === 'post_rate_limited' ? '請稍等 30 秒再發文。' : result.error === 'moderation_not_configured' ? '官方尚未設定審核人員，暫時無法發文。' : result.error === 'unsupported_media_type' || result.error === 'invalid_media_content' ? '照片或影片格式不支援，請使用 JPG、PNG、WebP、GIF、MP4 或 WebM。' : '送出失敗，請稍後再試。');
       dialog.close(); form.reset(); await load(true); say(result.status === 'pending' ? '已送出審核，通過後會公開。' : '貼文已發布');
     } catch (error) { feedback.textContent=error.message; }
