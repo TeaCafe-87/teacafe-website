@@ -22,10 +22,14 @@
   const supporterForm = $('[data-supporter-form]');
   const supporterList = $('[data-supporter-list]');
   const supporterMessage = $('[data-supporter-message]');
+  const pendingSummary = $('[data-admin-pending]');
+  const memberSummary = $('[data-admin-members]');
+  const supporterSummary = $('[data-admin-supporters]');
   let memberPage = 0;
   let activeMember = null;
   let postPage = 0;
   const showMessage = value => window.dispatchEvent(new CustomEvent('teacafe-toast', { detail: value }));
+  const todayTaipei = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   const categoryName = { gallery: '玩家相冊', general: '閒聊交流', help: '新手提問', professions: '職業與料理', homes: '家園與建築', economy: '交易與經濟', pets: '寵物與冒險', pass: '季節通行證', suggestions: '玩法建議' };
   lightbox.querySelector('button').addEventListener('click', () => lightbox.close());
   lightbox.addEventListener('click', event => { if (event.target === lightbox) lightbox.close(); });
@@ -71,12 +75,15 @@
   }
 
   async function loadQueue() {
-    const response = await fetch('/api/community/moderation', { headers: { Accept: 'application/json' }, cache: 'no-store' });
-    if (!response.ok) { count.textContent = '待審貼文無法讀取。'; return; }
-    const data = await response.json();
-    const posts = Array.isArray(data.posts) ? data.posts : [];
-    count.textContent = posts.length ? `${posts.length} 篇待審${data.has_more ? '；請先處理這批，再重新整理看其他貼文' : ''}` : '目前沒有待審貼文。';
-    feed.replaceChildren(...posts.map(renderPost));
+    try {
+      const response = await fetch('/api/community/moderation', { headers: { Accept: 'application/json' }, cache: 'no-store' });
+      if (!response.ok) throw new Error();
+      const data = await response.json();
+      const posts = Array.isArray(data.posts) ? data.posts : [];
+      count.textContent = posts.length ? `${posts.length} 篇待審${data.has_more ? '；請先處理這批，再重新整理看其他貼文' : ''}` : '目前沒有待審貼文。';
+      pendingSummary.textContent = data.has_more ? `${posts.length}+` : String(posts.length);
+      feed.replaceChildren(...posts.map(renderPost));
+    } catch { count.textContent = '待審貼文無法讀取，請按「重新整理」重試。'; pendingSummary.textContent = '—'; }
   }
 
   function renderMember(member) {
@@ -96,14 +103,17 @@
     if (reset) { memberPage = 0; memberList.replaceChildren(); }
     const url = new URL('/api/admin/members', location.origin);
     url.searchParams.set('q', memberSearch.value.trim()); url.searchParams.set('page', String(memberPage));
-    const response = await fetch(url, { cache: 'no-store' });
-    if (!response.ok) { memberCount.textContent = '成員資料無法讀取，請確認已執行 0004_admin.sql。'; return; }
-    const data = await response.json();
-    const members = Array.isArray(data.members) ? data.members : [];
-    memberList.append(...members.map(renderMember));
-    memberCount.textContent = memberList.children.length ? `顯示 ${memberList.children.length} 位成員` : '找不到符合條件的成員。';
-    memberPage = data.next_page;
-    memberMore.hidden = memberPage === null;
+    try {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error();
+      const data = await response.json();
+      const members = Array.isArray(data.members) ? data.members : [];
+      memberList.append(...members.map(renderMember));
+      memberCount.textContent = memberList.children.length ? `顯示 ${memberList.children.length} 位成員` : '找不到符合條件的成員。';
+      memberSummary.textContent = String(memberList.children.length);
+      memberPage = data.next_page;
+      memberMore.hidden = memberPage === null;
+    } catch { memberCount.textContent = '成員資料無法讀取，請確認 D1 遷移或按「重新整理」重試。'; memberSummary.textContent = '—'; memberMore.hidden = true; }
   }
 
   function renderAuthorPost(post) {
@@ -126,12 +136,16 @@
     memberPosts.hidden = false;
     const url = new URL('/api/admin/posts', location.origin);
     url.searchParams.set('author', activeMember.discord_id); url.searchParams.set('page', String(postPage));
-    const response = await fetch(url, { cache: 'no-store' });
-    if (!response.ok) { memberPosts.replaceChildren(make('p', '', '文章無法讀取。')); return; }
-    const data = await response.json();
+    let data;
+    try {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error();
+      data = await response.json();
+    } catch { memberPosts.replaceChildren(make('p', '', '文章無法讀取，請稍後再試。')); return; }
     if (!append) memberPosts.append(make('h3', '', `${activeMember.global_name || activeMember.username} 的文章`));
-    memberPosts.append(...data.posts.map(renderAuthorPost));
-    if (!data.posts.length && !append) memberPosts.append(make('p', '', '這位成員尚未發文。'));
+    const posts = Array.isArray(data.posts) ? data.posts : [];
+    memberPosts.append(...posts.map(renderAuthorPost));
+    if (!posts.length && !append) memberPosts.append(make('p', '', '這位成員尚未發文。'));
     postPage = data.next_page;
     if (postPage !== null) {
       const morePosts = make('button', 'mc-button', '載入更多文章'); morePosts.type = 'button';
@@ -144,6 +158,9 @@
   let searchTimer;
   memberSearch.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => loadMembers(true), 250); });
   memberMore.addEventListener('click', () => loadMembers());
+  $('[data-moderation-refresh]')?.addEventListener('click', loadQueue);
+  $('[data-member-refresh]')?.addEventListener('click', () => loadMembers(true));
+  $('[data-supporter-refresh]')?.addEventListener('click', loadSupporters);
 
   async function loadSupporters() {
     try {
@@ -151,6 +168,7 @@
       if (!response.ok) throw new Error();
       const data = await response.json();
       supporterList.replaceChildren();
+      supporterSummary.textContent = String((data.supporters || []).length);
       for (const row of data.supporters || []) {
         const item = make('article', 'admin-supporter-row');
         item.append(make('span', '', `${row.player_name} · ${row.supported_at}${row.note ? ' · ' + row.note : ''}`));
@@ -158,16 +176,19 @@
         remove.addEventListener('click', async () => {
           if (!confirm(`確定從感謝名單移除 ${row.player_name}？`)) return;
           remove.disabled = true;
-          const result = await fetch('/api/admin/supporters', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: row.id }) });
-          if (result.ok) { supporterMessage.textContent = '已從名單移除。'; await loadSupporters(); }
-          else { supporterMessage.textContent = '移除失敗。'; remove.disabled = false; }
+          try {
+            const result = await fetch('/api/admin/supporters', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: row.id }) });
+            if (!result.ok) throw new Error();
+            supporterMessage.textContent = '已從名單移除。';
+            await loadSupporters();
+          } catch { supporterMessage.textContent = '移除失敗，請稍後重試。'; remove.disabled = false; }
         });
         item.append(remove); supporterList.append(item);
       }
       if (!data.supporters?.length) supporterMessage.textContent = '目前還沒有公開的支持者。';
-    } catch { supporterMessage.textContent = '名單無法讀取，請先執行 0005_supporters.sql。'; }
+    } catch { supporterMessage.textContent = '名單無法讀取，請確認 D1 遷移或按「重新整理」重試。'; supporterSummary.textContent = '—'; }
   }
-  supporterForm.elements.supported_at.value = new Date().toISOString().slice(0, 10);
+  supporterForm.elements.supported_at.value = todayTaipei();
   supporterForm.addEventListener('submit', async event => {
     event.preventDefault();
     const button = supporterForm.querySelector('[type="submit"]'); button.disabled = true;
@@ -176,7 +197,7 @@
       const response = await fetch('/api/admin/supporters', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (!response.ok) throw new Error();
       supporterMessage.textContent = '已加入感謝名單。'; supporterForm.reset();
-      supporterForm.elements.supported_at.value = new Date().toISOString().slice(0, 10);
+      supporterForm.elements.supported_at.value = todayTaipei();
       await loadSupporters();
     } catch { supporterMessage.textContent = '新增失敗，請確認資料與 D1 migration。'; }
     finally { button.disabled = false; }

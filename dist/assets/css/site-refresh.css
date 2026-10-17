@@ -1,0 +1,74 @@
+/* Shared navigation and reading styles for the public pages and admin tools. */
+.topbar{gap:clamp(8px,1.2vw,18px);flex-wrap:nowrap}
+.topbar .brand{flex:0 0 auto;min-width:0}
+.topbar .topnav{display:flex;flex:1 1 auto;min-width:0;flex-wrap:nowrap;justify-content:center;gap:5px}
+.topbar .top-tools{flex:0 0 auto;min-width:0}
+html[data-text-size] .topbar .mc-nav{font-size:15px!important;line-height:1.25;padding:9px 11px;white-space:nowrap}
+html[data-text-size] .topbar .settings-button,html[data-text-size] .topbar .mobile-menu{font-size:18px!important;padding:0;flex:0 0 41px}
+.discord-invite{display:grid;place-items:center;width:43px;height:43px;flex:0 0 43px;background:#5865f2;border:3px solid #22284b;box-shadow:inset 2px 2px #8991ff,inset -3px -3px #36409b,0 3px #191d43;transition:transform .15s ease,background-color .15s ease}
+.discord-invite:hover{background:#6e79f3;transform:translateY(-2px)}
+.discord-invite:focus-visible{outline:3px solid #e5d374;outline-offset:3px}
+.discord-invite img{display:block;width:25px;height:25px}
+html[data-text-size] .home-video-hero .home-hero-content>h1{font-size:clamp(64px,10vw,150px)}
+html[data-text-size] .home-video-hero .home-hero-tagline{font-size:clamp(17px,2vw,30px);animation:tea-copy-in 1.6s ease-out 1.8s both}
+
+/* Rules, Wiki, and forum share one Minecraft-style index. */
+:root{--index-width:240px}
+.content-layout,.community-layout{grid-template-columns:var(--index-width) minmax(0,1fr);max-width:1200px;margin-inline:auto}
+body :is(.sidebar,.community-topics){width:100%;min-width:0;height:max-content;position:sticky;top:24px;align-self:start;margin:0;padding:10px;background:#272b26;border:3px solid #111;box-shadow:inset 2px 2px #4e534d,inset -3px -3px #171916;color:#fff}
+body :is(.sidebar h3,.community-topics h2){min-height:46px;margin:0;padding:7px 10px 12px;font-family:inherit;font-size:calc(18px * var(--text-scale))!important;line-height:1.4;font-weight:900;color:#b8d9a8}
+body :is(.sidebar .sidebar-links,.community-topics nav){display:grid;grid-template-columns:minmax(0,1fr);gap:5px;overflow:visible}
+body :is(.sidebar .sidebar-links a,.community-topics nav button){display:flex;align-items:center;width:100%;min-height:50px;margin:0!important;padding:10px 13px;background:#555852;color:#fff;border:2px solid #222;border-radius:0;box-shadow:inset 2px 2px #7c8078,inset -2px -2px #363834;font-size:calc(15px * var(--text-scale))!important;font-weight:800;line-height:1.45;text-align:left;white-space:normal;outline:0;transform:none;transition:transform .15s ease,background-color .15s ease,box-shadow .15s ease}
+body :is(.sidebar .sidebar-links a,.community-topics nav button):is(:hover,:focus-visible,.scroll-active,.active){background:#89ad74;color:#14220f;box-shadow:inset 3px 3px #4f7041,inset -2px -2px #d9ecd1;transform:translateX(2px);outline:2px solid #d9ecd1;outline-offset:-5px}
+body .community-topic-note{margin-top:14px;border-top:1px solid #64705e;padding:12px 8px 4px;line-height:1.6}
+
+/* Text links use the guide's quiet underlined treatment. */
+:is(.content-panel,.rule-content,.career-guide,.supporters-content,.market-dashboard) :is(p,li,small) a:not(.mc-button):not(.wiki-card),.career-guide a.secondary{display:inline;border:0;border-bottom:1px solid currentColor;padding:0 0 4px;color:#3e5946;font-weight:700;text-decoration:none;transition:color .15s ease,border-color .15s ease}
+:is(.content-panel,.rule-content,.career-guide,.supporters-content,.market-dashboard) :is(p,li,small) a:not(.mc-button):not(.wiki-card):hover,.career-guide a.secondary:hover{color:#ae713c;border-color:#ae713c}
+.career-guide a.secondary{display:inline-block;min-height:0;margin:16px 8px 0 0;padding:0 0 4px;background:none;box-shadow:none;border-bottom:1px solid currentColor}
+.career-jump-links{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px}
+.career-jump-links a{padding:9px 13px;background:#e5e9da;border:2px solid #5c7255;box-shadow:inset 2px 2px #fff,inset -2px -2px #b5c7ae;font-weight:800;transition:background-color .15s ease,transform .15s ease}
+.career-jump-links a:hover{background:#cfe1c6;transform:translateY(-2px)}
+
+.wiki-faq{margin:34px 0;padding:20px;background:#e6e9dd;border:3px solid #6f7f69;box-shadow:inset 2px 2px #fff,inset -3px -3px #b7c4b2}
+.wiki-faq h3{margin:0 0 8px!important}
+.wiki-faq details{border-top:2px solid #b8c4b2;padding:13px 4px}
+.wiki-faq summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;font-weight:900;list-style:none}
+.wiki-faq summary::-webkit-details-marker{display:none}
+.wiki-faq summary::after{content:'＋';color:#3e5946;font-size:22px;line-height:1}
+.wiki-faq details[open] summary::after{content:'－'}
+.wiki-faq details[open] p{animation:tea-copy-in .35s ease-out both;margin:12px 0 2px}
+
+.community-create-error{display:grid;justify-items:start;gap:5px;width:max-content;max-width:100%;margin-top:15px;padding:12px 16px;background:#f1e4cc;color:#362a1f;border:3px solid #8a6838;box-shadow:inset 2px 2px #fff3db}
+.community-create-error[hidden]{display:none}
+.community-create-error p,.compose-feedback p{margin:0}
+body .page-title .community-create-error p{color:#362a1f}
+.community-create-error a,.compose-feedback a{border-bottom:1px solid currentColor;padding-bottom:4px;color:#315b30;font-weight:900}
+.compose-feedback a{display:inline-block;margin-top:8px}
+.compose-feedback span{display:block}
+
+.supporters-empty{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:24px;background:#f0efe7;border:3px dashed #7c8b76}
+.supporters-empty img{width:72px;height:72px;object-fit:cover;image-rendering:pixelated}
+.supporters-empty p{margin:0}
+.supporter-icon{object-fit:cover;image-rendering:pixelated;background:#f7dfc3}
+.market-error{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 18px;background:#eee0c2;border:3px solid #9d773f;color:#44382e}
+.market-error[hidden]{display:none}
+
+.moderation-page .community-shell{width:min(1100px,calc(100% - 32px));margin:32px auto 80px}
+.admin-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 22px}
+.admin-overview a{display:grid;gap:6px;padding:18px;background:#e9eee3;border:3px solid #566b51;box-shadow:inset 2px 2px #fff,inset -3px -3px #b4c4ac;transition:transform .15s ease,background-color .15s ease}
+.admin-overview a:hover{background:#dce9d3;transform:translateY(-2px)}
+.admin-overview span{font-weight:900}.admin-overview strong{font-size:32px;color:#32532e}.admin-overview small{color:#586a54}
+.admin-sections{position:sticky;top:0;z-index:3;padding:10px;background:#e4e8de;border:2px solid #879783}
+.admin-section-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:12px}
+.admin-section-head h2{margin:0}
+.admin-section-head .mc-button{padding:8px 12px;font-size:14px}
+.admin-page :is(#review,#official,#members,#supporters){scroll-margin-top:20px}
+
+@media(max-width:1100px){.topbar .topnav{display:none}.topbar .mobile-menu{display:inline-block}.topbar .topnav.mobile-open{display:grid;position:absolute;top:100%;left:12px;right:12px;padding:14px;background:#171b16;border:3px solid #51402a;grid-template-columns:repeat(2,minmax(0,1fr));z-index:99}.content-layout,.community-layout{grid-template-columns:1fr}body :is(.sidebar,.community-topics){position:static}body :is(.sidebar .sidebar-links,.community-topics nav){grid-template-columns:repeat(2,minmax(0,1fr))}}
+html[data-text-size="150"] :is(.content-layout,.community-layout),html[data-text-size="200"] :is(.content-layout,.community-layout){grid-template-columns:1fr}
+html[data-text-size="150"] :is(.sidebar,.community-topics),html[data-text-size="200"] :is(.sidebar,.community-topics){position:static}
+html[data-text-size="150"] :is(.sidebar .sidebar-links,.community-topics nav),html[data-text-size="200"] :is(.sidebar .sidebar-links,.community-topics nav){grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:700px){html[data-text-size] .home-video-hero .home-hero-content>h1{font-size:clamp(52px,18vw,92px)}.topbar .brand b{font-size:15px}.topbar .brand-icon{width:38px;height:38px}.discord-invite{width:41px;height:41px;flex-basis:41px}.market-error{align-items:flex-start;flex-direction:column}.admin-overview{grid-template-columns:1fr}.admin-section-head{align-items:flex-start;flex-direction:column}.moderation-page .community-shell{width:calc(100% - 20px)}}
+@media(max-width:620px){body :is(.sidebar .sidebar-links,.community-topics nav),html[data-text-size="150"] :is(.sidebar .sidebar-links,.community-topics nav),html[data-text-size="200"] :is(.sidebar .sidebar-links,.community-topics nav){grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.discord-invite,.career-jump-links a,.admin-overview a,body :is(.sidebar .sidebar-links a,.community-topics nav button){transition:none;transform:none!important}.wiki-faq details[open] p,html[data-text-size] .home-video-hero .home-hero-tagline{animation:none!important;opacity:1;transform:none}}
