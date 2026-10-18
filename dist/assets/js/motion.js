@@ -18,6 +18,7 @@
     document.body.classList.remove('site-intro-pending');
     revealNav();
     startKinetic();
+    dispatchEvent(new Event('teacafe-intro-finished'));
   };
   if (intro && !reduceMotion()) {
     document.body.classList.add('site-intro-pending');
@@ -28,6 +29,7 @@
   } else {
     intro?.remove();
     revealNav();
+    queueMicrotask(() => dispatchEvent(new Event('teacafe-intro-finished')));
   }
 
   const transition = document.createElement('div');

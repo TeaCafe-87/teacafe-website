@@ -41,6 +41,12 @@ if (motionStyle) document.head.append(motionStyle);
 else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/motion.css?v=20261018-3">');
 const cinematicStyle = document.querySelector('link[href^="/assets/css/teacafe-cinematic.css"]');
 if (cinematicStyle) document.head.append(cinematicStyle);
+if (document.body.classList.contains('home-page')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/home-motion.css?v=1">');
+if (document.body.classList.contains('moderation-page')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/admin-copy.css?v=1">');
+const homeMotionStyle = document.querySelector('link[href^="/assets/css/home-motion.css"]');
+if (homeMotionStyle) document.head.append(homeMotionStyle);
+const adminCopyStyle = document.querySelector('link[href^="/assets/css/admin-copy.css"]');
+if (adminCopyStyle) document.head.append(adminCopyStyle);
 document.body.insertAdjacentHTML("beforeend", `
 <div class="toast" id="toast" role="status"></div>
 <dialog id="settings"><form method="dialog"><div class="mc-menu-screen">
@@ -61,7 +67,7 @@ document.body.insertAdjacentHTML("beforeend", `
   <section class="mc-settings-panel" id="interface-panel">
     <h3>介面設定</h3>
     <div class="mc-settings-row compact"><div><b>文字大小</b><small>標題與內文按比例調整</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="text-size-switch">標準</button></div>
-    <div class="mc-settings-row compact"><div><b>文字樣式</b><small>網站文字的顯示方式</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="font-style-switch">像素風文字</button></div>
+    <div class="mc-settings-row compact"><div><b>文字樣式</b><small>網站文字的顯示方式</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="font-style-switch">一般文字</button></div>
     <button type="button" class="mc-menu-button wide" data-settings-back>完成</button>
   </section>
 </div></form></dialog>
@@ -145,7 +151,7 @@ document.addEventListener("keydown", unlockAudio, { once: true });
 const textScaleOptions = ["normal", "125", "150", "200"];
 const savedScale = localStorage.getItem("teacafe-text-size");
 let textScale = textScaleOptions.includes(savedScale) ? savedScale : savedScale === "large" ? "125" : "normal";
-let pixelText = localStorage.getItem("teacafe-font-style") !== "normal";
+let pixelText = localStorage.getItem("teacafe-font-style") === "pixel";
 function applyInterfaceSettings() {
   document.documentElement.dataset.textSize = textScale;
   document.documentElement.dataset.fontStyle = pixelText ? "pixel" : "normal";
@@ -370,16 +376,11 @@ $$('.auth-required').forEach((button) => button.addEventListener("click", async 
   toast("目前尚未開放購買");
 }));
 
-// The navigation can be revealed from right to left at the intro and at the page top.
-// Scrolling down keeps the existing quick hide behavior.
+// Hide only after an actual downward scroll. Opening a menu keeps the bar in view.
 const topbar = $(".topbar");
 if (topbar) {
-  let previousPointerY = null;
-  let hideTimer = 0;
-  const touchPointer = matchMedia('(hover: none), (pointer: coarse)');
   const showTopbar = () => {
     if (document.querySelector('.site-intro') && !document.body.classList.contains('site-nav-reveal')) return;
-    clearTimeout(hideTimer);
     if (!topbar.classList.contains('topbar-hidden')) return;
     topbar.classList.remove('topbar-hidden');
     if (matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'reduced') return;
@@ -387,43 +388,58 @@ if (topbar) {
     void topbar.offsetWidth;
     topbar.classList.add('nav-revealing');
   };
+  topbar.addEventListener('animationend', event => {
+    if (event.animationName === 'tea-nav-reveal') topbar.classList.remove('nav-revealing');
+  });
   window.teaRevealTopbar = showTopbar;
-  const hideTopbar = (immediate = false) => {
-    clearTimeout(hideTimer);
-    const hide = () => {
-      topbar.classList.remove('nav-revealing');
-      topbar.classList.add('topbar-hidden');
-    };
-    if (immediate) hide();
-    else hideTimer = setTimeout(hide, 850);
+  const hideTopbar = () => {
+    if (topbar.querySelector('.nav-more[open]')) return;
+    topbar.classList.remove('nav-revealing');
+    topbar.classList.add('topbar-hidden');
   };
-  document.addEventListener('pointermove', event => {
-    if (event.pointerType === 'touch' || touchPointer.matches) return;
-    const withinRevealBand = event.clientY <= Math.max(108, topbar.offsetHeight + 26);
-    const movingUp = previousPointerY !== null && event.clientY < previousPointerY - 1;
-    if (withinRevealBand && movingUp) showTopbar();
-    else if (!withinRevealBand && !topbar.contains(event.target)) hideTopbar();
-    previousPointerY = event.clientY;
-  }, {passive:true});
-  topbar.addEventListener('pointerleave', () => hideTopbar());
-  document.addEventListener('wheel', event => {
-    if (event.deltaY > 0) hideTopbar(true);
-  }, {passive:true});
   let priorScroll = window.scrollY;
   addEventListener('scroll', () => {
-    if (window.scrollY > priorScroll + 2) hideTopbar(true);
-    else if (window.scrollY <= 8 && priorScroll > 8) showTopbar();
+    const difference = window.scrollY - priorScroll;
+    if (window.scrollY <= 8 || difference < -3) showTopbar();
+    else if (difference > 3 && window.scrollY > topbar.offsetHeight) hideTopbar();
     priorScroll = window.scrollY;
   }, {passive:true});
   topbar.addEventListener('focusin', showTopbar);
-  document.addEventListener('keydown', event => {
-    if (event.altKey && event.key.toLowerCase() === 'm') {
-      event.preventDefault();
-      if (topbar.classList.contains('topbar-hidden')) showTopbar();
-      else hideTopbar(true);
-    }
+  topbar.querySelector('.nav-more')?.addEventListener('toggle', event => {
+    if (event.currentTarget.open) showTopbar();
   });
 }
+
+// Give stepped mouse wheels a short eased push; keep touchpads, touch and nested scrollers native.
+let wheelTarget = window.scrollY;
+let wheelFrame = 0;
+addEventListener('scroll', () => { if (!wheelFrame) wheelTarget = window.scrollY; }, { passive: true });
+document.addEventListener('click', event => {
+  if (!event.target.closest('a[href]')) return;
+  cancelAnimationFrame(wheelFrame);
+  wheelFrame = 0;
+  wheelTarget = window.scrollY;
+}, { capture: true });
+document.addEventListener('wheel', event => {
+  if (event.ctrlKey || event.shiftKey || event.defaultPrevented ||
+      matchMedia('(prefers-reduced-motion: reduce)').matches ||
+      document.documentElement.dataset.motion === 'reduced' ||
+      document.querySelector('dialog[open]') ||
+      event.target.closest('.sidebar-links,.community-topics nav,.gallery-rail,.copy-block-list,[data-copy-input]')) return;
+  const stepped = event.deltaMode === WheelEvent.DOM_DELTA_LINE || (event.deltaMode === WheelEvent.DOM_DELTA_PIXEL && Math.abs(event.deltaY) >= 75);
+  if (!stepped || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+  event.preventDefault();
+  const maxScroll = Math.max(0, document.documentElement.scrollHeight - innerHeight);
+  wheelTarget = Math.min(maxScroll, Math.max(0, wheelTarget + Math.sign(event.deltaY) * Math.min(Math.abs(event.deltaY) * (event.deltaMode ? 15 : 1), 420)));
+  if (wheelFrame) return;
+  const glide = () => {
+    const gap = wheelTarget - window.scrollY;
+    if (Math.abs(gap) < .7) { scrollTo({ top: wheelTarget, behavior: 'instant' }); wheelFrame = 0; return; }
+    scrollTo({ top: window.scrollY + gap * .23, behavior: 'instant' });
+    wheelFrame = requestAnimationFrame(glide);
+  };
+  wheelFrame = requestAnimationFrame(glide);
+}, { passive: false });
 
 // D1 is the primary content source. Static JSON stays as a setup preview.
 async function loadNews() {

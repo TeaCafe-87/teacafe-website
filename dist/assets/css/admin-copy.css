@@ -1,0 +1,39 @@
+.admin-copy-editor { margin: 34px 0; padding: clamp(20px, 3vw, 38px); background: #f1eee3; color: #292a22; border: 2px solid #797e6c; box-shadow: 7px 7px 0 #292d23; }
+.admin-copy-editor .admin-section-head { margin-bottom: 18px; }
+.admin-copy-editor .admin-section-head p { max-width: 72ch; line-height: 1.7; }
+.copy-page-tabs { display: flex; gap: 8px; margin: 12px 0 16px; }
+.copy-page-tabs button { border: 2px solid #525b4e; background: #dadbcc; padding: 10px 18px; color: #293027; font-weight: 700; }
+.copy-page-tabs button.active { background: #354d38; color: #fff; }
+.copy-editor-status { font-size: .92rem; color: #4b5c4a; }
+.copy-editor-layout { display: grid; grid-template-columns: minmax(220px, 32%) minmax(0, 1fr); gap: clamp(16px, 2vw, 28px); align-items: start; }
+.copy-editor-layout[hidden] { display: none; }
+.copy-block-panel, .copy-edit-panel { min-width: 0; background: #fffdf5; border: 1px solid #bdc1af; padding: 18px; }
+.copy-block-panel { position: sticky; top: 90px; max-height: min(76vh, 850px); display: flex; flex-direction: column; }
+.copy-block-panel label, .copy-edit-panel label { display: grid; gap: 7px; font-weight: 700; }
+.copy-block-panel input, .copy-edit-panel textarea { width: 100%; border: 1px solid #909884; border-radius: 0; background: white; color: #20251f; padding: 11px; }
+.copy-block-list { min-height: 160px; overflow: auto; margin-top: 12px; }
+.copy-block-list h3 { position: sticky; top: 0; z-index: 1; padding: 8px 10px; margin: 8px 0 0; background: #dfe7d9; font-size: .9rem; }
+.copy-block-button { display: grid; width: 100%; gap: 4px; padding: 10px; border: 0; border-bottom: 1px solid #d4d9c9; background: transparent; color: inherit; text-align: left; line-height: 1.5; }
+.copy-block-button:hover, .copy-block-button:focus-visible { background: #e6e9de; }
+.copy-block-button.active { background: #526b50; color: #fff; }
+.copy-block-button small { opacity: .72; }
+.copy-edit-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 18px; font-weight: 700; }
+.copy-edit-head a { color: #345b43; border-bottom: 1px solid currentColor; }
+.copy-edit-panel textarea { min-height: 160px; margin-top: 8px; resize: vertical; line-height: 1.75; }
+.copy-editor-hint { margin: 9px 0 18px; font-size: .85rem; color: #586153; }
+.copy-compare { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.copy-compare > div { border: 1px solid #b6c0ac; background: #f9f8f1; }
+.copy-compare h3 { margin: 0; padding: 9px 12px; font-size: .95rem; background: #e1e8db; }
+.copy-compare h3 span { font-size: .76rem; font-weight: 500; color: #436243; }
+.copy-preview { min-height: 100px; padding: 12px; line-height: 1.75; overflow-wrap: anywhere; white-space: pre-line; }
+.copy-preview a { border-bottom: 1px solid currentColor; }
+.copy-diff { margin-top: 14px; padding: 12px; background: #f2f0e7; border-left: 3px solid #718c6e; }
+.copy-diff h3 { margin: 0 0 8px; font-size: .95rem; }
+.copy-diff p { margin: 6px 0; overflow-wrap: anywhere; }
+.copy-diff del { background: #f1cccc; text-decoration: line-through; }
+.copy-diff ins { background: #c9e7c8; text-decoration: none; }
+.copy-edit-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
+.copy-edit-actions button:disabled { opacity: .48; cursor: not-allowed; }
+[data-copy-message] { min-height: 1.5em; color: #385c39; }
+@media (max-width: 800px) { .copy-editor-layout { grid-template-columns: 1fr; } .copy-block-panel { position: static; max-height: 320px; } }
+@media (max-width: 540px) { .copy-compare { grid-template-columns: 1fr; } .copy-edit-head { flex-direction: column; } }
