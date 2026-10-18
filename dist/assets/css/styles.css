@@ -68,8 +68,6 @@ body{background-color:#c7c7bf;background-image:linear-gradient(90deg,rgba(0,0,0,
 .home-hero-kicker{font:clamp(9px,1vw,12px) var(--pixel);letter-spacing:.22em;color:#d8e5d2;margin:0 0 18px}
 .home-video-hero h1{margin:0;font:900 clamp(64px,10vw,150px)/.95 "Noto Sans TC",sans-serif;letter-spacing:-.06em;color:#fff}
 .home-hero-tagline{margin:24px 0 0;font-size:clamp(17px,2vw,30px);font-weight:700;color:#f0eee5;letter-spacing:.08em}
-.home-scroll-cue{position:absolute;z-index:2;bottom:28px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;text-shadow:2px 2px #111;font:10px var(--pixel);letter-spacing:.08em}
-.home-scroll-cue i{font-style:normal;font-size:13px;animation:mc-scroll-cue 1.2s steps(3,end) infinite}@keyframes mc-scroll-cue{50%{transform:translateY(6px)}}
 
 .server-overview{min-height:100svh;background:#c9c8c0;color:#1b1d18;border-bottom:7px solid #4b3424;display:flex;align-items:center}
 .server-overview-inner{width:100%;padding:clamp(64px,8vh,110px) var(--screen-pad);max-width:none}
@@ -90,18 +88,18 @@ body{background-color:#c7c7bf;background-image:linear-gradient(90deg,rgba(0,0,0,
 .server-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:22px}.server-actions .discord-button{min-height:48px}
 
 @media(max-width:1180px){.server-info-grid{grid-template-columns:1fr 1fr}.uptime-card{grid-column:1/-1}.server-info-card{min-height:145px}}
-@media(max-width:700px){.home-video-hero h1{font-size:clamp(52px,18vw,92px)}.home-hero-tagline{font-size:16px;letter-spacing:.03em}.home-scroll-cue{bottom:20px}.server-overview-head{align-items:flex-start;flex-direction:column}.server-info-grid{grid-template-columns:1fr}.uptime-card{grid-column:auto}.server-info-card{min-height:132px;padding:20px}.server-uptime{font-size:clamp(18px,5.7vw,25px)!important}.server-player-board-head{align-items:flex-start;flex-direction:column;gap:8px}.home-page .topbar-hotzone{height:20px}}
+@media(max-width:700px){.home-video-hero h1{font-size:clamp(52px,18vw,92px)}.home-hero-tagline{font-size:16px;letter-spacing:.03em}.server-overview-head{align-items:flex-start;flex-direction:column}.server-info-grid{grid-template-columns:1fr}.uptime-card{grid-column:auto}.server-info-card{min-height:132px;padding:20px}.server-uptime{font-size:clamp(18px,5.7vw,25px)!important}.server-player-board-head{align-items:flex-start;flex-direction:column;gap:8px}.home-page .topbar-hotzone{height:20px}}
 
 /* v9: calm, full-screen rhythm with restrained Minecraft UI */
 html{scroll-padding-top:76px;scroll-snap-type:y proximity}
 html:has(.rules-page){scroll-behavior:auto;scroll-snap-type:none}
-.mc-nav{font-size:14px}.crumb,.kicker{font-size:13px}.home-scroll-cue{font-size:13px}
+.mc-nav{font-size:14px}.crumb,.kicker{font-size:13px}
 .snap-screen{scroll-snap-align:start;scroll-margin-top:0}
 .mc-nav.active{outline:0;background:#686f61;box-shadow:inset 2px 2px #90938c,inset -3px -3px #343632,0 3px #0c0d0b}
 .home-video-hero,.server-overview{scroll-snap-align:start}
 .home-video-hero{border-bottom:0}
 .home-hero-fallback{z-index:0;background:linear-gradient(180deg,#14221b 0%,#23432d 54%,#503d2b 100%)}
-.home-hero-video{z-index:1}.home-hero-shade{z-index:2}.home-hero-content,.home-scroll-cue{z-index:3}
+.home-hero-video{z-index:1}.home-hero-shade{z-index:2}.home-hero-content{z-index:3}
 .home-video-hero h1{letter-spacing:-.045em}
 .server-overview{background:#deddd3}
 .server-info-grid{gap:12px}
@@ -338,7 +336,7 @@ html[data-text-size="large"]{
 /* No user-facing micro text below the readable secondary-text scale. */
 body,p,li,td,th,label,input,textarea,button{font-size:var(--type-body)}
 small,.crumb,.sidebar h3,.wiki-card small,.gallery-author time,.gallery-count,
-.mc-settings-row small,.mc-settings-value,.home-scroll-cue,.notice-row time,
+.mc-settings-row small,.mc-settings-value,.notice-row time,
 .site-footer,.site-footer nav,.brand small{font-size:var(--type-small)}
 
 .brand b{font-size:17px}
