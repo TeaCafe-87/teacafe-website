@@ -36,9 +36,9 @@ if (footer) {
 document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/effects.css?v=20261017">');
 document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/polish.css?v=20261018">');
 document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-refresh.css?v=20261018-2">');
-if (!document.querySelector('link[href^="/assets/css/motion.css"]')) {
-  document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/motion.css?v=20261018-2">');
-}
+const motionStyle = document.querySelector('link[href^="/assets/css/motion.css"]');
+if (motionStyle) document.head.append(motionStyle);
+else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/motion.css?v=20261018-3">');
 document.body.insertAdjacentHTML("beforeend", `
 <div class="toast" id="toast" role="status"></div>
 <dialog id="settings"><form method="dialog"><div class="mc-menu-screen">
@@ -576,5 +576,5 @@ if (ruleSections.length) {
 }
 
 const motionScript = document.createElement('script');
-motionScript.src = '/assets/js/motion.js?v=20261018-1';
+motionScript.src = '/assets/js/motion.js?v=20261018-3';
 document.body.append(motionScript);

@@ -1,77 +1,63 @@
-/* Motion inspired by editorial page reveals, translated into TeaCafe's block UI. */
-:root { --tea-motion-ease: cubic-bezier(.16, 1, .3, 1); }
+/* Saisei-inspired timing with TeaCafe's own type and content. */
+:root { --tea-ease: cubic-bezier(.22, 1, .36, 1); --intro-paper: #faf0dc; --intro-ink: #29251e; }
 
-.site-preloader {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  clip-path: inset(0);
-  background: #111a13;
-  color: #f5f1e4;
-  animation: tea-preloader-exit .85s var(--tea-motion-ease) 1.65s forwards;
-}
-.site-preloader::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: .16;
-  background: linear-gradient(90deg, #d2b67b 1px, transparent 1px), linear-gradient(#d2b67b 1px, transparent 1px);
-  background-size: 48px 48px;
-}
-.site-preloader-content { position: relative; width: min(440px, calc(100vw - 48px)); text-align: center; }
-.site-preloader-icon { display: block; width: clamp(76px, 12vw, 112px); aspect-ratio: 1; margin: 0 auto 26px; border: 4px solid #a78c5d; image-rendering: pixelated; box-shadow: 7px 7px #080d09; animation: tea-preloader-icon .9s steps(5, end) both; }
-.site-preloader-name { display: block; font-size: clamp(28px, 5vw, 48px); font-weight: 900; letter-spacing: .1em; }
-.site-preloader-caption { display: block; margin-top: 10px; color: #c9d8be; font-size: 13px; letter-spacing: .2em; }
-.site-preloader-track { display: block; height: 5px; margin-top: 30px; background: #384536; border: 1px solid #a78c5d; }
-.site-preloader-track::after { content: ""; display: block; height: 100%; width: 0; background: #d9ba79; animation: tea-preloader-progress 1.55s steps(18, end) both; }
-@keyframes tea-preloader-icon { from { opacity: 0; transform: translateY(18px) scale(.92); } to { opacity: 1; transform: none; } }
-@keyframes tea-preloader-progress { to { width: 100%; } }
-@keyframes tea-preloader-exit { to { clip-path: inset(0 0 100% 0); visibility: hidden; pointer-events: none; } }
-.site-preloader.is-skipped { display: none; }
-body.intro-queued .home-hero-content > h1, body.intro-queued .home-hero-tagline { animation: none !important; opacity: 0; }
+/* Three uninterrupted vertical lines, a centered seal, then two outward doors. */
+.site-intro { position: fixed; inset: 0; z-index: 200; overflow: hidden; isolation: isolate; pointer-events: auto; animation: tea-intro-finish .01s linear 2.42s forwards; }
+.site-intro-panel { position: absolute; top: 0; bottom: 0; width: 50%; background: var(--intro-paper); will-change: transform; animation: tea-intro-door 1.18s cubic-bezier(.76, 0, .18, 1) 1.15s both; }
+.site-intro-left { left: 0; --door-direction: -101%; border-right: 1px solid var(--intro-ink); }
+.site-intro-right { right: 0; --door-direction: 101%; }
+.site-intro-panel::before { content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: var(--intro-ink); }
+.site-intro-left::before { left: 14.4%; }
+.site-intro-right::before { right: 14.4%; }
+.site-intro-seal { position: absolute; z-index: 1; top: 50%; left: 50%; display: grid; place-items: center; width: clamp(76px, 7vw, 100px); aspect-ratio: 1; border: 1px solid var(--intro-ink); border-radius: 50%; background: var(--intro-paper); color: var(--intro-ink); font: 400 clamp(31px, 3.4vw, 46px)/1 "Noto Serif TC", "Songti TC", "PMingLiU", serif !important; transform: translate(-50%, -50%); animation: tea-intro-seal .42s ease .91s forwards; }
+html[data-font-style="pixel"] .site-intro-seal,
+html[data-font-style="pixel"] .page-transition-seal { font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif !important; }
+@keyframes tea-intro-door { to { transform: translate3d(var(--door-direction), 0, 0); } }
+@keyframes tea-intro-seal { to { opacity: 0; transform: translate(-50%, -50%) scale(.86); } }
+@keyframes tea-intro-finish { to { visibility: hidden; pointer-events: none; } }
 
-.page-transition {
-  position: fixed;
-  inset: 0;
-  z-index: 190;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  background: #18261b;
-  color: #f4f0df;
-  clip-path: inset(100% 0 0 0);
-  pointer-events: none;
-  transition: clip-path .48s var(--tea-motion-ease);
-}
-.page-transition::before { content: ""; position: absolute; inset: 0; opacity: .1; background: repeating-linear-gradient(90deg, transparent 0 31px, #eee2c0 32px 33px); }
-.page-transition-label { position: relative; display: flex; align-items: center; gap:16px; font-size: clamp(18px, 3vw, 30px); font-weight: 900; letter-spacing: .1em; }
-.page-transition-label img { width: 48px; height: 48px; image-rendering: pixelated; border: 2px solid #d6b879; }
+/* Defer page copy until the doors open. The header enters during the split. */
+body.site-intro-pending :is(.home-hero-content > h1, .home-hero-tagline, .page-title-inner > h1, .page-title-inner > p, .career-hero h1, .market-dashboard .top h1) { animation: none !important; opacity: 0; }
+body.site-intro-pending:not(.site-nav-reveal) .topbar { opacity: 0 !important; transform: translate3d(0, -24px, 0) !important; pointer-events: none; }
+body.site-intro-pending { overflow: hidden; }
+.topbar { transition: transform .72s var(--tea-ease), opacity .78s ease !important; }
+.home-page .topbar { background: rgba(12, 14, 11, .25); border-bottom: 1px solid rgba(250, 240, 220, .72); box-shadow: none; backdrop-filter: blur(5px); }
+.home-page .topbar .mc-nav { background: transparent; border: 0; box-shadow: none; text-shadow: none; }
+.home-page .topbar .mc-nav:is(:hover, :focus-visible, .active) { background: rgba(250, 240, 220, .15); outline: 0; }
+.home-page .topbar .nav-more > div { background: #20251e; }
+
+/* A light outgoing curtain meets the identical incoming opening screen. */
+.page-transition { position: fixed; inset: 0; z-index: 190; display: grid; place-items: center; overflow: hidden; background: var(--intro-paper); color: var(--intro-ink); clip-path: inset(100% 0 0); pointer-events: none; transition: clip-path .55s var(--tea-ease); }
+.page-transition::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent calc(7.2% - .5px), var(--intro-ink) 7.2%, transparent calc(7.2% + .5px)), linear-gradient(90deg, transparent calc(50% - .5px), var(--intro-ink) 50%, transparent calc(50% + .5px)), linear-gradient(90deg, transparent calc(92.8% - .5px), var(--intro-ink) 92.8%, transparent calc(92.8% + .5px)); }
+.page-transition-seal { position: relative; display: grid; place-items: center; width: 84px; aspect-ratio: 1; border: 1px solid var(--intro-ink); border-radius: 50%; background: var(--intro-paper); font: 400 38px/1 "Noto Serif TC", "Songti TC", "PMingLiU", serif !important; }
 body.is-page-leaving .page-transition { clip-path: inset(0); pointer-events: auto; }
 
-/* Each line keeps its original text for selection, search, and screen readers. */
+/* Only section titles move. Reset occurs after a title has left below the viewport. */
 .kinetic-mask { display: block; overflow: hidden; }
-.kinetic-inner { display: inline-block; max-width: 100%; will-change: transform, clip-path, opacity; }
-.kinetic-mask.kinetic-ready:not(.kinetic-visible) .kinetic-inner { transform: translate3d(72px, 0, 0); clip-path: inset(0 0 0 100%); opacity: 0; }
-.kinetic-mask.kinetic-ready.kinetic-visible .kinetic-inner { transform: translate3d(0, 0, 0); clip-path: inset(0); opacity: 1; transition: transform 1.05s var(--tea-motion-ease), clip-path 1.05s var(--tea-motion-ease), opacity .65s ease; transition-delay: var(--kinetic-delay, 0ms); }
+.kinetic-inner { display: inline-block; max-width: 100%; }
+.kinetic-mask.kinetic-ready:not(.kinetic-visible) .kinetic-inner { transform: translate3d(64px, 0, 0); clip-path: inset(0 0 0 100%); opacity: 0; }
+.kinetic-mask.kinetic-ready.kinetic-visible .kinetic-inner { transform: none; clip-path: inset(0); opacity: 1; transition: transform 1.05s var(--tea-ease), clip-path 1.05s var(--tea-ease), opacity .75s ease; transition-delay: var(--kinetic-delay, 0ms); }
 
-.home-video-hero::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: .12; background: linear-gradient(90deg, #bacaac 1px, transparent 1px), linear-gradient(#bacaac 1px, transparent 1px); background-size: 54px 54px; }
-.home-hero-fallback { background-image: radial-gradient(circle at 68% 38%, rgba(181, 151, 95, .22), transparent 25%), linear-gradient(165deg, #101a14 0%, #25402b 55%, #503b2b 100%); }
-.home-hero-content { width: 100%; }
-.home-hero-content > h1 { font-size: min(clamp(calc(70px * var(--text-scale)), calc(13vw * var(--text-scale)), calc(190px * var(--text-scale))), 29svh) !important; letter-spacing: -.075em; overflow-wrap: anywhere; text-wrap: balance; }
-html[data-text-size] .home-video-hero .home-hero-content > h1 { font-size: min(clamp(calc(70px * var(--text-scale)), calc(13vw * var(--text-scale)), calc(190px * var(--text-scale))), 29svh) !important; }
-.home-hero-tagline { letter-spacing: .12em; }
+/* Home hero follows the reference's lower-left display and restrained side copy. */
+.home-video-hero::after { opacity: 0 !important; }
+.home-hero-fallback { background: radial-gradient(circle at 69% 37%, rgba(149, 112, 72, .21), transparent 28%), linear-gradient(145deg, #0c1210 2%, #18251c 48%, #34291e 100%); }
+.home-page .home-hero-content { position: absolute; inset: auto 0 0; width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(225px, 24vw); align-items: end; gap: clamp(22px, 3vw, 56px); padding: 0 clamp(28px, 4vw, 72px) clamp(70px, 9vh, 120px); text-align: left; text-shadow: none; }
+.home-page .home-hero-content > h1 { margin: 0; color: #f8f0df; font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif !important; font-weight: 500; font-size: min(clamp(calc(76px * var(--text-scale)), calc(14vw * var(--text-scale)), calc(215px * var(--text-scale))), 29svh) !important; line-height: .94; letter-spacing: -.09em; text-wrap: balance; overflow-wrap: anywhere; animation: tea-hero-rise 1.58s var(--tea-ease) both !important; }
+html[data-text-size] .home-video-hero .home-hero-content > h1 { font-size: min(clamp(calc(76px * var(--text-scale)), calc(14vw * var(--text-scale)), calc(215px * var(--text-scale))), 29svh) !important; }
+.home-page .home-hero-tagline { max-width: 320px; margin: 0 0 8px; color: #efe5d1; font-size: clamp(17px, 1.7vw, 25px); font-weight: 500; line-height: 1.6; letter-spacing: .04em; }
+.page-title-inner > p, .career-hero h1 + p, .home-page .home-hero-tagline, .wiki-faq details[open] p { animation: none !important; opacity: 1; transform: none; clip-path: none; }
+@keyframes tea-hero-rise { from { opacity: 0; clip-path: inset(100% 0 0); transform: translate3d(0, 45px, 0); } to { opacity: 1; clip-path: inset(0); transform: none; } }
 
-@media (max-width: 700px) {
-  .home-hero-content > h1, html[data-text-size] .home-video-hero .home-hero-content > h1 { font-size: min(clamp(calc(54px * var(--text-scale)), calc(17vw * var(--text-scale)), calc(100px * var(--text-scale))), 29svh) !important; }
-  .kinetic-mask.kinetic-ready:not(.kinetic-visible) .kinetic-inner { transform: translate3d(38px, 0, 0); }
+@media (max-width: 760px) {
+  .home-page .home-hero-content { grid-template-columns: 1fr; gap: 16px; padding-bottom: clamp(70px, 11vh, 110px); }
+  .home-page .home-hero-content > h1, html[data-text-size] .home-video-hero .home-hero-content > h1 { font-size: min(clamp(calc(58px * var(--text-scale)), calc(17vw * var(--text-scale)), calc(110px * var(--text-scale))), 24svh) !important; }
+  .home-page .home-hero-tagline { margin: 0; max-width: none; }
+  .kinetic-mask.kinetic-ready:not(.kinetic-visible) .kinetic-inner { transform: translate3d(36px, 0, 0); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .site-preloader, .page-transition { display: none !important; }
+  .site-intro, .page-transition { display: none !important; }
   .kinetic-inner { transform: none !important; clip-path: none !important; opacity: 1 !important; transition: none !important; }
-  .home-hero-fallback { animation: none !important; }
+  .home-hero-content > h1, .home-hero-tagline { animation: none !important; opacity: 1 !important; clip-path: none !important; transform: none !important; }
 }
-html[data-motion="reduced"] .site-preloader, html[data-motion="reduced"] .page-transition { display: none !important; }
+html[data-motion="reduced"] .site-intro, html[data-motion="reduced"] .page-transition { display: none !important; }
 html[data-motion="reduced"] .kinetic-inner { transform: none !important; clip-path: none !important; opacity: 1 !important; transition: none !important; }

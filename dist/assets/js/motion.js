@@ -1,28 +1,42 @@
 (() => {
   const root = document.documentElement;
   const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches || root.dataset.motion === 'reduced';
-  const preloader = document.querySelector('.site-preloader');
-
-  if (preloader) {
-    let seen = false;
-    try {
-      seen = sessionStorage.getItem('teacafe-intro-seen') === '1';
-      sessionStorage.setItem('teacafe-intro-seen', '1');
-    } catch { /* Storage may be disabled; the CSS timer still clears the intro. */ }
-    if (seen || reduceMotion()) preloader.classList.add('is-skipped');
-    else {
-      document.body.classList.add('intro-queued');
-      setTimeout(() => {
-        preloader.remove();
-        document.body.classList.remove('intro-queued');
-      }, 2600);
-    }
+  const intro = document.querySelector('.site-intro');
+  let introFinished = false;
+  let navRevealed = false;
+  const revealNav = () => {
+    if (navRevealed) return;
+    navRevealed = true;
+    document.body.classList.add('site-nav-reveal');
+    document.querySelector('.topbar')?.classList.remove('topbar-hidden');
+  };
+  const finishIntro = () => {
+    if (introFinished) return;
+    introFinished = true;
+    revealNav();
+    intro?.remove();
+    document.body.classList.remove('site-intro-pending');
+    startKinetic();
+  };
+  if (intro && !reduceMotion()) {
+    document.body.classList.add('site-intro-pending');
+    intro.addEventListener('animationstart', (event) => {
+      if (event.animationName === 'tea-intro-door') revealNav();
+    });
+    intro.addEventListener('animationend', (event) => {
+      if (event.target === intro && event.animationName === 'tea-intro-finish') finishIntro();
+    });
+    setTimeout(revealNav, 1450);
+    setTimeout(finishIntro, 3500);
+  } else {
+    intro?.remove();
+    revealNav();
   }
 
   const transition = document.createElement('div');
   transition.className = 'page-transition';
   transition.setAttribute('aria-hidden', 'true');
-  transition.innerHTML = '<span class="page-transition-label"><img src="/image/server_icon.png" alt="">茶咖暖居</span>';
+  transition.innerHTML = '<span class="page-transition-seal">茶</span>';
   document.body.append(transition);
 
   // Let native links handle new tabs, downloads, external sites, hashes and OAuth.
@@ -36,24 +50,25 @@
     if (document.body.classList.contains('is-page-leaving')) { event.preventDefault(); return; }
     event.preventDefault();
     document.body.classList.add('is-page-leaving');
-    setTimeout(() => location.assign(url.href), 460);
+    setTimeout(() => location.assign(url.href), 540);
   });
   addEventListener('pageshow', () => document.body.classList.remove('is-page-leaving'));
 
-  // Build masked lines only for plain headings and selected lead copy. Any DOM or
-  // animation failure leaves readable text in the document.
+  // Only section titles use masked motion. Upward scrolling keeps them visible;
+  // they reset only after leaving below the viewport, ready for the next descent.
   const observer = !reduceMotion() && 'IntersectionObserver' in window
     ? new IntersectionObserver((entries) => {
         for (const entry of entries) {
-          entry.target.classList.toggle('kinetic-visible', entry.isIntersecting);
+          if (entry.isIntersecting) entry.target.classList.add('kinetic-visible');
+          else if (entry.boundingClientRect.top >= innerHeight - 2) entry.target.classList.remove('kinetic-visible');
         }
-      }, { threshold: .08, rootMargin: '0px 0px -9% 0px' })
+      }, { threshold: .08 })
     : null;
 
-  const selector = 'main h2, main h3, main .screen-heading p, main .section-head > p, main .title-line';
+  const selector = 'main h2, main .title-line';
   function prepare(element) {
     if (!observer || element.dataset.kineticPrepared !== undefined || element.closest('dialog,[hidden]')) return;
-    // Avoid changing rich text, links, controls, or live status labels.
+    // Keep rich text, links, and controls untouched.
     if (element.children.length || !element.textContent.trim() || element.hasAttribute('data-server-status')) return;
     const inner = document.createElement('span');
     inner.className = 'kinetic-inner';
@@ -66,8 +81,11 @@
     }
     observer.observe(element);
   }
-  document.querySelectorAll(selector).forEach(prepare);
-  if (observer) {
+  let kineticStarted = false;
+  function startKinetic() {
+    if (!observer || kineticStarted) return;
+    kineticStarted = true;
+    document.querySelectorAll(selector).forEach(prepare);
     const main = document.querySelector('main');
     if (main) new MutationObserver((records) => {
       for (const record of records) for (const node of record.addedNodes) {
@@ -77,6 +95,7 @@
       }
     }).observe(main, { childList: true, subtree: true });
   }
+  if (!intro || reduceMotion()) startKinetic();
 
   // Smooth in-page navigation remains available on the rules page, where its
   // original stylesheet disables CSS smooth scrolling to avoid scroll snapping.
