@@ -6,7 +6,7 @@
 
 1. 在 Cloudflare Pages 專案設定中，將 D1 綁定變數命名為 `DB`。
 2. 將 R2 bucket 綁定變數命名為 `GALLERY_MEDIA`。這個名稱沿用原有相冊設定，但同時儲存論壇媒體。
-3. 已有資料庫：在 Cloudflare D1 Studio 的 Query 頁面執行 `migrations/0004_admin.sql`，再執行 `migrations/0005_supporters.sql`。`0004` 會隱藏八篇舊的示範討論文，保留玩家貼文，並建立 `site_members`。新資料庫依序執行 `0001_community.sql`、`0002_content.sql`、`0004_admin.sql`、`0005_supporters.sql`。舊的討論種子檔已移除。
+3. 已有資料庫：在 Cloudflare D1 Studio 的 Query 頁面依序執行尚未套用的 `migrations/0004_admin.sql`、`migrations/0005_supporters.sql`，最後執行 `migrations/0006_site_copy.sql`。`0004` 會隱藏八篇舊的示範討論文，保留玩家貼文，並建立 `site_members`。新資料庫依序執行 `0001_community.sql`、`0002_content.sql`、`0004_admin.sql`、`0005_supporters.sql`、`0006_site_copy.sql`。舊的討論種子檔已移除。
 4. 在 Pages 設定中提供 `DISCORD_CLIENT_ID`、`DISCORD_CLIENT_SECRET`、`DISCORD_REDIRECT_URI`、`SESSION_SECRET`，並於 Discord Developer Portal 登記回呼網址。
 5. 重新部署 Pages。先開啟 `/api/community/posts?kind=forum`，確認回傳 `configured: true`；再以 Discord 登入測試投稿，管理員到 `/admin` 審核。
 

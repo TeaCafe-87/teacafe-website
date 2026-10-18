@@ -32,7 +32,6 @@ body .topbar {
 }
 body .topbar.topbar-hidden {
   transform: translate3d(0, calc(-100% - 8px), 0) !important;
-  opacity: 0 !important;
   pointer-events: none;
 }
 body .topbar.nav-revealing {
@@ -62,6 +61,10 @@ body .topbar .nav-more > div,
 body .topbar .topnav.mobile-open {
   background: rgba(20, 29, 22, .97) !important;
 }
+body .topbar .nav-more:not([open]) > div { display: none; }
+body .topbar .nav-more[open] { z-index: 90; }
+html { scroll-snap-type: none !important; scroll-behavior: smooth; }
+[data-copy-edited] { white-space: pre-line; }
 body .topbar::after {
   content: "";
   position: absolute;
