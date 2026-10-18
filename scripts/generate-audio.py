@@ -1,4 +1,4 @@
-"""Generate the site's original, quiet UI and ambient sounds (standard library only)."""
+"""Generate the site's quiet ambient background loop (standard library only)."""
 
 from pathlib import Path
 import math
@@ -21,13 +21,6 @@ def save(name, samples):
 def tone(frequency, t):
     return math.sin(2 * math.pi * frequency * t) + 0.2 * math.sin(4 * math.pi * frequency * t)
 
-
-click = []
-for index in range(int(RATE * 0.09)):
-    t = index / RATE
-    envelope = (1 - t / 0.09) ** 3
-    click.append(0.18 * envelope * (tone(680, t) + 0.35 * tone(1020, t)))
-save("ui-click.wav", click)
 
 duration = 16
 notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 293.66, 392.00]

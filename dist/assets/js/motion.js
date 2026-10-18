@@ -33,7 +33,7 @@
   const transition = document.createElement('div');
   transition.className = 'page-transition';
   transition.setAttribute('aria-hidden', 'true');
-  transition.innerHTML = '<span class="page-transition-seal">茶</span>';
+  transition.innerHTML = '<span class="page-transition-line page-transition-line-left"></span><span class="page-transition-line page-transition-line-middle"></span><span class="page-transition-line page-transition-line-right"></span><span class="page-transition-seal"><svg class="page-transition-seal-ring" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19.4"/></svg><span class="page-transition-seal-text">茶</span></span>';
   document.body.append(transition);
 
   // Let native links handle new tabs, downloads, external sites, hashes and OAuth.

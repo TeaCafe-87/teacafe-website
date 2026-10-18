@@ -2,7 +2,16 @@
   --tea-nav-paper: rgba(248, 240, 223, .82);
   --tea-nav-backdrop: rgba(12, 17, 13, .96);
   --tea-cinematic-ease: cubic-bezier(.22, 1, .36, 1);
+  --tea-intro-outer-line: 3px;
+  --tea-intro-center-line: 1.5px;
+  --tea-intro-seal-size: clamp(76px, 7vw, 100px);
 }
+
+/* Keep wheel, touch and keyboard scrolling, without a visible scroll track. */
+html, body, .sidebar-links, .community-topics nav, .topnav { scrollbar-width: none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar,
+.sidebar-links::-webkit-scrollbar, .community-topics nav::-webkit-scrollbar,
+.topnav::-webkit-scrollbar { display: none; }
 
 /* Every page uses the same restrained, translucent index topbar. */
 body .topbar {
@@ -81,14 +90,14 @@ body:not(.site-intro-pending):not(.site-nav-reveal) .topbar::after { transform: 
 
 /* Intro panels: only GPU-composited translations; never resize the panels. */
 .site-intro {
-  background: var(--intro-paper);
-  animation: tea-intro-finish .01s linear 3.83s forwards !important;
+  background: transparent;
+  animation: tea-intro-finish .01s linear 3.15s forwards !important;
   contain: layout style paint;
 }
 .site-intro-panel {
   border: 0 !important;
   background: var(--intro-paper);
-  animation: tea-intro-door 1.15s cubic-bezier(.76, 0, .18, 1) 2.52s both !important;
+  animation: tea-intro-door 1.15s cubic-bezier(.76, 0, .18, 1) 1.90s both !important;
   transform: translate3d(0,0,0);
   backface-visibility: hidden;
   will-change: transform;
@@ -97,7 +106,7 @@ body:not(.site-intro-pending):not(.site-nav-reveal) .topbar::after { transform: 
 .site-intro-line {
   position: absolute;
   z-index: 1;
-  width: 3px;
+  width: var(--tea-intro-outer-line);
   top: 0;
   height: 100%;
   background: var(--intro-ink);
@@ -109,19 +118,19 @@ body:not(.site-intro-pending):not(.site-nav-reveal) .topbar::after { transform: 
 .site-intro-line-left {
   left: 7.2%;
   transform-origin: 50% 100%;
-  animation: tea-intro-line-retract 1.22s var(--tea-cinematic-ease) 1.20s forwards;
+  animation: tea-intro-line-retract 1.5s linear .30s forwards;
 }
 .site-intro-line-right {
   right: 7.2%;
   transform-origin: 50% 0%;
-  animation: tea-intro-line-retract 1.22s var(--tea-cinematic-ease) 1.20s forwards;
+  animation: tea-intro-line-retract 1.5s linear .30s forwards;
 }
 .site-intro-line-middle-top,
 .site-intro-line-middle-bottom {
   left: 50%;
-  width: 1.5px;
+  width: var(--tea-intro-center-line);
   height: 50%;
-  animation: tea-intro-line-retract 1s var(--tea-cinematic-ease) 1.42s forwards;
+  animation: tea-intro-line-retract 1s ease-in-out .80s forwards;
 }
 .site-intro-line-middle-top { top: 0; transform-origin: 50% 0%; }
 .site-intro-line-middle-bottom { top: 50%; transform-origin: 50% 100%; }
@@ -133,7 +142,7 @@ body:not(.site-intro-pending):not(.site-nav-reveal) .topbar::after { transform: 
   top: 50%;
   left: 50%;
   z-index: 2;
-  width: clamp(76px, 7vw, 100px);
+  width: var(--tea-intro-seal-size);
   aspect-ratio: 1;
   background: var(--intro-paper);
   color: var(--intro-ink);
@@ -155,11 +164,9 @@ body:not(.site-intro-pending):not(.site-nav-reveal) .topbar::after { transform: 
   stroke: var(--intro-ink);
   stroke-width: .3;
   stroke-linecap: round;
-  stroke-dasharray: 100;
-  stroke-dashoffset: 100;
-  animation: tea-intro-ring-draw 1.02s var(--tea-cinematic-ease) .35s forwards;
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
 }
-@keyframes tea-intro-ring-draw { to { stroke-dashoffset: 0; } }
 .site-intro-seal-text {
   font: 400 clamp(31px, 3.4vw, 46px)/1 "Noto Serif TC", "Songti TC", "PMingLiU", serif;
 }
@@ -167,7 +174,7 @@ html[data-font-style="pixel"] .site-intro-seal-text {
   font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif !important;
 }
 /* The ring and glyph begin fading with the split center line, and finish with every line. */
-.site-intro-seal { animation: tea-intro-seal-complete 1s ease 1.42s forwards !important; }
+.site-intro-seal { animation: tea-intro-seal-complete 1s ease-in-out .80s forwards !important; }
 @keyframes tea-intro-seal-complete { to { opacity: 0; } }
 
 /* Avoid layout/size animation on the outgoing page curtain as well. */
@@ -179,6 +186,30 @@ html[data-font-style="pixel"] .site-intro-seal-text {
   will-change: transform;
 }
 body.is-page-leaving .page-transition { transform: translate3d(0,0,0); }
+.page-transition::before { display: none; }
+.page-transition-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--tea-intro-outer-line);
+  background: var(--intro-ink);
+}
+.page-transition-line-left { left: 7.2%; }
+.page-transition-line-middle { left: 50%; width: var(--tea-intro-center-line); }
+.page-transition-line-right { right: 7.2%; }
+.page-transition-seal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--tea-intro-seal-size);
+  border: 0;
+  transform: translate(-50%, -50%);
+  font-size: 0 !important;
+}
+.page-transition-seal-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: rotate(-90deg); }
+.page-transition-seal-ring circle { fill: none; stroke: var(--intro-ink); stroke-width: .3; }
+.page-transition-seal-text { font: 400 clamp(31px, 3.4vw, 46px)/1 "Noto Serif TC", "Songti TC", "PMingLiU", serif; }
+html[data-font-style="pixel"] .page-transition-seal-text { font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif !important; }
 
 /* Temporary full-screen hero screenshot (index.png). Keep the existing shade
  * and copy/image layers; only the home hero's backdrop is replaced. */
@@ -205,3 +236,16 @@ html[data-motion="reduced"] .site-intro,
 html[data-motion="reduced"] .page-transition { display: none !important; }
 html[data-motion="reduced"] body .topbar { animation: none !important; opacity: 1 !important; pointer-events: auto !important; }
 html[data-motion="reduced"] body .topbar::after { animation: none !important; transform: scaleX(1) !important; }
+
+/* The complete opening sentence stays on a single line at every width. */
+.home-page .home-hero-content { grid-template-columns: minmax(0, 1fr) minmax(0, 31vw); }
+.home-page .home-hero-tagline {
+  max-width: none;
+  white-space: nowrap;
+  font-size: clamp(12px, 1.65vw, 25px);
+  letter-spacing: .025em;
+}
+@media (max-width: 760px) {
+  .home-page .home-hero-content { grid-template-columns: 1fr; }
+  .home-page .home-hero-tagline { font-size: clamp(11px, 3.3vw, 16px); }
+}

@@ -112,5 +112,5 @@ try {
 
 const redirects = readFileSync(new URL('../dist/_redirects', import.meta.url), 'utf8');
 for (const route of ['admin', 'supporters', 'careers', 'market']) assert.ok(!redirects.includes(`/${route} /${route}.html 200`));
-for (const name of ['background.wav', 'ui-click.wav']) assert.ok(statSync(new URL(`../dist/audio/${name}`, import.meta.url)).size > 100);
+assert.ok(statSync(new URL('../dist/audio/background.wav', import.meta.url)).size > 100);
 console.log('Page routing, sharing, uploads, search, content management, and session checks passed.');
