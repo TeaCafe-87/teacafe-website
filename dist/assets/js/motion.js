@@ -14,21 +14,17 @@
   const finishIntro = () => {
     if (introFinished) return;
     introFinished = true;
-    revealNav();
     intro?.remove();
     document.body.classList.remove('site-intro-pending');
+    revealNav();
     startKinetic();
   };
   if (intro && !reduceMotion()) {
     document.body.classList.add('site-intro-pending');
-    intro.addEventListener('animationstart', (event) => {
-      if (event.animationName === 'tea-intro-door') revealNav();
-    });
     intro.addEventListener('animationend', (event) => {
       if (event.target === intro && event.animationName === 'tea-intro-finish') finishIntro();
     });
-    setTimeout(revealNav, 2300);
-    setTimeout(finishIntro, 4500);
+    setTimeout(finishIntro, 5000);
   } else {
     intro?.remove();
     revealNav();

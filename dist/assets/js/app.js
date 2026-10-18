@@ -589,5 +589,5 @@ if (ruleSections.length) {
 }
 
 const motionScript = document.createElement('script');
-motionScript.src = '/assets/js/motion.js?v=20261018-4';
+motionScript.src = '/assets/js/motion.js?v=20261018-5';
 document.body.append(motionScript);
