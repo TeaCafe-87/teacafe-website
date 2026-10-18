@@ -32,7 +32,7 @@ body .topbar.nav-revealing {
   animation: tea-nav-reveal .88s var(--tea-cinematic-ease) both;
 }
 @keyframes tea-nav-reveal {
-  from { clip-path: inset(0 0 0 100%); opacity: 1; }
+  from { clip-path: inset(0 100% 0 0); opacity: 1; }
   to { clip-path: inset(0); opacity: 1; }
 }
 body .topbar .mc-nav,
@@ -62,7 +62,7 @@ body .topbar::after {
   height: 1px;
   background: var(--tea-nav-paper);
   transform: scaleX(0);
-  transform-origin: right center;
+  transform-origin: left center;
   pointer-events: none;
 }
 body.site-nav-reveal .topbar::after {
@@ -82,13 +82,13 @@ body:not(.site-intro-pending):not(.site-nav-reveal) .topbar::after { transform: 
 /* Intro panels: only GPU-composited translations; never resize the panels. */
 .site-intro {
   background: var(--intro-paper);
-  animation: tea-intro-finish .01s linear 3.35s forwards !important;
+  animation: tea-intro-finish .01s linear 3.83s forwards !important;
   contain: layout style paint;
 }
 .site-intro-panel {
   border: 0 !important;
   background: var(--intro-paper);
-  animation: tea-intro-door 1.15s cubic-bezier(.76, 0, .18, 1) 2.05s both !important;
+  animation: tea-intro-door 1.15s cubic-bezier(.76, 0, .18, 1) 2.52s both !important;
   transform: translate3d(0,0,0);
   backface-visibility: hidden;
   will-change: transform;
@@ -97,7 +97,7 @@ body:not(.site-intro-pending):not(.site-nav-reveal) .topbar::after { transform: 
 .site-intro-line {
   position: absolute;
   z-index: 1;
-  width: 1px;
+  width: 3px;
   top: 0;
   height: 100%;
   background: var(--intro-ink);
@@ -109,18 +109,22 @@ body:not(.site-intro-pending):not(.site-nav-reveal) .topbar::after { transform: 
 .site-intro-line-left {
   left: 7.2%;
   transform-origin: 50% 100%;
-  animation: tea-intro-line-retract 1.12s var(--tea-cinematic-ease) .55s forwards;
+  animation: tea-intro-line-retract 1.22s var(--tea-cinematic-ease) 1.20s forwards;
 }
 .site-intro-line-right {
   right: 7.2%;
   transform-origin: 50% 0%;
-  animation: tea-intro-line-retract 1.12s var(--tea-cinematic-ease) .55s forwards;
+  animation: tea-intro-line-retract 1.22s var(--tea-cinematic-ease) 1.20s forwards;
 }
-.site-intro-line-middle {
+.site-intro-line-middle-top,
+.site-intro-line-middle-bottom {
   left: 50%;
-  transform-origin: center center;
-  animation: tea-intro-line-retract 1.02s var(--tea-cinematic-ease) .78s forwards;
+  width: 1.5px;
+  height: 50%;
+  animation: tea-intro-line-retract 1s var(--tea-cinematic-ease) 1.42s forwards;
 }
+.site-intro-line-middle-top { top: 0; transform-origin: 50% 0%; }
+.site-intro-line-middle-bottom { top: 50%; transform-origin: 50% 100%; }
 @keyframes tea-intro-line-retract { to { transform: scaleY(0); } }
 .site-intro-seal {
   display: grid;
@@ -149,11 +153,11 @@ body:not(.site-intro-pending):not(.site-nav-reveal) .topbar::after { transform: 
 .site-intro-seal-ring circle {
   fill: none;
   stroke: var(--intro-ink);
-  stroke-width: 1;
+  stroke-width: .3;
   stroke-linecap: round;
   stroke-dasharray: 100;
   stroke-dashoffset: 100;
-  animation: tea-intro-ring-draw 1.02s var(--tea-cinematic-ease) .42s forwards;
+  animation: tea-intro-ring-draw 1.02s var(--tea-cinematic-ease) .35s forwards;
 }
 @keyframes tea-intro-ring-draw { to { stroke-dashoffset: 0; } }
 .site-intro-seal-text {
@@ -162,8 +166,8 @@ body:not(.site-intro-pending):not(.site-nav-reveal) .topbar::after { transform: 
 html[data-font-style="pixel"] .site-intro-seal-text {
   font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif !important;
 }
-/* The completed ring and glyph fade together. */
-.site-intro-seal { animation: tea-intro-seal-complete .48s ease 1.57s forwards !important; }
+/* The ring and glyph begin fading with the split center line, and finish with every line. */
+.site-intro-seal { animation: tea-intro-seal-complete 1s ease 1.42s forwards !important; }
 @keyframes tea-intro-seal-complete { to { opacity: 0; } }
 
 /* Avoid layout/size animation on the outgoing page curtain as well. */
