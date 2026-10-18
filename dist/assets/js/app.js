@@ -14,7 +14,7 @@ const nav = [
 
 const header = $("[data-header]");
 if (header) {
-  header.innerHTML = `<header class="topbar topbar-hidden ${page === "index.html" ? "home-topbar" : ""}">
+  header.innerHTML = `<header class="topbar topbar-hidden">
     <a class="brand" href="/"><img class="brand-icon" src="/image/server_icon.png" alt=""><span><b>茶咖暖居</b><small>TEACAFE</small></span></a>
     <nav class="topnav">${nav.map(([url, name]) => `<a class="mc-nav ${page === url ? "active" : ""}" href="/${url}">${name}</a>`).join("")}<details class="nav-more"><summary class="mc-nav">更多</summary><div><a href="/supporters.html">感謝支持</a><a href="/careers.html">職業指南</a><a href="/market.html">月映茶行</a><a data-official-link href="/admin" hidden>管理後台</a></div></details></nav>
     <div class="top-tools">
@@ -39,6 +39,8 @@ document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/ass
 const motionStyle = document.querySelector('link[href^="/assets/css/motion.css"]');
 if (motionStyle) document.head.append(motionStyle);
 else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/motion.css?v=20261018-3">');
+const cinematicStyle = document.querySelector('link[href^="/assets/css/teacafe-cinematic.css"]');
+if (cinematicStyle) document.head.append(cinematicStyle);
 document.body.insertAdjacentHTML("beforeend", `
 <div class="toast" id="toast" role="status"></div>
 <dialog id="settings"><form method="dialog"><div class="mc-menu-screen">
@@ -371,23 +373,32 @@ $$('.auth-required').forEach((button) => button.addEventListener("click", async 
   toast("目前尚未開放購買");
 }));
 
-// Navigation is revealed only by moving the pointer upward into its hover band.
-// Scrolling down hides the bar immediately, even while the pointer is over it.
+// The navigation can be revealed from right to left at the intro and at the page top.
+// Scrolling down keeps the existing quick hide behavior.
 const topbar = $(".topbar");
 if (topbar) {
   let previousPointerY = null;
   let hideTimer = 0;
   const touchPointer = matchMedia('(hover: none), (pointer: coarse)');
   const showTopbar = () => {
-    if (touchPointer.matches) return;
+    if (document.querySelector('.site-intro') && !document.body.classList.contains('site-nav-reveal')) return;
     clearTimeout(hideTimer);
+    if (!topbar.classList.contains('topbar-hidden')) return;
     topbar.classList.remove('topbar-hidden');
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'reduced') return;
+    topbar.classList.remove('nav-revealing');
+    void topbar.offsetWidth;
+    topbar.classList.add('nav-revealing');
   };
+  window.teaRevealTopbar = showTopbar;
   const hideTopbar = (immediate = false) => {
-    if (touchPointer.matches) return;
     clearTimeout(hideTimer);
-    if (immediate) topbar.classList.add('topbar-hidden');
-    else hideTimer = setTimeout(() => topbar.classList.add('topbar-hidden'), 850);
+    const hide = () => {
+      topbar.classList.remove('nav-revealing');
+      topbar.classList.add('topbar-hidden');
+    };
+    if (immediate) hide();
+    else hideTimer = setTimeout(hide, 850);
   };
   document.addEventListener('pointermove', event => {
     if (event.pointerType === 'touch' || touchPointer.matches) return;
@@ -404,13 +415,15 @@ if (topbar) {
   let priorScroll = window.scrollY;
   addEventListener('scroll', () => {
     if (window.scrollY > priorScroll + 2) hideTopbar(true);
+    else if (window.scrollY <= 8 && priorScroll > 8) showTopbar();
     priorScroll = window.scrollY;
   }, {passive:true});
-  topbar.addEventListener('focusin', () => topbar.classList.remove('topbar-hidden'));
+  topbar.addEventListener('focusin', showTopbar);
   document.addEventListener('keydown', event => {
     if (event.altKey && event.key.toLowerCase() === 'm') {
       event.preventDefault();
-      topbar.classList.toggle('topbar-hidden');
+      if (topbar.classList.contains('topbar-hidden')) showTopbar();
+      else hideTopbar(true);
     }
   });
 }
@@ -576,5 +589,5 @@ if (ruleSections.length) {
 }
 
 const motionScript = document.createElement('script');
-motionScript.src = '/assets/js/motion.js?v=20261018-3';
+motionScript.src = '/assets/js/motion.js?v=20261018-4';
 document.body.append(motionScript);

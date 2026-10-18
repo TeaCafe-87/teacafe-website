@@ -8,7 +8,8 @@
     if (navRevealed) return;
     navRevealed = true;
     document.body.classList.add('site-nav-reveal');
-    document.querySelector('.topbar')?.classList.remove('topbar-hidden');
+    if (window.teaRevealTopbar) window.teaRevealTopbar();
+    else document.querySelector('.topbar')?.classList.remove('topbar-hidden');
   };
   const finishIntro = () => {
     if (introFinished) return;
@@ -26,8 +27,8 @@
     intro.addEventListener('animationend', (event) => {
       if (event.target === intro && event.animationName === 'tea-intro-finish') finishIntro();
     });
-    setTimeout(revealNav, 1450);
-    setTimeout(finishIntro, 3500);
+    setTimeout(revealNav, 2300);
+    setTimeout(finishIntro, 4500);
   } else {
     intro?.remove();
     revealNav();
