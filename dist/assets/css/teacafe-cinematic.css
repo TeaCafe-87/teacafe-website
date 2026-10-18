@@ -237,6 +237,21 @@ html[data-motion="reduced"] .page-transition { display: none !important; }
 html[data-motion="reduced"] body .topbar { animation: none !important; opacity: 1 !important; pointer-events: auto !important; }
 html[data-motion="reduced"] body .topbar::after { animation: none !important; transform: scaleX(1) !important; }
 
+.music-track-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 2px solid #8d8d87;
+}
+.music-track-controls small { display: block; margin-top: 3px; color: #555; }
+.music-track-controls .mc-menu-button { min-height: 38px; }
+@media (max-width: 700px) {
+  .music-track-controls { grid-template-columns: 1fr 1fr; }
+  .music-track-controls > div { grid-column: 1 / -1; }
+}
+
 /* The complete opening sentence stays on a single line at every width. */
 .home-page .home-hero-content { grid-template-columns: minmax(0, 1fr) minmax(0, 31vw); }
 .home-page .home-hero-tagline {

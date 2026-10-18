@@ -55,6 +55,7 @@ document.body.insertAdjacentHTML("beforeend", `
   <section class="mc-settings-panel" id="sound-panel">
     <h3>背景音樂</h3>
     <div class="mc-settings-row"><div><b>背景音樂</b><small>背景 BGM</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="music-switch">開啟</button><span></span><input id="music-volume" type="range" min="0" max="100" value="18"><span class="mc-settings-value" id="music-value">18%</span></div>
+    <div class="music-track-controls"><div><b>目前曲目</b><small id="music-track-name" aria-live="polite"></small></div><button type="button" class="mc-menu-button" id="music-prev">上一首</button><button type="button" class="mc-menu-button" id="music-next">下一首</button></div>
     <button type="button" class="mc-menu-button wide" data-settings-back>完成</button>
   </section>
   <section class="mc-settings-panel" id="interface-panel">
@@ -82,13 +83,47 @@ if (authNotice) {
   queueMicrotask(() => toast(authNotice));
 }
 
-const musicAudio = new Audio("/audio/background.wav");
+const musicTracks = [
+  { file: "path_to_lake_land.mp3", name: "Path to Lake Land" },
+  { file: "two_left_socks.mp3", name: "Two Left Socks" },
+  { file: "cake_town.mp3", name: "Cake Town" },
+  { file: "town_theme.mp3", name: "Town Theme" },
+  { file: "bartender.mp3", name: "Bartender" },
+  { file: "salt.mp3", name: "Salt" },
+  { file: "a_cup_of_tea.mp3", name: "A Cup of Tea" }
+];
+const storedMusicIndex = Number(sessionStorage.getItem("teacafe-music-index"));
+let musicIndex = Number.isInteger(storedMusicIndex) && storedMusicIndex >= 0 && storedMusicIndex < musicTracks.length ? storedMusicIndex : 0;
+let resumeMusicTime = Math.max(0, Number(sessionStorage.getItem("teacafe-music-time")) || 0);
+const musicAudio = new Audio(`/audio/${musicTracks[musicIndex].file}`);
 musicAudio.preload = "none";
-musicAudio.loop = true;
 
 let musicOn = localStorage.getItem("teacafe-music-on") !== "false";
 let musicVol = Number(localStorage.getItem("teacafe-music-vol") || 18);
 let audioUnlocked = false;
+
+function updateMusicTrackName() {
+  const label = $("#music-track-name");
+  if (label) label.textContent = `${musicIndex + 1} / ${musicTracks.length} · ${musicTracks[musicIndex].name}`;
+}
+function changeMusicTrack(index) {
+  musicAudio.pause();
+  musicIndex = (index + musicTracks.length) % musicTracks.length;
+  sessionStorage.setItem("teacafe-music-index", String(musicIndex));
+  sessionStorage.removeItem("teacafe-music-time");
+  resumeMusicTime = 0;
+  musicAudio.src = `/audio/${musicTracks[musicIndex].file}`;
+  updateMusicTrackName();
+  if (musicOn && audioUnlocked) startMusic();
+}
+musicAudio.addEventListener("loadedmetadata", () => {
+  if (resumeMusicTime > 0 && resumeMusicTime < musicAudio.duration - 1) musicAudio.currentTime = resumeMusicTime;
+  resumeMusicTime = 0;
+});
+musicAudio.addEventListener("ended", () => changeMusicTrack(musicIndex + 1));
+addEventListener("pagehide", () => {
+  if (Number.isFinite(musicAudio.currentTime)) sessionStorage.setItem("teacafe-music-time", String(musicAudio.currentTime));
+});
 
 function startMusic() {
   musicAudio.volume = Math.max(0, Math.min(1, musicVol / 100));
@@ -153,6 +188,7 @@ document.addEventListener("keydown", (event) => {
 
 const musicSwitch = $("#music-switch");
 const musicVolume = $("#music-volume");
+updateMusicTrackName();
 if (musicVolume) musicVolume.value = musicVol;
 if (musicSwitch) musicSwitch.textContent = musicOn ? "開啟" : "關閉";
 $("#music-value").textContent = musicVol + "%";
@@ -163,6 +199,8 @@ musicSwitch?.addEventListener("click", () => {
   musicSwitch.textContent = musicOn ? "開啟" : "關閉";
   if (musicOn && audioUnlocked) startMusic(); else stopMusic();
 });
+$("#music-prev")?.addEventListener("click", () => changeMusicTrack(musicIndex - 1));
+$("#music-next")?.addEventListener("click", () => changeMusicTrack(musicIndex + 1));
 musicVolume?.addEventListener("input", (event) => {
   musicVol = Number(event.target.value);
   $("#music-value").textContent = musicVol + "%";
