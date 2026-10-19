@@ -64,7 +64,27 @@ body .topbar .topnav.mobile-open {
 body .topbar .nav-more:not([open]) > div { display: none; }
 body .topbar .nav-more[open] { z-index: 90; }
 html { scroll-snap-type: none !important; scroll-behavior: smooth; }
+html:has(.moderation-page) { scroll-behavior: auto; }
+body.moderation-page .page-title-inner > :is(h1,p) { animation: none !important; opacity: 1 !important; transform: none !important; clip-path: none !important; }
+.topbar-music-toggle {
+  display: inline-grid; place-items: center; flex: 0 0 42px; width: 42px; height: 42px;
+  color: #f2e8d0; background: transparent; border: 1px solid rgba(242,232,208,.34);
+  border-radius: 50%; cursor: pointer; transition: background .22s ease, border-color .22s ease;
+}
+.topbar-music-toggle:hover, .topbar-music-toggle:focus-visible { background: rgba(248,240,223,.15); border-color: currentColor; }
+.topbar-music-toggle:focus-visible { outline: 2px solid #e7c789; outline-offset: 3px; }
+.topbar-music-toggle svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.topbar-music-toggle .speaker-off, .topbar-music-toggle.is-muted .speaker-on { display: none; }
+.topbar-music-toggle.is-muted .speaker-off { display: block; }
+.reveal-on-scroll { opacity: .72; transform: translate3d(0,14px,0); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.75,.25,1); }
+.reveal-on-scroll.reveal-visible { opacity: 1; transform: none; }
+html[data-intro-skipped="true"] .home-hero-content > h1 { animation: none !important; opacity: 1 !important; transform: none !important; }
+@media (prefers-reduced-motion: reduce) { .reveal-on-scroll { opacity: 1 !important; transform: none !important; transition: none !important; } }
 [data-copy-edited] { white-space: pre-line; }
+.site-custom-section { margin-top: clamp(24px, 3vw, 42px); padding: clamp(18px, 2vw, 27px); border-left: 3px solid #7e9877; background: rgba(233, 235, 221, .62); }
+.site-custom-section h3 { margin: 0 0 10px; font-size: clamp(1.25rem, 2vw, 1.7rem); }
+.site-custom-section p { margin: 0; line-height: 1.85; white-space: pre-line; overflow-wrap: anywhere; }
+.site-custom-section[hidden] { display: none; }
 body .topbar::after {
   content: "";
   position: absolute;

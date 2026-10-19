@@ -19,6 +19,7 @@ if (header) {
     <nav class="topnav">${nav.map(([url, name]) => `<a class="mc-nav ${page === url ? "active" : ""}" href="/${url}">${name}</a>`).join("")}<details class="nav-more"><summary class="mc-nav">更多</summary><div><a href="/supporters.html">感謝支持</a><a href="/careers.html">職業指南</a><a href="/market.html">月映茶行</a><a data-official-link href="/admin" hidden>管理後台</a></div></details></nav>
     <div class="top-tools">
       <a class="discord-invite" href="https://discord.gg/FHCSjfD9Fq" target="_blank" rel="noopener noreferrer" aria-label="加入茶咖暖居 Discord 伺服器" title="加入 Discord 伺服器"><img src="/image/discord.svg" alt=""></a>
+      <button class="topbar-music-toggle" data-music-mute type="button" aria-label="靜音背景音樂" aria-pressed="false" title="背景音樂"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="speaker-body" d="M3 9v6h4l5 4V5L7 9H3Z"/><path class="speaker-on" d="M16 8a6 6 0 0 1 0 8m2-11a10 10 0 0 1 0 14"/><path class="speaker-off" d="m16 9 5 6m0-6-5 6"/></svg></button>
       <button class="mc-nav settings-button" data-settings aria-label="設定">⚙</button>
       <button class="mc-nav mobile-menu" data-mobile aria-label="選單">☰</button>
     </div>
@@ -41,8 +42,8 @@ if (motionStyle) document.head.append(motionStyle);
 else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/motion.css?v=20261018-3">');
 const cinematicStyle = document.querySelector('link[href^="/assets/css/teacafe-cinematic.css"]');
 if (cinematicStyle) document.head.append(cinematicStyle);
-if (document.body.classList.contains('home-page')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/home-motion.css?v=1">');
-if (document.body.classList.contains('moderation-page')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/admin-copy.css?v=1">');
+if (document.body.classList.contains('home-page')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/home-motion.css?v=20261019-2">');
+if (document.body.classList.contains('moderation-page')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/admin-copy.css?v=20261019-2">');
 const homeMotionStyle = document.querySelector('link[href^="/assets/css/home-motion.css"]');
 if (homeMotionStyle) document.head.append(homeMotionStyle);
 const adminCopyStyle = document.querySelector('link[href^="/assets/css/admin-copy.css"]');
@@ -60,14 +61,15 @@ document.body.insertAdjacentHTML("beforeend", `
   </div>
   <section class="mc-settings-panel" id="sound-panel">
     <h3>背景音樂</h3>
-    <div class="mc-settings-row"><div><b>背景音樂</b><small>背景 BGM</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="music-switch">開啟</button><span></span><input id="music-volume" type="range" min="0" max="100" value="18"><span class="mc-settings-value" id="music-value">18%</span></div>
-    <div class="music-track-controls"><div><b>目前曲目</b><small id="music-track-name" aria-live="polite"></small></div><button type="button" class="mc-menu-button" id="music-prev">上一首</button><button type="button" class="mc-menu-button" id="music-next">下一首</button></div>
+    <div class="mc-settings-row"><div><b>背景音樂</b><small>Path to Lake Land</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="music-switch">開啟</button><span></span><input id="music-volume" type="range" min="0" max="100" value="18"><span class="mc-settings-value" id="music-value">18%</span></div>
+    <div class="mc-settings-row compact"><div><b>靜音</b><small>也可使用上方音樂圖示</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="music-mute-switch">取消靜音</button></div>
     <button type="button" class="mc-menu-button wide" data-settings-back>完成</button>
   </section>
   <section class="mc-settings-panel" id="interface-panel">
     <h3>介面設定</h3>
     <div class="mc-settings-row compact"><div><b>文字大小</b><small>標題與內文按比例調整</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="text-size-switch">標準</button></div>
     <div class="mc-settings-row compact"><div><b>文字樣式</b><small>網站文字的顯示方式</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="font-style-switch">一般文字</button></div>
+    <div class="mc-settings-row compact"><div><b>播放開場動畫</b><small>新版本首次造訪仍會播放一次</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="intro-switch">開啟</button></div>
     <button type="button" class="mc-menu-button wide" data-settings-back>完成</button>
   </section>
 </div></form></dialog>
@@ -89,50 +91,26 @@ if (authNotice) {
   queueMicrotask(() => toast(authNotice));
 }
 
-const musicTracks = [
-  { file: "path_to_lake_land.mp3", name: "Path to Lake Land" },
-  { file: "two_left_socks.mp3", name: "Two Left Socks" },
-  { file: "cake_town.mp3", name: "Cake Town" },
-  { file: "town_theme.mp3", name: "Town Theme" },
-  { file: "bartender.mp3", name: "Bartender" },
-  { file: "salt.mp3", name: "Salt" },
-  { file: "a_cup_of_tea.mp3", name: "A Cup of Tea" }
-];
-const storedMusicIndex = Number(sessionStorage.getItem("teacafe-music-index"));
-let musicIndex = Number.isInteger(storedMusicIndex) && storedMusicIndex >= 0 && storedMusicIndex < musicTracks.length ? storedMusicIndex : 0;
 let resumeMusicTime = Math.max(0, Number(sessionStorage.getItem("teacafe-music-time")) || 0);
-const musicAudio = new Audio(`/audio/${musicTracks[musicIndex].file}`);
+const musicAudio = new Audio("/audio/path_to_lake_land.mp3");
 musicAudio.preload = "none";
+musicAudio.loop = true;
 
 let musicOn = localStorage.getItem("teacafe-music-on") !== "false";
-let musicVol = Number(localStorage.getItem("teacafe-music-vol") || 18);
+let musicMuted = localStorage.getItem("teacafe-music-muted") === "true";
+let musicVol = Math.max(0, Math.min(100, Number(localStorage.getItem("teacafe-music-vol") ?? 18) || 0));
 let audioUnlocked = false;
-
-function updateMusicTrackName() {
-  const label = $("#music-track-name");
-  if (label) label.textContent = `${musicIndex + 1} / ${musicTracks.length} · ${musicTracks[musicIndex].name}`;
-}
-function changeMusicTrack(index) {
-  musicAudio.pause();
-  musicIndex = (index + musicTracks.length) % musicTracks.length;
-  sessionStorage.setItem("teacafe-music-index", String(musicIndex));
-  sessionStorage.removeItem("teacafe-music-time");
-  resumeMusicTime = 0;
-  musicAudio.src = `/audio/${musicTracks[musicIndex].file}`;
-  updateMusicTrackName();
-  if (musicOn && audioUnlocked) startMusic();
-}
 musicAudio.addEventListener("loadedmetadata", () => {
   if (resumeMusicTime > 0 && resumeMusicTime < musicAudio.duration - 1) musicAudio.currentTime = resumeMusicTime;
   resumeMusicTime = 0;
 });
-musicAudio.addEventListener("ended", () => changeMusicTrack(musicIndex + 1));
 addEventListener("pagehide", () => {
   if (Number.isFinite(musicAudio.currentTime)) sessionStorage.setItem("teacafe-music-time", String(musicAudio.currentTime));
 });
 
 function startMusic() {
   musicAudio.volume = Math.max(0, Math.min(1, musicVol / 100));
+  musicAudio.muted = musicMuted;
   const promise = musicAudio.play();
   if (promise?.catch) promise.catch(() => {});
 }
@@ -194,7 +172,25 @@ document.addEventListener("keydown", (event) => {
 
 const musicSwitch = $("#music-switch");
 const musicVolume = $("#music-volume");
-updateMusicTrackName();
+const muteSwitch = $("#music-mute-switch");
+const topbarMute = $("[data-music-mute]");
+function renderMusicMute() {
+  musicAudio.muted = musicMuted;
+  if (muteSwitch) muteSwitch.textContent = musicMuted ? "已靜音" : "取消靜音";
+  if (topbarMute) {
+    topbarMute.classList.toggle("is-muted", musicMuted);
+    topbarMute.setAttribute("aria-label", musicMuted ? "取消靜音背景音樂" : "靜音背景音樂");
+    topbarMute.setAttribute("aria-pressed", String(musicMuted));
+  }
+}
+function toggleMusicMute() {
+  musicMuted = !musicMuted;
+  localStorage.setItem("teacafe-music-muted", String(musicMuted));
+  renderMusicMute();
+}
+renderMusicMute();
+topbarMute?.addEventListener("click", toggleMusicMute);
+muteSwitch?.addEventListener("click", toggleMusicMute);
 if (musicVolume) musicVolume.value = musicVol;
 if (musicSwitch) musicSwitch.textContent = musicOn ? "開啟" : "關閉";
 $("#music-value").textContent = musicVol + "%";
@@ -205,13 +201,19 @@ musicSwitch?.addEventListener("click", () => {
   musicSwitch.textContent = musicOn ? "開啟" : "關閉";
   if (musicOn && audioUnlocked) startMusic(); else stopMusic();
 });
-$("#music-prev")?.addEventListener("click", () => changeMusicTrack(musicIndex - 1));
-$("#music-next")?.addEventListener("click", () => changeMusicTrack(musicIndex + 1));
 musicVolume?.addEventListener("input", (event) => {
   musicVol = Number(event.target.value);
   $("#music-value").textContent = musicVol + "%";
   localStorage.setItem("teacafe-music-vol", String(musicVol));
   musicAudio.volume = musicVol / 100;
+});
+const introSwitch = $("#intro-switch");
+let introEnabled = localStorage.getItem("teacafe-intro-enabled") !== "false";
+if (introSwitch) introSwitch.textContent = introEnabled ? "開啟" : "關閉";
+introSwitch?.addEventListener("click", () => {
+  introEnabled = !introEnabled;
+  localStorage.setItem("teacafe-intro-enabled", String(introEnabled));
+  introSwitch.textContent = introEnabled ? "開啟" : "關閉";
 });
 $("#text-size-switch")?.addEventListener("click", () => {
   textScale = textScaleOptions[(textScaleOptions.indexOf(textScale) + 1) % textScaleOptions.length];
@@ -376,7 +378,7 @@ $$('.auth-required').forEach((button) => button.addEventListener("click", async 
   toast("目前尚未開放購買");
 }));
 
-// Hide only after an actual downward scroll. Opening a menu keeps the bar in view.
+// The navigation stays fixed after the opening reveal.
 const topbar = $(".topbar");
 if (topbar) {
   const showTopbar = () => {
@@ -392,54 +394,7 @@ if (topbar) {
     if (event.animationName === 'tea-nav-reveal') topbar.classList.remove('nav-revealing');
   });
   window.teaRevealTopbar = showTopbar;
-  const hideTopbar = () => {
-    if (topbar.querySelector('.nav-more[open]')) return;
-    topbar.classList.remove('nav-revealing');
-    topbar.classList.add('topbar-hidden');
-  };
-  let priorScroll = window.scrollY;
-  addEventListener('scroll', () => {
-    const difference = window.scrollY - priorScroll;
-    if (window.scrollY <= 8 || difference < -3) showTopbar();
-    else if (difference > 3 && window.scrollY > topbar.offsetHeight) hideTopbar();
-    priorScroll = window.scrollY;
-  }, {passive:true});
-  topbar.addEventListener('focusin', showTopbar);
-  topbar.querySelector('.nav-more')?.addEventListener('toggle', event => {
-    if (event.currentTarget.open) showTopbar();
-  });
 }
-
-// Give stepped mouse wheels a short eased push; keep touchpads, touch and nested scrollers native.
-let wheelTarget = window.scrollY;
-let wheelFrame = 0;
-addEventListener('scroll', () => { if (!wheelFrame) wheelTarget = window.scrollY; }, { passive: true });
-document.addEventListener('click', event => {
-  if (!event.target.closest('a[href]')) return;
-  cancelAnimationFrame(wheelFrame);
-  wheelFrame = 0;
-  wheelTarget = window.scrollY;
-}, { capture: true });
-document.addEventListener('wheel', event => {
-  if (event.ctrlKey || event.shiftKey || event.defaultPrevented ||
-      matchMedia('(prefers-reduced-motion: reduce)').matches ||
-      document.documentElement.dataset.motion === 'reduced' ||
-      document.querySelector('dialog[open]') ||
-      event.target.closest('.sidebar-links,.community-topics nav,.gallery-rail,.copy-block-list,[data-copy-input]')) return;
-  const stepped = event.deltaMode === WheelEvent.DOM_DELTA_LINE || (event.deltaMode === WheelEvent.DOM_DELTA_PIXEL && Math.abs(event.deltaY) >= 75);
-  if (!stepped || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
-  event.preventDefault();
-  const maxScroll = Math.max(0, document.documentElement.scrollHeight - innerHeight);
-  wheelTarget = Math.min(maxScroll, Math.max(0, wheelTarget + Math.sign(event.deltaY) * Math.min(Math.abs(event.deltaY) * (event.deltaMode ? 15 : 1), 420)));
-  if (wheelFrame) return;
-  const glide = () => {
-    const gap = wheelTarget - window.scrollY;
-    if (Math.abs(gap) < .7) { scrollTo({ top: wheelTarget, behavior: 'instant' }); wheelFrame = 0; return; }
-    scrollTo({ top: window.scrollY + gap * .23, behavior: 'instant' });
-    wheelFrame = requestAnimationFrame(glide);
-  };
-  wheelFrame = requestAnimationFrame(glide);
-}, { passive: false });
 
 // D1 is the primary content source. Static JSON stays as a setup preview.
 async function loadNews() {
@@ -535,7 +490,7 @@ if (search) search.addEventListener("input", (event) => {
   $$(".wiki-card").forEach((card) => {
     card.hidden = Boolean(query && !card.dataset.keywords.toLowerCase().includes(query) && !card.textContent.toLowerCase().includes(query));
   });
-  $$(".wiki-live-entry").forEach((entry) => { entry.hidden = Boolean(query && !entry.dataset.keywords.includes(query)); });
+  $$(".wiki-live-entry,.site-custom-section").forEach((entry) => { entry.hidden = Boolean(query && !entry.dataset.keywords.includes(query)); });
 });
 
 if (page === "wiki.html") {
@@ -602,5 +557,5 @@ if (ruleSections.length) {
 }
 
 const motionScript = document.createElement('script');
-motionScript.src = '/assets/js/motion.js?v=20261018-6';
+motionScript.src = '/assets/js/motion.js?v=20261019-2';
 document.body.append(motionScript);

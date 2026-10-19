@@ -113,7 +113,7 @@ try {
 const redirects = readFileSync(new URL('../dist/_redirects', import.meta.url), 'utf8');
 for (const route of ['admin', 'supporters', 'careers', 'market']) assert.ok(!redirects.includes(`/${route} /${route}.html 200`));
 const musicScript = readFileSync(new URL('../dist/assets/js/app.js', import.meta.url), 'utf8');
-const musicFiles = [...musicScript.matchAll(/\{ file: "([^"/]+\.mp3)", name: /g)].map(match => match[1]);
-assert.equal(musicFiles.length, 7);
-for (const name of musicFiles) assert.ok(statSync(new URL(`../dist/audio/${name}`, import.meta.url)).size > 100000);
+assert.ok(musicScript.includes('new Audio("/audio/path_to_lake_land.mp3")'));
+assert.ok(statSync(new URL('../dist/audio/path_to_lake_land.mp3', import.meta.url)).size > 100000);
+assert.ok(!musicScript.includes('musicTracks'));
 console.log('Page routing, sharing, uploads, search, content management, and session checks passed.');

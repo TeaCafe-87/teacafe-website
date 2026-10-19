@@ -14,6 +14,10 @@
 
 ## 資料契約
 
+### Wiki 與規則段落管理
+
+在既有 D1 遷移之後執行 `migrations/0007_site_sections.sql`。此遷移只新增 `site_copy_sections`，不更動舊欄位或內容。管理員可在 `/admin` 新增、編輯、排序及軟刪除 Wiki／規則段落。公開頁面讀取 `GET /api/site-sections?page=wiki|rules`；寫入使用 `POST /api/admin/site-sections`，每次都在伺服器驗證官方 Discord 身分及同源請求。新段落儲存後，已開啟的公開頁面會在重新取得焦點時更新。
+
 | 資料 | API | D1 表／來源 | 用途 |
 | --- | --- | --- | --- |
 | 伺服器線上狀態、玩家數、版本 | `GET /api/server/status` | 外部狀態服務，短暫快取 | 首頁即時資訊 |

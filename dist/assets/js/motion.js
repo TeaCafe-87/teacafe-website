@@ -2,6 +2,12 @@
   const root = document.documentElement;
   const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches || root.dataset.motion === 'reduced';
   const intro = document.querySelector('.site-intro');
+  const INTRO_VERSION = 'tea-cinematic-2026-10-v2';
+  const introSeen = localStorage.getItem('teacafe-intro-seen-version') === INTRO_VERSION;
+  const introEnabled = localStorage.getItem('teacafe-intro-enabled') !== 'false';
+  const playedThisSession = sessionStorage.getItem('teacafe-intro-session-version') === INTRO_VERSION;
+  const adminPage = document.body.classList.contains('moderation-page');
+  const playIntro = Boolean(intro && !adminPage && !reduceMotion() && (!introSeen || introEnabled && !playedThisSession));
   let introFinished = false;
   let navRevealed = false;
   const revealNav = () => {
@@ -11,25 +17,28 @@
     if (window.teaRevealTopbar) window.teaRevealTopbar();
     else document.querySelector('.topbar')?.classList.remove('topbar-hidden');
   };
-  const finishIntro = () => {
+  const finishIntro = (played = true) => {
     if (introFinished) return;
     introFinished = true;
+    if (played) {
+      localStorage.setItem('teacafe-intro-seen-version', INTRO_VERSION);
+      sessionStorage.setItem('teacafe-intro-session-version', INTRO_VERSION);
+    } else document.documentElement.dataset.introSkipped = 'true';
     intro?.remove();
     document.body.classList.remove('site-intro-pending');
     revealNav();
     startKinetic();
-    dispatchEvent(new Event('teacafe-intro-finished'));
+    window.teaIntroResult = { played };
+    dispatchEvent(new CustomEvent('teacafe-intro-finished', { detail: window.teaIntroResult }));
   };
-  if (intro && !reduceMotion()) {
+  if (playIntro) {
     document.body.classList.add('site-intro-pending');
     intro.addEventListener('animationend', (event) => {
-      if (event.target === intro && event.animationName === 'tea-intro-finish') finishIntro();
+      if (event.target === intro && event.animationName === 'tea-intro-finish') finishIntro(true);
     });
-    setTimeout(finishIntro, 5000);
+    setTimeout(() => finishIntro(true), 5000);
   } else {
-    intro?.remove();
-    revealNav();
-    queueMicrotask(() => dispatchEvent(new Event('teacafe-intro-finished')));
+    queueMicrotask(() => finishIntro(false));
   }
 
   const transition = document.createElement('div');
@@ -55,7 +64,7 @@
 
   // Only section titles use masked motion. Upward scrolling keeps them visible;
   // they reset only after leaving below the viewport, ready for the next descent.
-  const observer = !reduceMotion() && 'IntersectionObserver' in window
+  const observer = !adminPage && !reduceMotion() && 'IntersectionObserver' in window
     ? new IntersectionObserver((entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) entry.target.classList.add('kinetic-visible');
@@ -94,13 +103,27 @@
       }
     }).observe(main, { childList: true, subtree: true });
   }
-  if (!intro || reduceMotion()) startKinetic();
+  if (!playIntro) startKinetic();
+
+  // Small, once-only section entrances. Native scrolling remains untouched.
+  if (!adminPage && !reduceMotion() && 'IntersectionObserver' in window) {
+    const revealObserver = new IntersectionObserver(entries => {
+      for (const entry of entries) if (entry.isIntersecting) {
+        entry.target.classList.add('reveal-visible');
+        revealObserver.unobserve(entry.target);
+      }
+    }, { threshold: .08, rootMargin: '0px 0px 25px 0px' });
+    document.querySelectorAll('main :is(.server-info-card,.server-player-board,.wiki-faq,.rule-card,.career-card,.market-card)').forEach(element => {
+      element.classList.add('reveal-on-scroll');
+      revealObserver.observe(element);
+    });
+  }
 
   // Smooth in-page navigation remains available on the rules page, where its
   // original stylesheet disables CSS smooth scrolling to avoid scroll snapping.
   document.addEventListener('click', (event) => {
     const link = event.target.closest('a[href^="#"]');
-    if (!link || event.defaultPrevented || reduceMotion()) return;
+    if (!link || link.hasAttribute('data-home-more') || event.defaultPrevented || reduceMotion()) return;
     const id = decodeURIComponent(link.hash.slice(1));
     const target = id && document.getElementById(id);
     if (!target) return;
