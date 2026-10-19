@@ -9,7 +9,6 @@
   const leaf = hero.querySelector('[data-home-leaf]');
   const ripples = hero.querySelector('[data-home-ripples]');
   const more = hero.querySelector('[data-home-more]');
-  const tea = hero.querySelector('[data-home-tea]');
   const stage = transition.querySelector('[data-mask-stage]');
   const svg = transition.querySelector('[data-mask-svg]');
   const maskBase = svg.querySelector('[data-mask-base]');
@@ -112,7 +111,6 @@
   async function startCycle() {
     const token = ++generation;
     setState('TITLE_VISIBLE');
-    tea.classList.add('is-visible', 'is-steaming');
     await delay(3000);
     if (token === generation) await rollTitle(token);
   }
@@ -132,7 +130,6 @@
   }
   book.addEventListener('click', () => { if (reduced()) { title.style.clipPath = 'none'; return; } replay(); });
   function finalHero() {
-    tea.classList.add('is-visible', 'is-steaming');
     if (reduced()) title.style.clipPath = 'none';
     else { title.style.clipPath = 'inset(0 100% 0 0)'; showBook(); }
     revealMore();
@@ -159,8 +156,9 @@
   }
   function updateMask() {
     frame = 0;
-    const travel = Math.max(1, transition.offsetHeight - innerHeight);
-    const p = clamp((scrollY - transition.offsetTop) / travel);
+    // Begin the reveal while Section 02 is entering the viewport, so its
+    // letters are already visible when the new scene fills the screen.
+    const p = clamp((scrollY - (transition.offsetTop - innerHeight)) / Math.max(1, transition.offsetHeight));
     if (reduced()) {
       edge.style.opacity = '1'; svg.style.opacity = '1'; solid.style.opacity = '0';
       caption.style.opacity = '1'; return;
@@ -192,7 +190,7 @@
     if (!more.classList.contains('is-visible')) return;
     cancelAutoScroll();
     const travel = Math.max(1, transition.offsetHeight - innerHeight);
-    const target = transition.offsetTop + travel * .55;
+    const target = transition.offsetTop + travel * .2;
     if (reduced()) { scrollTo({ top: target, behavior: 'instant' }); return; }
     const start = scrollY, started = performance.now();
     autoAbort = new AbortController();

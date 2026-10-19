@@ -42,7 +42,7 @@ if (motionStyle) document.head.append(motionStyle);
 else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/motion.css?v=20261018-3">');
 const cinematicStyle = document.querySelector('link[href^="/assets/css/teacafe-cinematic.css"]');
 if (cinematicStyle) document.head.append(cinematicStyle);
-if (document.body.classList.contains('home-page')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/home-motion.css?v=20261019-2">');
+if (document.body.classList.contains('home-page')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/home-motion.css?v=20261019-3">');
 if (document.body.classList.contains('moderation-page')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/admin-copy.css?v=20261019-2">');
 const homeMotionStyle = document.querySelector('link[href^="/assets/css/home-motion.css"]');
 if (homeMotionStyle) document.head.append(homeMotionStyle);
