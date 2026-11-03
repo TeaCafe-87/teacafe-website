@@ -1,4 +1,4 @@
-import { json, userOrError, sameOrigin, findPublishedPost, authorFields } from '../../_lib/community.js';
+import { json, userOrError, sameOrigin, findPublishedPost, authorFields, isOfficialUser } from '../../_lib/community.js';
 
 export async function onRequestGet({ request, env }) {
   if (!env.DB) return json({ configured: false, comments: [] });
@@ -27,4 +27,20 @@ export async function onRequestPost({ request, env }) {
   const now = new Date().toISOString();
   await env.DB.prepare('INSERT INTO community_comments (id,post_id,body,author_id,author_username,author_name,author_avatar_url,created_at) VALUES (?,?,?,?,?,?,?,?)').bind(id, postId, body, ...authorFields(user), now).run();
   return json({ ok: true, comment: { id, post_id: postId, body, author_id: String(user.id), author_username: user.username, author_name: user.global_name || user.username, author_avatar_url: user.avatar_url, created_at: now } }, 201);
+}
+
+export async function onRequestDelete({ request, env }) {
+  if (!env.DB) return json({ error: 'database_not_configured' }, 503);
+  if (!sameOrigin(request)) return json({ error: 'invalid_origin' }, 403);
+  const user = await userOrError(request, env);
+  if (!user) return json({ error: 'authentication_required' }, 401);
+  let data;
+  try { data = await request.json(); } catch { return json({ error: 'invalid_json' }, 400); }
+  const id = String(data?.id || '');
+  if (!id) return json({ error: 'comment_required' }, 400);
+  const comment = await env.DB.prepare('SELECT id,post_id,author_id FROM community_comments WHERE id=? LIMIT 1').bind(id).first();
+  if (!comment) return json({ error: 'comment_not_found' }, 404);
+  if (comment.author_id !== String(user.id) && !isOfficialUser(user, env)) return json({ error: 'forbidden' }, 403);
+  await env.DB.prepare('DELETE FROM community_comments WHERE id=?').bind(id).run();
+  return json({ ok: true, post_id: comment.post_id });
 }

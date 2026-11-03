@@ -6,7 +6,7 @@
 
 1. 在 Cloudflare Pages 專案設定中，將 D1 綁定變數命名為 `DB`。
 2. 將 R2 bucket 綁定變數命名為 `GALLERY_MEDIA`。這個名稱沿用原有相冊設定，但同時儲存論壇媒體。
-3. 已有資料庫：在 Cloudflare D1 Studio 的 Query 頁面依序執行尚未套用的 `migrations/0004_admin.sql`、`migrations/0005_supporters.sql`，最後執行 `migrations/0006_site_copy.sql`。`0004` 會隱藏八篇舊的示範討論文，保留玩家貼文，並建立 `site_members`。新資料庫依序執行 `0001_community.sql`、`0002_content.sql`、`0004_admin.sql`、`0005_supporters.sql`、`0006_site_copy.sql`。舊的討論種子檔已移除。
+3. 已有資料庫：在 Cloudflare D1 Studio 的 Query 頁面依序執行尚未套用的 `migrations/0004_admin.sql`、`migrations/0005_supporters.sql`、`migrations/0006_site_copy.sql`、`migrations/0007_site_sections.sql`、`migrations/0008_community_reactions.sql`。`0004` 會隱藏八篇舊的示範討論文，保留玩家貼文，並建立 `site_members`。新資料庫依序執行 `0001_community.sql`、`0002_content.sql`、`0004_admin.sql` 至 `0008_community_reactions.sql`。舊的討論種子檔已移除。
 4. 在 Pages 設定中提供 `DISCORD_CLIENT_ID`、`DISCORD_CLIENT_SECRET`、`DISCORD_REDIRECT_URI`、`SESSION_SECRET`，並於 Discord Developer Portal 登記回呼網址。
 5. 重新部署 Pages。先開啟 `/api/community/posts?kind=forum`，確認回傳 `configured: true`；再以 Discord 登入測試投稿，管理員到 `/admin` 審核。
 
@@ -18,6 +18,12 @@
 
 在既有 D1 遷移之後執行 `migrations/0007_site_sections.sql`。此遷移只新增 `site_copy_sections`，不更動舊欄位或內容。管理員可在 `/admin` 新增、編輯、排序及軟刪除 Wiki／規則段落。公開頁面讀取 `GET /api/site-sections?page=wiki|rules`；寫入使用 `POST /api/admin/site-sections`，每次都在伺服器驗證官方 Discord 身分及同源請求。新段落儲存後，已開啟的公開頁面會在重新取得焦點時更新。
 
+### 發文驗證、留言刪除與表情回應
+
+在 `0007` 之後執行 `migrations/0008_community_reactions.sql`。這只新增 `community_reactions`，不更動舊貼文或留言。作者或官方管理員可刪除留言；表情回應每位登入者對每篇貼文、每種表情各可切換一次。
+
+發文前的人類驗證使用 Cloudflare Turnstile。到 Cloudflare Dashboard 建立 Turnstile widget，把 `teacafe.xyz` 與 `teacafe-website.pages.dev` 加入允許網域；在 Pages 的正式與預覽環境分別設定公開文字變數 `TURNSTILE_SITE_KEY` 和加密變數 `TURNSTILE_SECRET_KEY`，再重新部署。兩者都設定後，發文表單才顯示驗證，`POST /api/community/posts` 也會向 Cloudflare Siteverify 驗證一次性 token。未設定時舊發文流程照常運作，不能視為已啟用人類驗證。這裡採用 Cloudflare 的實際人類驗證，而不是只有六個輸入格、可被自動填入的展示型驗證碼。
+
 | 資料 | API | D1 表／來源 | 用途 |
 | --- | --- | --- | --- |
 | 伺服器線上狀態、玩家數、版本 | `GET /api/server/status` | 外部狀態服務，短暫快取 | 首頁即時資訊 |
@@ -26,8 +32,9 @@
 | 相冊／論壇貼文 | `GET/POST /api/community/posts` | `community_posts`、`community_media` | `kind=gallery` 或 `kind=forum`；每頁 20 篇，`next_cursor` 分頁 |
 | 審核 | `GET/POST /api/community/moderation` | `community_posts.status` | 管理員查看待審投稿、核准或退回 |
 | 媒體 | `GET /api/community/media/:id` | D1 索引、R2 物件 | 圖片、影片串流與 Range 請求 |
-| 留言 | `GET/POST /api/community/comments` | `community_comments` | 每篇貼文留言 |
+| 留言 | `GET/POST/DELETE /api/community/comments` | `community_comments` | 每篇貼文留言；刪除限作者與官方 |
 | 讚 | `POST /api/community/likes` | `community_likes` | 使用者每篇最多一個讚 |
+| 表情 | `GET/POST /api/community/reactions` | `community_reactions` | 每篇貼文的表情計數與本人反應 |
 | 分享 | `POST /api/community/shares` | `community_shares` | 記錄成功分享或複製連結 |
 | 公告 | `GET /api/news` | `news_items` | 網站公告；未連接 D1 時讀 `dist/data/news.json` |
 | Wiki 補充條目 | `GET /api/wiki/entries` | `wiki_entries` | Wiki 顯示已發布的補充條目 |
