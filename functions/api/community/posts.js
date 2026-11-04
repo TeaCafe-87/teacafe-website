@@ -1,4 +1,5 @@
 import { MAX_TOTAL_BYTES, MAX_MEDIA_FILES, MEDIA_TYPES, hasValidSignature, json, userOrError, sameOrigin, publicPost, authorFields, isOfficialUser } from '../../_lib/community.js';
+import { verifyTurnstile } from '../../_lib/turnstile.js';
 
 const select = `SELECT p.*, (SELECT COUNT(*) FROM community_likes l WHERE l.post_id=p.id) like_count,
   (SELECT COUNT(*) FROM community_comments c WHERE c.post_id=p.id) comment_count,
@@ -60,6 +61,7 @@ export async function onRequestPost({ request, env }) {
   if (declared > MAX_TOTAL_BYTES + 2 * 1024 * 1024) return json({ error: 'files_too_large', max_bytes: MAX_TOTAL_BYTES }, 413);
   let form;
   try { form = await request.formData(); } catch { return json({ error: 'invalid_form' }, 400); }
+  if (!await verifyTurnstile(request, env, form.get('cf-turnstile-response'))) return json({ error: 'human_verification_required' }, 403);
   const kind = String(form.get('kind') || '');
   if (!['gallery', 'forum'].includes(kind)) return json({ error: 'invalid_kind' }, 400);
   const title = String(form.get('title') || '').trim();

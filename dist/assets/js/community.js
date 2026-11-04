@@ -12,6 +12,7 @@
   const fileSummary = $('[data-community-file-summary]');
   const feedback = $('[data-community-feedback]');
   const authError = $('[data-community-auth-error]');
+  const verification = $('[data-community-verification]');
   const more = $('[data-community-more]');
   const MAX_BYTES = 20 * 1024 * 1024;
   const MAX_FILES = 30;
@@ -30,6 +31,35 @@
     return node;
   };
   const say = text => window.dispatchEvent(new CustomEvent('teacafe-toast',{detail:text}));
+  let turnstileSitekey = null, turnstileWidget = null, turnstileToken = '';
+  const verificationReady = fetch('/api/community/verification').then(response => response.json()).then(data => {
+    turnstileSitekey = data.sitekey || null;
+    if (turnstileSitekey && verification) verification.hidden = false;
+  }).catch(() => {});
+  async function showVerification() {
+    await verificationReady;
+    if (!turnstileSitekey || !verification || turnstileWidget !== null) return;
+    if (!window.turnstile) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.async = true;
+        script.onload = resolve; script.onerror = reject;
+        document.head.append(script);
+      }).catch(() => { feedback.textContent = '人類驗證暫時無法載入，請稍後重試。'; });
+    }
+    if (!window.turnstile) return;
+    turnstileWidget = window.turnstile.render(verification, {
+      sitekey: turnstileSitekey, theme: 'auto',
+      callback: token => { turnstileToken = token; },
+      'expired-callback': () => { turnstileToken = ''; },
+      'error-callback': () => { turnstileToken = ''; feedback.textContent = '驗證失敗，請重新整理驗證。'; return true; }
+    });
+  }
+  function resetVerification() {
+    turnstileToken = '';
+    if (turnstileWidget !== null) window.turnstile?.reset(turnstileWidget);
+  }
   const fmt = value => {
     if (!value) return '';
     const date = new Date(value);
@@ -100,24 +130,28 @@
     form.reset(); feedback.textContent=''; fileSummary.textContent=''; cleanupPreviews();
     if (kind === 'forum') form.elements.category.value = ['all','official'].includes(activeCategory) ? 'general' : activeCategory;
     dialog.showModal();
+    showVerification();
   });
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (!await auth(false)) { showLoginError(feedback); return; }
+    await verificationReady;
+    if (turnstileSitekey && !turnstileToken) { feedback.textContent = '請先完成人類驗證，再送出貼文。'; return; }
     if (!selectedFiles()) return;
     if (kind === 'gallery' && !fileInput.files.length) { feedback.textContent = '相冊貼文至少需要一張圖片或一段影片。'; return; }
     const submit = form.querySelector('[type="submit"]');
     submit.disabled = true; feedback.textContent='上傳中…';
     const data = new FormData(form);
     data.set('kind',kind);
+    if (turnstileSitekey) data.set('cf-turnstile-response', turnstileToken);
     try {
       const response = await fetch('/api/community/posts',{method:'POST',body:data});
       const result = await response.json().catch(() => ({}));
       if (response.status === 401) { showLoginError(feedback); return; }
-      if (!response.ok) throw new Error(result.error === 'too_many_files' ? `每篇最多可附上 ${MAX_FILES} 個檔案。` : response.status === 413 || result.error === 'files_too_large' ? '附件合計不得超過 20 MiB。' : result.error === 'post_rate_limited' ? '請稍等 30 秒再發文。' : result.error === 'moderation_not_configured' ? '官方尚未設定審核人員，暫時無法發文。' : result.error === 'unsupported_media_type' || result.error === 'invalid_media_content' ? '照片或影片格式不支援，請使用 JPG、PNG、WebP、GIF、MP4 或 WebM。' : '送出失敗，請稍後再試。');
+      if (!response.ok) throw new Error(result.error === 'human_verification_required' ? '人類驗證未通過或已過期，請重新驗證。' : result.error === 'too_many_files' ? `每篇最多可附上 ${MAX_FILES} 個檔案。` : response.status === 413 || result.error === 'files_too_large' ? '附件合計不得超過 20 MiB。' : result.error === 'post_rate_limited' ? '請稍等 30 秒再發文。' : result.error === 'moderation_not_configured' ? '官方尚未設定審核人員，暫時無法發文。' : result.error === 'unsupported_media_type' || result.error === 'invalid_media_content' ? '照片或影片格式不支援，請使用 JPG、PNG、WebP、GIF、MP4 或 WebM。' : '送出失敗，請稍後再試。');
       dialog.close(); form.reset(); await load(true); say(result.status === 'pending' ? '已送出審核，通過後會公開。' : '貼文已發布');
     } catch (error) { feedback.textContent=error.message; }
-    finally { submit.disabled=false; }
+    finally { submit.disabled=false; resetVerification(); }
   });
 
   const lightbox = el('dialog','community-lightbox');
@@ -170,7 +204,33 @@
         const row=el('div','post-comment');
         const name=el('strong','',comment.author_name||comment.author_username||'玩家');
         const body=el('span','',comment.body);
-        row.append(name,body); return row;
+        row.append(name,body);
+        const viewer=window.TeaCafeAuth?.getState();
+        if (viewer?.authenticated && (String(viewer.user?.id)===String(comment.author_id) || viewer.is_official)) {
+          const remove=el('button','comment-delete'); remove.type='button'; remove.setAttribute('aria-label','刪除留言');
+          remove.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path class="trash-lid" d="M4 6h16M9 4h6"/><path d="M6 7l1 13h10l1-13M10 10v7m4-7v7"/></svg><span>刪除</span>';
+          remove.addEventListener('click',()=>{
+            if (row.querySelector('.comment-delete-confirm')) return;
+            const confirm=el('span','comment-delete-confirm');
+            const prompt=el('span','','確定刪除？');
+            const yes=el('button','','刪除'); yes.type='button';
+            const no=el('button','','取消'); no.type='button';
+            no.addEventListener('click',()=>confirm.remove());
+            yes.addEventListener('click',async()=>{
+              yes.disabled=true;
+              try {
+                const response=await fetch('/api/community/comments',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:comment.id})});
+                if(!response.ok)throw new Error();
+                await commentsFor(post,host);
+                host.closest('.community-post')?.querySelector('[aria-label="留言"]')?.replaceChildren(document.createTextNode(`▤ ${post.comment_count}`));
+                say('留言已刪除');
+              } catch { yes.disabled=false; say('刪除失敗，請稍後再試'); }
+            });
+            confirm.append(prompt,yes,no); row.append(confirm); yes.focus();
+          });
+          row.append(remove);
+        }
+        return row;
       }));
       if (!comments.length) host.append(el('p','post-comment-empty','還沒有留言，來當第一位吧。'));
       post.comment_count=comments.length;
@@ -197,6 +257,35 @@
     const comment=el('button','post-action',`▤ ${Number(post.comment_count)||0}`); comment.type='button'; comment.setAttribute('aria-label','留言');
     const share=el('button','post-action',`↗ 分享`); share.type='button';
     actions.append(like,comment,share); article.append(actions);
+    if (configured && !post.demo) {
+      const reactionBar=el('div','post-reactions'); reactionBar.setAttribute('aria-label','貼文表情反應');
+      const emojis=['🍵','❤️','👏','🔥','😂'];
+      const buttons=new Map();
+      const paint=(counts={},mine=[])=>{
+        for(const emoji of emojis){const button=buttons.get(emoji);button.textContent=`${emoji} ${Number(counts[emoji]||0)}`;button.setAttribute('aria-pressed',mine.includes(emoji)?'true':'false');}
+      };
+      for(const emoji of emojis){
+        const button=el('button','post-reaction',emoji);button.type='button';button.setAttribute('aria-label',`以 ${emoji} 回應`);button.setAttribute('aria-pressed','false');
+        buttons.set(emoji,button);reactionBar.append(button);
+        button.addEventListener('click',async()=>{
+          if(!await auth())return;
+          button.disabled=true;
+          try {
+            const response=await fetch('/api/community/reactions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({postId:post.id,emoji})});
+            if(!response.ok)throw new Error();
+            const result=await response.json();
+            const mine=emojis.filter(item=>buttons.get(item).getAttribute('aria-pressed')==='true');
+            if(result.selected&&!mine.includes(emoji))mine.push(emoji);
+            else if(!result.selected&&mine.includes(emoji))mine.splice(mine.indexOf(emoji),1);
+            paint(result.counts,mine);
+            button.classList.remove('is-popping'); void button.offsetWidth; button.classList.add('is-popping');
+          } catch { say('表情回應暫時無法使用'); }
+          finally { button.disabled=false; }
+        });
+      }
+      article.append(reactionBar);
+      fetch(`/api/community/reactions?post=${encodeURIComponent(post.id)}`).then(response=>{if(!response.ok)throw new Error();return response.json()}).then(result=>paint(result.counts,result.mine)).catch(()=>{reactionBar.hidden=true});
+    }
     const commentArea=el('div','post-comments'); commentArea.hidden=true;
     const commentList=el('div','post-comment-list');
     const commentForm=el('form','post-comment-form');
