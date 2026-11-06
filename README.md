@@ -18,7 +18,7 @@ TeaCafe Minecraft Server 的官方網站專案。
 
 相冊與論壇使用相同的貼文格式，每篇最多可附 30 個圖片或影片，合計上限 20 MiB，並支援按讚、留言及分享。資料寫入需要 Pages 綁定 `DB`（D1）與 `GALLERY_MEDIA`（R2），以及 Discord OAuth 環境變數；在綁定之前畫面會顯示清楚的空狀態。
 
-背景音樂使用 `dist/audio/` 中的七首 MP3，於網站設定中可開關、調整音量及切換曲目。瀏覽器需要先收到一次點擊或按鍵，才會開始播放音樂。首頁目前使用輕微動畫背景；若未來有正式影片素材，再加入影片來源。推送或提出 PR 時，`.github/workflows/check.yml` 會執行 JavaScript 語法與整合測試。
+背景音樂使用 `dist/audio/` 中的七首 MP3，於網站設定中可開關、調整音量及切換曲目。瀏覽器需要先收到一次點擊或按鍵，才會開始播放音樂。首頁使用 8 秒循環背景影片，播放進度隨整頁滾動同步，提供桌面與手機直式素材。素材重建與預覽方式見 [首頁影片說明](docs/home-scene.md)。推送或提出 PR 時，`.github/workflows/check.yml` 會執行 JavaScript 語法與整合測試。
 
 <br>
 
