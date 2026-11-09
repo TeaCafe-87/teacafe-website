@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {onRequestGet} from '../functions/api/news.js';
+const original=globalThis.fetch;
+globalThis.fetch=async url=>Response.json(url.includes('/messages')?[{id:'1',type:0,content:'測試公告',timestamp:'2026-11-10T00:00:00Z'}]:{guild_id:'123'});
+const result=await (await onRequestGet({env:{DISCORD_BOT_TOKEN:'test'}})).json();
+assert.equal(result.source,'discord');assert.equal(result.items.length,2);assert.ok(result.items[0].discord_url.includes('/123/'));assert.ok(result.items.some(x=>x.title.includes('更新公告')));
+globalThis.fetch=async()=>{throw new Error('offline')};
+assert.equal((await (await onRequestGet({env:{DISCORD_BOT_TOKEN:'test'}})).json()).configured,false);
+globalThis.fetch=original;
+console.log('Discord two-channel mapping and offline fallback passed');

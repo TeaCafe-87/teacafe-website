@@ -42,7 +42,7 @@ if (motionStyle) document.head.append(motionStyle);
 else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/motion.css?v=20261018-3">');
 const cinematicStyle = document.querySelector('link[href^="/assets/css/teacafe-cinematic.css"]');
 if (cinematicStyle) document.head.append(cinematicStyle);
-if (document.body.classList.contains('home-page')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/home-motion.css?v=20261104-1">');
+if (document.body.classList.contains('home-page') && !document.querySelector('link[href^="/assets/css/home-motion.css"]')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/home-motion.css?v=20261107-2">');
 if (document.body.classList.contains('moderation-page')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/admin-copy.css?v=20261019-2">');
 const homeMotionStyle = document.querySelector('link[href^="/assets/css/home-motion.css"]');
 if (homeMotionStyle) document.head.append(homeMotionStyle);
@@ -62,7 +62,6 @@ document.body.insertAdjacentHTML("beforeend", `
   <section class="mc-settings-panel" id="sound-panel">
     <h3>背景音樂</h3>
     <div class="mc-settings-row"><div><b>背景音樂</b><small>Path to Lake Land</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="music-switch">開啟</button><span></span><input id="music-volume" type="range" min="0" max="100" value="18"><span class="mc-settings-value" id="music-value">18%</span></div>
-    <div class="mc-settings-row compact"><div><b>靜音</b><small>也可使用上方音樂圖示</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="music-mute-switch">取消靜音</button></div>
     <button type="button" class="mc-menu-button wide" data-settings-back>完成</button>
   </section>
   <section class="mc-settings-panel" id="interface-panel">
@@ -559,3 +558,5 @@ if (ruleSections.length) {
 const motionScript = document.createElement('script');
 motionScript.src = '/assets/js/motion.js?v=20261019-2';
 document.body.append(motionScript);
+
+const uxScript=document.createElement("script");uxScript.src="/assets/js/site-ux.js?v=20261110";document.body.append(uxScript);

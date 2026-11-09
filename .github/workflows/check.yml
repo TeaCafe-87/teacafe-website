@@ -20,3 +20,4 @@ jobs:
           node tests/site-integration.mjs
           node tests/community-moderation.mjs
           node tests/site-regressions.mjs
+          node tests/home-scene.mjs
