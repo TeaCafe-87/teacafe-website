@@ -49,7 +49,7 @@
 
   // Let native links handle new tabs, downloads, external sites, hashes and OAuth.
   document.addEventListener('click', (event) => {
-    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || reduceMotion() || localStorage.getItem('teacafe-intro-enabled') === 'false') return;
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || reduceMotion()) return;
     const link = event.target.closest('a[href]');
     if (!link || link.hasAttribute('download') || link.target && link.target !== '_self') return;
     const url = new URL(link.href, location.href);
@@ -57,7 +57,6 @@
     if (url.pathname === location.pathname && url.search === location.search) return;
     if (document.body.classList.contains('is-page-leaving')) { event.preventDefault(); return; }
     event.preventDefault();
-    sessionStorage.setItem('tea-navigation-count', String(Number(sessionStorage.getItem('tea-navigation-count') || 0)+1));
     document.body.classList.add('is-page-leaving');
     setTimeout(() => location.assign(url.href), 540);
   });
