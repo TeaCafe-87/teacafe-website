@@ -60,9 +60,3 @@ Discord Developer Portal 中的 Redirect URI 與 Pages 正式環境變數 `DISCO
 ## 公開內容與安全
 
 上傳的伺服器封存檔只作 Wiki 依據，不會放入網站或 Git 儲存庫。該封存檔包含日誌、使用者資料、資料庫及可能的連線資訊。`wiki_entries` 與 `news_items` 只應放可公開文字；API 僅傳回 `status='published'`。玩家提供的文字以純文字節點呈現，避免 HTML 注入；媒體拒絕 SVG、HTML 等格式。上線前應將 Discord、R2、D1 綁定及正式網域分別在正式與預覽環境核對。
-
-## Discord 公告同步
-
-Pages 設定加密 DISCORD_BOT_TOKEN。內建頻道：伺服器公告 1515749237353086976、更新公告 1534847072639909888。Bot 需能查看這兩個頻道、讀取歷史訊息，並在 Developer Portal 開啟 Message Content Intent。只從 Discord 讀取，不回寫訊息。伺服器 ID 會從頻道資料取得，也可設定 DISCORD_GUILD_ID。
-
-兩個頻道各讀取最新 20 則，按時間合併並快取 60 秒，首頁顯示最新 3 則。訊息編輯、刪除會在下一次快取更新時反映。Discord 失敗時回退 D1 公告。圖片和附件透過「在 Discord 閱讀」查看。無需 D1 遷移。
