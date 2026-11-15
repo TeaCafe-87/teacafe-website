@@ -28,7 +28,7 @@
           <a href="#members"><span>已載入成員</span><strong data-admin-members>—</strong><small>搜尋登入者與文章</small></a>
           <a href="#supporters"><span>感謝支持</span><strong data-admin-supporters>—</strong><small>管理公開名單</small></a>
         </div>
-        <nav class="admin-sections" aria-label="後台區域"><a href="#review">文章審核</a><a href="#official">官方發文</a><a href="#members">網站成員</a><a href="#supporters">感謝支持名單</a><a href="#site-copy-editor">Wiki／規則編輯</a><a href="#content">網站內容</a></nav>
+        <nav class="admin-sections" aria-label="後台區域"><a href="#review">文章審核</a><a href="#featured">首頁精選牆</a><a href="#switches">功能開關</a><a href="#official">官方發文</a><a href="#members">網站成員</a><a href="#supporters">感謝支持名單</a><a href="#site-copy-editor">Wiki／規則編輯</a><a href="#content">網站內容</a></nav>
         <section class="moderation-compose" id="official"><h2>官方發文</h2><p>官方貼文會顯示在論壇的「官方公告」，發布後直接公開。</p>
           <form data-official-form class="moderation-form">
             <label>標題<input name="title" maxlength="100" required></label>
@@ -76,6 +76,26 @@
             </div>
           </section>
         </section>
+        <section class="admin-decided" id="decided"><div class="admin-section-head"><h2>最近處理的投稿</h2><button class="mc-button" data-decided-refresh type="button">重新整理</button></div>
+          <p>最近核准或退回的玩家貼文都在這裡，按錯了可以直接反悔。</p>
+          <p data-decided-status role="status">讀取中…</p>
+          <div data-decided-list class="admin-feature-switches"></div>
+        </section>
+        <section class="admin-featured-manager" id="featured"><div class="admin-section-head"><h2>首頁精選牆</h2><button class="mc-button" data-featured-refresh type="button">重新整理</button></div>
+          <p>挑選玩家相冊中的照片，顯示在首頁「精選時刻」照片牆。排列順序就是牆上的順序，最多 60 張。</p>
+          <p data-featured-status role="status">讀取中…</p>
+          <div data-featured-list class="admin-featured-grid"></div>
+          <details class="admin-featured-pick" data-featured-pick-details><summary>＋ 從相冊挑選照片</summary>
+            <p data-featured-pick-status role="status"></p>
+            <div data-featured-pick class="admin-featured-grid"></div>
+            <button class="mc-button" data-featured-pick-more type="button" hidden>載入更多</button>
+          </details>
+        </section>
+        <section class="admin-switches" id="switches"><div class="admin-section-head"><h2>功能開關</h2></div>
+          <p>暫停的區塊會在網站顯示「暫停開放中」，玩家也無法發文或留言；官方帳號與管理後台不受影響。備註會顯示在暫停頁面上。</p>
+          <p data-switches-status role="status">讀取中…</p>
+          <div data-switches class="admin-feature-switches"></div>
+        </section>
         <section class="admin-content" id="content" aria-label="網站內容管理">
           <h2>網站內容</h2><p>公告和 Wiki 條目可先存草稿，確認後再公開；通行證同時只會有一個啟用中的季節。</p>
           <div class="admin-content-grid">
@@ -116,5 +136,6 @@
   <script defer src="/assets/js/site-copy-core.js?v=1"></script>
   <script defer src="/assets/js/admin-site-copy.js?v=1"></script>
   <script defer src="/assets/js/admin-site-sections.js?v=20261019-2"></script>
+  <script defer src="/assets/js/admin-featured.js?v=20261115"></script>
 </body>
 </html>

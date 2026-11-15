@@ -1,4 +1,5 @@
 import { json, userOrError, sameOrigin, findPublishedPost, authorFields, isOfficialUser } from '../../_lib/community.js';
+import { featureEnabled } from '../site-features.js';
 
 export async function onRequestGet({ request, env }) {
   if (!env.DB) return json({ configured: false, comments: [] });
@@ -21,6 +22,10 @@ export async function onRequestPost({ request, env }) {
   const body = String(data.body || '').trim();
   if (!body || body.length > 1000) return json({ error: 'invalid_comment' }, 400);
   if (!await findPublishedPost(env, postId)) return json({ error: 'post_not_found' }, 404);
+  const target = await env.DB.prepare('SELECT kind FROM community_posts WHERE id = ?').bind(postId).first();
+  if (target && ['forum', 'gallery'].includes(target.kind) && !isOfficialUser(user, env) && !await featureEnabled(env, target.kind)) {
+    return json({ error: 'feature_paused' }, 503);
+  }
   const recent = await env.DB.prepare('SELECT id FROM community_comments WHERE author_id=? AND created_at > ? LIMIT 1').bind(String(user.id), new Date(Date.now() - 3000).toISOString()).first();
   if (recent) return json({ error: 'comment_rate_limited' }, 429);
   const id = crypto.randomUUID();

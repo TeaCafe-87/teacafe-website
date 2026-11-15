@@ -6,7 +6,7 @@
 
 1. 在 Cloudflare Pages 專案設定中，將 D1 綁定變數命名為 `DB`。
 2. 將 R2 bucket 綁定變數命名為 `GALLERY_MEDIA`。這個名稱沿用原有相冊設定，但同時儲存論壇媒體。
-3. 已有資料庫：在 Cloudflare D1 Studio 的 Query 頁面依序執行尚未套用的 `migrations/0004_admin.sql`、`migrations/0005_supporters.sql`、`migrations/0006_site_copy.sql`、`migrations/0007_site_sections.sql`、`migrations/0008_community_reactions.sql`。`0004` 會隱藏八篇舊的示範討論文，保留玩家貼文，並建立 `site_members`。新資料庫依序執行 `0001_community.sql`、`0002_content.sql`、`0004_admin.sql` 至 `0008_community_reactions.sql`。舊的討論種子檔已移除。
+3. 已有資料庫：在 Cloudflare D1 Studio 的 Query 頁面依序執行尚未套用的 `migrations/0004_admin.sql`、`migrations/0005_supporters.sql`、`migrations/0006_site_copy.sql`、`migrations/0007_site_sections.sql`、`migrations/0008_community_reactions.sql`、`migrations/0009_featured_and_flags.sql`。`0004` 會隱藏八篇舊的示範討論文，保留玩家貼文，並建立 `site_members`；`0009` 建立首頁精選牆 `featured_photos` 與功能開關 `site_features`，不動舊資料。新資料庫依序執行 `0001_community.sql`、`0002_content.sql`、`0004_admin.sql` 至 `0009_featured_and_flags.sql`。舊的討論種子檔已移除。
 4. 在 Pages 設定中提供 `DISCORD_CLIENT_ID`、`DISCORD_CLIENT_SECRET`、`DISCORD_REDIRECT_URI`、`SESSION_SECRET`，並於 Discord Developer Portal 登記回呼網址。
 5. 重新部署 Pages。先開啟 `/api/community/posts?kind=forum`，確認回傳 `configured: true`；再以 Discord 登入測試投稿，管理員到 `/admin` 審核。
 
@@ -17,6 +17,20 @@
 ### Wiki 與規則段落管理
 
 在既有 D1 遷移之後執行 `migrations/0007_site_sections.sql`。此遷移只新增 `site_copy_sections`，不更動舊欄位或內容。管理員可在 `/admin` 新增、編輯、排序及軟刪除 Wiki／規則段落。公開頁面讀取 `GET /api/site-sections?page=wiki|rules`；寫入使用 `POST /api/admin/site-sections`，每次都在伺服器驗證官方 Discord 身分及同源請求。新段落儲存後，已開啟的公開頁面會在重新取得焦點時更新。
+
+### 首頁精選牆與功能開關
+
+在 `0008` 之後執行 `migrations/0009_featured_and_flags.sql`。管理員在 `/admin` 的「首頁精選牆」從已公開的相冊貼文挑照片（`POST /api/admin/featured`，動作 `add`／`remove`／`move`／`label`），首頁經 `GET /api/featured` 讀取；來源貼文被退回或刪除時，照片自動從牆上消失。「功能開關」（`POST /api/admin/features`）可暫停論壇、相冊、Wiki、月映茶行與首頁精選牆：公開頁面經 `GET /api/site-features` 顯示暫停說明，同時 `POST /api/community/posts` 與留言 API 會在伺服器端拒絕一般玩家寫入（官方帳號不受限）。未執行 `0009` 時一切視為開放，網站照常運作。
+
+#### 玩家照片上傳的完整接線清單
+
+照片上傳走「玩家在相冊發文 → 管理員審核 → 管理員挑進精選牆」。要讓這條路通，Cloudflare 上需要一次性完成：
+
+1. **D1**：Workers & Pages → D1 → 建立（或沿用）`teacafe-db`，在 Pages 專案 Settings → Bindings 加入 D1 綁定，變數名稱必須是 `DB`；依上方清單執行 migrations。
+2. **R2**：R2 → 建立 bucket（例如 `teacafe-gallery`），在 Pages Bindings 加入 R2 綁定，變數名稱必須是 `GALLERY_MEDIA`。bucket 不需開公開存取，媒體一律經 `/api/community/media/:id` 供應。
+3. **Discord OAuth 與 Session**：環境變數 `DISCORD_CLIENT_ID`、`DISCORD_CLIENT_SECRET`、`DISCORD_REDIRECT_URI`（`https://teacafe.xyz/api/auth/callback`）、`SESSION_SECRET`（長隨機字串）。
+4. **Turnstile**（建議）：`TURNSTILE_SITE_KEY`、`TURNSTILE_SECRET_KEY`，擋機器人投稿。
+5. 重新部署後驗收：`/api/community/posts?kind=gallery` 回 `configured: true`；登入後在相冊發文附圖；`/admin` 待審清單出現並可核准；核准後到「首頁精選牆」加入照片；首頁重新整理出現「精選時刻」。
 
 ### 發文驗證、留言刪除與表情回應
 

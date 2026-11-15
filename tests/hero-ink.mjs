@@ -11,7 +11,7 @@ assert.match(html, /<canvas[^>]*data-ink-canvas[^>]*aria-hidden="true"/);
 assert.match(html, /data-copy="SERVER_IP"/);
 assert.ok(html.includes('/assets/js/hero-ink.js') && html.includes('/assets/css/home-ink.css'));
 for (const gone of ['site-intro', 'home-scene-video', 'home-scene.js', 'home-motion.css']) assert.ok(!html.includes(gone), `index.html must not reference ${gone}`);
-assert.ok(app.includes("!document.body.classList.contains('ink-home')"), 'app.js must not inject the old video-scene stylesheet on the ink home');
+assert.ok(!app.includes('home-motion.css'), 'app.js must not reference the removed video-scene stylesheet');
 
 // Layering: black headline (1) < canvas (2) < other UI (3); canvas never intercepts input.
 const z = (sel) => Number(new RegExp(`${sel}[^}]*z-index:\\s*(\\d+)`).exec(css)?.[1]);

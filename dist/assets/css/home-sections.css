@@ -155,3 +155,42 @@ body.ink-home .news-list .notice-row .mc-button:hover { background: var(--h-ink)
   body.ink-home .news-list .notice-row .mc-button { justify-self: start; }
   body.ink-home .section-head-row { align-items: start; }
 }
+
+/* ---------- Featured wall: tilted 3-column waterfall of admin-picked photos ---------- */
+body.ink-home .home-featured { padding-bottom: 0; overflow: hidden; }
+.featured-stage { perspective: 1000px; margin-top: clamp(8px, 2vw, 24px); }
+.featured-push { animation: feat-push 18s ease-in-out infinite alternate; }
+.featured-wall {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 clamp(12px, 1.6vw, 22px);
+  height: clamp(400px, 56vh, 620px); overflow: hidden;
+  width: min(1240px, calc(100% - 2 * var(--h-gutter))); margin-inline: auto;
+  transform: rotateX(16deg) scale(1.07); transform-origin: 50% 50%;
+  -webkit-mask-image: linear-gradient(transparent, #000 160px, #000 calc(100% - 160px), transparent);
+  mask-image: linear-gradient(transparent, #000 160px, #000 calc(100% - 160px), transparent);
+}
+.feat-col { display: block; will-change: transform; animation: feat-scroll var(--feat-dur, 24s) linear infinite; }
+.feat-col.rev { animation-direction: reverse; }
+.feat-item { display: block; position: relative; margin-bottom: clamp(12px, 1.6vw, 22px); border-radius: 14px; overflow: hidden; background: var(--h-surface-2); border: 1px solid var(--h-line); }
+.feat-item img { display: block; width: 100%; aspect-ratio: var(--feat-ratio, 4 / 3); object-fit: cover; }
+.feat-item figcaption {
+  position: absolute; inset: auto 0 0 0; padding: 26px 14px 11px; color: #fff; font: 700 13.5px/1.4 "Noto Sans TC", system-ui, sans-serif;
+  background: linear-gradient(transparent, rgb(0 0 0 / 72%)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+@keyframes feat-scroll { to { transform: translateY(-50%); } }
+@keyframes feat-push { from { transform: scale(1); } to { transform: scale(1.04); } }
+/* Few photos: a calm static strip instead of the wall. */
+.featured-wall.feat-static { height: auto; transform: none; mask-image: none; -webkit-mask-image: none; overflow: visible; padding-bottom: clamp(48px, 6vw, 80px); }
+.featured-wall.feat-static .feat-col { animation: none; }
+@media (max-width: 760px) {
+  .featured-wall { grid-template-columns: repeat(2, minmax(0, 1fr)); height: clamp(360px, 52vh, 520px); }
+  .featured-wall .feat-col:nth-child(3) { display: none; }
+  .featured-wall.feat-static { grid-template-columns: 1fr 1fr; }
+  .featured-wall.feat-static .feat-col:nth-child(3) { display: block; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .featured-push, .feat-col { animation: none !important; }
+  .featured-wall { transform: none; height: auto; mask-image: none; -webkit-mask-image: none; padding-bottom: clamp(48px, 6vw, 80px); }
+  .feat-col > a[aria-hidden="true"], .feat-col > .feat-copy { display: none; }
+}
+html[data-motion='reduced'] .featured-push, html[data-motion='reduced'] .feat-col { animation: none !important; }
+html[data-motion='reduced'] .featured-wall { transform: none; height: auto; mask-image: none; -webkit-mask-image: none; padding-bottom: clamp(48px, 6vw, 80px); }

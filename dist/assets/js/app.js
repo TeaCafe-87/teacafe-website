@@ -42,39 +42,36 @@ if (motionStyle) document.head.append(motionStyle);
 else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/motion.css?v=20261018-3">');
 const cinematicStyle = document.querySelector('link[href^="/assets/css/teacafe-cinematic.css"]');
 if (cinematicStyle) document.head.append(cinematicStyle);
-if (document.body.classList.contains('home-page') && !document.body.classList.contains('ink-home') && !document.querySelector('link[href^="/assets/css/home-motion.css"]')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/home-motion.css?v=20261107-2">');
 if (document.body.classList.contains('moderation-page')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/admin-copy.css?v=20261019-2">');
-const homeMotionStyle = document.querySelector('link[href^="/assets/css/home-motion.css"]');
-if (homeMotionStyle) document.head.append(homeMotionStyle);
 const adminCopyStyle = document.querySelector('link[href^="/assets/css/admin-copy.css"]');
 if (adminCopyStyle) document.head.append(adminCopyStyle);
 const homeInkStyle = document.querySelector('link[href^="/assets/css/home-ink.css"]');
 if (homeInkStyle) document.head.append(homeInkStyle);
+document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-ui.css?v=20261115">');
 document.body.insertAdjacentHTML("beforeend", `
 <div class="toast" id="toast" role="status"></div>
-<dialog id="settings"><form method="dialog"><div class="mc-menu-screen">
-  <h2 class="mc-menu-title">遊戲選單</h2>
-  <div class="mc-menu-grid">
-    <button type="button" class="mc-menu-button wide green" data-settings-resume>返回網站</button>
-    <button type="button" class="mc-menu-button" data-settings-sound>背景音樂</button>
-    <button type="button" class="mc-menu-button" data-settings-interface>介面設定</button>
-    <button type="button" class="mc-menu-button" data-settings-discord>Discord 登入</button>
-    <button type="button" class="mc-menu-button" data-settings-home>回到首頁</button>
+<dialog id="settings" class="prm" aria-label="網站設定"><form method="dialog" class="prm-sheet">
+  <header class="prm-head"><h2>設定</h2><button class="prm-x" value="close" aria-label="關閉設定" type="submit">×</button></header>
+  <div class="prm-body">
+  <section class="prm-group" aria-labelledby="prm-audio-h">
+    <h3 id="prm-audio-h">音訊</h3>
+    <div class="prm-row"><div class="prm-text"><b>背景音樂</b><small>Path to Lake Land</small></div><button type="button" class="prm-switch" id="music-switch" role="switch" aria-checked="true" aria-label="背景音樂"><span class="prm-knob"></span></button></div>
+    <div class="prm-row prm-col"><div class="prm-text"><b>音量</b><small><span id="music-value">18</span>%</small></div><div class="prm-volume" data-volume-bars></div></div>
+    <div class="prm-row"><div class="prm-text"><b>靜音</b><small>也可用右上角的喇叭圖示</small></div><button type="button" class="prm-switch" id="music-mute-switch" role="switch" aria-checked="false" aria-label="靜音"><span class="prm-knob"></span></button></div>
+  </section>
+  <section class="prm-group" aria-labelledby="prm-ui-h">
+    <h3 id="prm-ui-h">介面</h3>
+    <div class="prm-row"><div class="prm-text"><b>文字大小</b><small>標題與內文按比例調整</small></div><div class="prm-seg" id="text-size-seg" role="group" aria-label="文字大小"></div></div>
+    <div class="prm-row"><div class="prm-text"><b>文字樣式</b></div><div class="prm-seg" id="font-style-seg" role="group" aria-label="文字樣式"></div></div>
+    <div class="prm-row"><div class="prm-text"><b>頁面開場動畫</b><small>新版本首次造訪仍會播放一次</small></div><button type="button" class="prm-switch" id="intro-switch" role="switch" aria-checked="true" aria-label="頁面開場動畫"><span class="prm-knob"></span></button></div>
+  </section>
+  <section class="prm-group" aria-labelledby="prm-acct-h">
+    <h3 id="prm-acct-h">帳號</h3>
+    <div class="prm-row"><div class="prm-text"><b>Discord</b><small data-settings-auth>未登入</small></div><button type="button" class="prm-btn" data-settings-discord>登入</button></div>
+  </section>
+  <nav class="prm-foot"><a class="prm-link" href="/">回到首頁</a><button value="close" class="prm-btn prm-btn-dark" type="submit">完成</button></nav>
   </div>
-  <section class="mc-settings-panel" id="sound-panel">
-    <h3>背景音樂</h3>
-    <div class="mc-settings-row"><div><b>背景音樂</b><small>Path to Lake Land</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="music-switch">開啟</button><span></span><input id="music-volume" type="range" min="0" max="100" value="18"><span class="mc-settings-value" id="music-value">18%</span></div>
-    <div class="mc-settings-row compact"><div><b>靜音</b><small>也可使用上方音樂圖示</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="music-mute-switch">取消靜音</button></div>
-    <button type="button" class="mc-menu-button wide" data-settings-back>完成</button>
-  </section>
-  <section class="mc-settings-panel" id="interface-panel">
-    <h3>介面設定</h3>
-    <div class="mc-settings-row compact"><div><b>文字大小</b><small>標題與內文按比例調整</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="text-size-switch">標準</button></div>
-    <div class="mc-settings-row compact"><div><b>文字樣式</b><small>網站文字的顯示方式</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="font-style-switch">一般文字</button></div>
-    <div class="mc-settings-row compact"><div><b>播放開場動畫</b><small>新版本首次造訪仍會播放一次</small></div><button type="button" class="mc-menu-button mc-settings-toggle" id="intro-switch">開啟</button></div>
-    <button type="button" class="mc-menu-button wide" data-settings-back>完成</button>
-  </section>
-</div></form></dialog>
+</form></dialog>
 <dialog id="auth" class="auth-dialog"><form method="dialog"><button class="dialog-close">×</button><div id="auth-content"></div></form></dialog>`);
 
 const toast = (message) => {
@@ -135,10 +132,8 @@ let pixelText = localStorage.getItem("teacafe-font-style") === "pixel";
 function applyInterfaceSettings() {
   document.documentElement.dataset.textSize = textScale;
   document.documentElement.dataset.fontStyle = pixelText ? "pixel" : "normal";
-  const textButton = $("#text-size-switch");
-  const fontButton = $("#font-style-switch");
-  if (textButton) textButton.textContent = textScale === "normal" ? "標準" : `${textScale}%`;
-  if (fontButton) fontButton.textContent = pixelText ? "像素風文字" : "一般文字";
+  $$('#text-size-seg [data-value]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.value === textScale)));
+  $$('#font-style-seg [data-value]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.value === (pixelText ? "pixel" : "normal"))));
 }
 applyInterfaceSettings();
 
@@ -146,39 +141,181 @@ const settings = $("#settings");
 const auth = $("#auth");
 $("[data-settings]")?.addEventListener("click", () => settings.showModal());
 $$('[data-mobile]').forEach((button) => button.addEventListener("click", () => $(".topnav")?.classList.toggle("mobile-open")));
-const closeSettingPanels = () => {
-  $$('.mc-settings-panel').forEach((panel) => panel.classList.remove('open'));
-  $$('[data-settings-sound],[data-settings-interface]').forEach((button) => button.setAttribute('aria-expanded', 'false'));
-};
-const toggleSettingPanel = (selector, button) => {
-  const panel = $(selector);
-  const opening = !panel?.classList.contains('open');
-  closeSettingPanels();
-  if (opening) { panel.classList.add('open'); button.setAttribute('aria-expanded', 'true'); }
-};
-$('[data-settings-resume]')?.addEventListener('click', () => settings.close());
-$('[data-settings-sound]')?.addEventListener('click', (event) => toggleSettingPanel('#sound-panel', event.currentTarget));
-$('[data-settings-interface]')?.addEventListener('click', (event) => toggleSettingPanel('#interface-panel', event.currentTarget));
-$$('[data-settings-back]').forEach((button) => button.addEventListener('click', closeSettingPanels));
-$('[data-settings-home]')?.addEventListener('click', () => location.href = '/');
+settings?.addEventListener('click', (event) => { if (event.target === settings) settings.close(); });
 
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
   const openDialog = [...document.querySelectorAll('dialog[open]')].at(-1);
   if (openDialog && openDialog !== settings && openDialog !== auth) return;
   event.preventDefault();
-  if (settings.open) { closeSettingPanels(); settings.close(); return; }
+  if (settings.open) { settings.close(); return; }
   if (auth?.open) { auth.close(); return; }
   settings.showModal();
 }, { capture: true });
 
+// Volume bars: a fixed centre indicator with rolling digits over a row of bars
+// that slides beneath it. Bars rise into a gentle peak around the indicator.
+window.TeaVolumeBars = function (host, { min = 0, max = 100, value = 0, step = 5, onInput } = {}) {
+  const BAR_GAP = 7;                       // px between bar centres
+  const BAR_COUNT = 81;                    // odd, so one bar sits exactly under the pin
+  const SPAN = (BAR_COUNT - 1) * BAR_GAP;  // px length of the whole scale
+  const unitsPerPx = (max - min) / SPAN;
+  const clampValue = (v) => Math.min(max, Math.max(min, v));
+  const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.dataset.motion === "reduced";
+
+  host.classList.add("vol");
+  host.tabIndex = 0;
+  host.setAttribute("role", "slider");
+  host.setAttribute("aria-label", "音量");
+  host.setAttribute("aria-valuemin", String(min));
+  host.setAttribute("aria-valuemax", String(max));
+  host.setAttribute("aria-orientation", "horizontal");
+  const track = document.createElement("div");
+  track.className = "vol-track";
+  const bars = [];
+  for (let i = 0; i < BAR_COUNT; i++) {
+    const bar = document.createElement("span");
+    bar.className = "vol-bar";
+    track.append(bar);
+    bars.push(bar);
+  }
+  const pin = document.createElement("div");
+  pin.className = "vol-pin";
+  const pill = document.createElement("div");
+  pill.className = "vol-pill";
+  const reels = [];
+  for (let d = 0; d < 3; d++) {
+    const digit = document.createElement("span");
+    digit.className = "vol-digit";
+    const reel = document.createElement("span");
+    reel.className = "vol-reel";
+    for (let n = 0; n < 10; n++) {
+      const glyph = document.createElement("i");
+      glyph.textContent = String(n);
+      reel.append(glyph);
+    }
+    digit.append(reel);
+    pill.append(digit);
+    reels.push({ digit, reel });
+  }
+  const stem = document.createElement("span");
+  stem.className = "vol-stem";
+  pin.append(pill, stem);
+  host.append(track, pin);
+
+  let current = clampValue(Number(value) || 0);
+  let shown = -1;
+  let raf = 0, tweenRaf = 0, idleTimer = 0;
+
+  function paintDigits() {
+    const rounded = Math.round(current);
+    if (rounded === shown) return;
+    shown = rounded;
+    const text = String(rounded).padStart(2, "0");
+    const offset = 3 - text.length;
+    reels.forEach(({ digit, reel }, index) => {
+      const char = text[index - offset];
+      digit.classList.toggle("off", char === undefined);
+      if (char !== undefined) reel.style.transform = `translateY(-${Number(char)}em)`;
+    });
+    host.setAttribute("aria-valuenow", String(rounded));
+    host.setAttribute("aria-valuetext", rounded + "%");
+  }
+  function paint() {
+    raf = 0;
+    const centre = host.clientWidth / 2;
+    const offset = centre - ((current - min) / (max - min)) * SPAN;
+    track.style.transform = `translateX(${offset.toFixed(2)}px)`;
+    for (let i = 0; i < BAR_COUNT; i++) {
+      const dx = offset + i * BAR_GAP - centre;
+      const peak = Math.exp(-(dx * dx) / (2 * 90 * 90));
+      bars[i].style.height = (8 + 26 * peak).toFixed(1) + "px";
+      bars[i].style.opacity = (0.3 + 0.7 * Math.exp(-(dx * dx) / (2 * 170 * 170))).toFixed(2);
+    }
+    paintDigits();
+  }
+  const queuePaint = () => { if (!raf) raf = requestAnimationFrame(paint); };
+
+  function setValue(next, { animate = false, notify = true } = {}) {
+    next = clampValue(next);
+    cancelAnimationFrame(tweenRaf);
+    const finish = () => { if (notify && onInput) onInput(Math.round(current)); };
+    if (!animate || reduced()) { current = next; queuePaint(); finish(); return; }
+    const from = current, t0 = performance.now(), duration = 320;
+    const frame = (now) => {
+      const k = Math.min(1, (now - t0) / duration);
+      current = from + (next - from) * (1 - Math.pow(1 - k, 3));
+      paint();
+      if (k < 1) tweenRaf = requestAnimationFrame(frame);
+      else finish();
+    };
+    tweenRaf = requestAnimationFrame(frame);
+  }
+
+  // The pin expands while adjusting and settles back into a short centre bar.
+  function expand() {
+    clearTimeout(idleTimer);
+    host.classList.add("vol-live");
+  }
+  function scheduleCollapse() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => host.classList.remove("vol-live"), 1100);
+  }
+
+  let dragId = null, startX = 0, startVal = 0, moved = false;
+  host.addEventListener("pointerdown", (event) => {
+    dragId = event.pointerId;
+    try { host.setPointerCapture(dragId); } catch {}
+    startX = event.clientX;
+    startVal = current;
+    moved = false;
+    expand();
+    event.preventDefault();
+  });
+  host.addEventListener("pointermove", (event) => {
+    if (dragId !== event.pointerId) return;
+    const dx = event.clientX - startX;
+    if (Math.abs(dx) > 3) moved = true;
+    if (moved) setValue(startVal - dx * unitsPerPx);
+  });
+  const endDrag = (event) => {
+    if (dragId !== event.pointerId) return;
+    try { host.releasePointerCapture(dragId); } catch {}
+    dragId = null;
+    if (!moved) {
+      const rect = host.getBoundingClientRect();
+      const fromCentre = event.clientX - (rect.left + rect.width / 2);
+      setValue(startVal + fromCentre * unitsPerPx, { animate: true });
+    }
+    scheduleCollapse();
+  };
+  host.addEventListener("pointerup", endDrag);
+  host.addEventListener("pointercancel", endDrag);
+  host.addEventListener("keydown", (event) => {
+    const moves = { ArrowRight: step, ArrowUp: step, ArrowLeft: -step, ArrowDown: -step, PageUp: step * 2, PageDown: -step * 2 };
+    let next = null;
+    if (event.key in moves) next = Math.round(current) + moves[event.key];
+    else if (event.key === "Home") next = min;
+    else if (event.key === "End") next = max;
+    if (next === null) return;
+    event.preventDefault();
+    expand();
+    setValue(next, { animate: true });
+    scheduleCollapse();
+  });
+  host.addEventListener("blur", () => host.classList.remove("vol-live"));
+  if (typeof ResizeObserver === "function") new ResizeObserver(queuePaint).observe(host);
+  paint();
+  return { set: (v) => setValue(v, { notify: false }), get: () => Math.round(current) };
+};
+
 const musicSwitch = $("#music-switch");
-const musicVolume = $("#music-volume");
 const muteSwitch = $("#music-mute-switch");
 const topbarMute = $("[data-music-mute]");
+const setSwitch = (el, on) => el && el.setAttribute("aria-checked", String(Boolean(on)));
 function renderMusicMute() {
   musicAudio.muted = musicMuted;
-  if (muteSwitch) muteSwitch.textContent = musicMuted ? "已靜音" : "取消靜音";
+  setSwitch(muteSwitch, musicMuted);
   if (topbarMute) {
     topbarMute.classList.toggle("is-muted", musicMuted);
     topbarMute.setAttribute("aria-label", musicMuted ? "取消靜音背景音樂" : "靜音背景音樂");
@@ -193,40 +330,53 @@ function toggleMusicMute() {
 renderMusicMute();
 topbarMute?.addEventListener("click", toggleMusicMute);
 muteSwitch?.addEventListener("click", toggleMusicMute);
-if (musicVolume) musicVolume.value = musicVol;
-if (musicSwitch) musicSwitch.textContent = musicOn ? "開啟" : "關閉";
-$("#music-value").textContent = musicVol + "%";
-
+setSwitch(musicSwitch, musicOn);
 musicSwitch?.addEventListener("click", () => {
   musicOn = !musicOn;
   localStorage.setItem("teacafe-music-on", String(musicOn));
-  musicSwitch.textContent = musicOn ? "開啟" : "關閉";
+  setSwitch(musicSwitch, musicOn);
   if (musicOn && audioUnlocked) startMusic(); else stopMusic();
 });
-musicVolume?.addEventListener("input", (event) => {
-  musicVol = Number(event.target.value);
-  $("#music-value").textContent = musicVol + "%";
-  localStorage.setItem("teacafe-music-vol", String(musicVol));
-  musicAudio.volume = musicVol / 100;
+const musicValueOut = $("#music-value");
+if (musicValueOut) musicValueOut.textContent = String(musicVol);
+const volumeHost = $("[data-volume-bars]");
+if (volumeHost && window.TeaVolumeBars) window.TeaVolumeBars(volumeHost, {
+  value: musicVol,
+  onInput: (value) => {
+    musicVol = value;
+    if (musicValueOut) musicValueOut.textContent = String(value);
+    localStorage.setItem("teacafe-music-vol", String(value));
+    musicAudio.volume = value / 100;
+  }
 });
 const introSwitch = $("#intro-switch");
 let introEnabled = localStorage.getItem("teacafe-intro-enabled") !== "false";
-if (introSwitch) introSwitch.textContent = introEnabled ? "開啟" : "關閉";
+setSwitch(introSwitch, introEnabled);
 introSwitch?.addEventListener("click", () => {
   introEnabled = !introEnabled;
   localStorage.setItem("teacafe-intro-enabled", String(introEnabled));
-  introSwitch.textContent = introEnabled ? "開啟" : "關閉";
+  setSwitch(introSwitch, introEnabled);
 });
-$("#text-size-switch")?.addEventListener("click", () => {
-  textScale = textScaleOptions[(textScaleOptions.indexOf(textScale) + 1) % textScaleOptions.length];
-  localStorage.setItem("teacafe-text-size", textScale);
-  applyInterfaceSettings();
+function buildSegment(host, options, setter) {
+  if (!host) return;
+  host.replaceChildren(...options.map(([value, label]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.value = value;
+    button.textContent = label;
+    button.addEventListener("click", () => { setter(value); applyInterfaceSettings(); });
+    return button;
+  }));
+}
+buildSegment($("#text-size-seg"), [["normal", "標準"], ["125", "125%"], ["150", "150%"], ["200", "200%"]], (value) => {
+  textScale = value;
+  localStorage.setItem("teacafe-text-size", value);
 });
-$("#font-style-switch")?.addEventListener("click", () => {
-  pixelText = !pixelText;
-  localStorage.setItem("teacafe-font-style", pixelText ? "pixel" : "normal");
-  applyInterfaceSettings();
+buildSegment($("#font-style-seg"), [["normal", "一般"], ["pixel", "像素"]], (value) => {
+  pixelText = value === "pixel";
+  localStorage.setItem("teacafe-font-style", value);
 });
+applyInterfaceSettings();
 
 $$('[data-copy]').forEach((button) => button.addEventListener("click", async () => {
   const value = button.dataset.copy === "SERVER_IP" ? "mc.teacafe.xyz" : button.dataset.copy;
@@ -283,18 +433,44 @@ async function loadServerStatus() {
 loadServerStatus();
 
 const TEACAFE_STARTED_AT = Date.parse("2026-08-07T00:00:00+08:00");
-function updateServerUptime() {
-  const el = $("[data-server-uptime]");
-  if (!el) return;
-  const total = Math.max(0, Math.floor((Date.now() - TEACAFE_STARTED_AT) / 1000));
+const uptimeEl = $("[data-server-uptime]");
+const uptimeSeconds = () => Math.max(0, Math.floor((Date.now() - TEACAFE_STARTED_AT) / 1000));
+function renderUptime(total) {
   const days = Math.floor(total / 86400);
   const hours = Math.floor(total % 86400 / 3600);
   const minutes = Math.floor(total % 3600 / 60);
   const seconds = total % 60;
-  el.textContent = `${days}天 ${String(hours).padStart(2, "0")}小時 ${String(minutes).padStart(2, "0")}分鐘 ${String(seconds).padStart(2, "0")}秒`;
+  uptimeEl.textContent = `${days}天 ${String(hours).padStart(2, "0")}小時 ${String(minutes).padStart(2, "0")}分鐘 ${String(seconds).padStart(2, "0")}秒`;
 }
-updateServerUptime();
-setInterval(updateServerUptime, 1000);
+if (uptimeEl) {
+  // First paint counts up from a random earlier day to the real elapsed time, then ticks live.
+  const tick = () => renderUptime(uptimeSeconds());
+  let uptimeStarted = false;
+  const beginUptime = () => {
+    if (uptimeStarted) return;
+    uptimeStarted = true;
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.dataset.motion === "reduced";
+    if (reduce) { tick(); setInterval(tick, 1000); return; }
+    const from = Math.floor(uptimeSeconds() * (0.2 + Math.random() * 0.5));
+    const started = performance.now();
+    const duration = 2400;
+    const frame = (now) => {
+      const k = Math.min(1, (now - started) / duration);
+      const eased = 1 - Math.pow(1 - k, 4);
+      renderUptime(Math.floor(from + (uptimeSeconds() - from) * eased));
+      if (k < 1) requestAnimationFrame(frame);
+      else setInterval(tick, 1000);
+    };
+    requestAnimationFrame(frame);
+  };
+  renderUptime(0);
+  if ("IntersectionObserver" in window) {
+    const uptimeWatch = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) { uptimeWatch.disconnect(); beginUptime(); }
+    }, { threshold: 0.4 });
+    uptimeWatch.observe(uptimeEl);
+  } else beginUptime();
+}
 
 let authState = { authenticated: false };
 const authName = (user) => user?.global_name || user?.username || "Discord 使用者";
@@ -371,6 +547,18 @@ async function openAuth(event) {
 }
 // Shared read-only auth state for front-end components.
 window.TeaCafeAuth = { ready: authReady, open: openAuth, getState: () => authState };
+authReady.then(() => {
+  const stateOut = $("[data-settings-auth]");
+  const authButton = $("[data-settings-discord]");
+  if (!stateOut) return;
+  if (authState.authenticated) {
+    stateOut.textContent = `已登入：${authName(authState.user)}`;
+    if (authButton) authButton.textContent = "帳號資訊";
+  } else {
+    stateOut.textContent = "未登入";
+    if (authButton) authButton.textContent = "登入";
+  }
+});
 window.addEventListener('teacafe-toast', (event) => toast(String(event.detail || '')));
 $('[data-settings-discord]')?.addEventListener('click', (event) => { settings.close(); openAuth(event); });
 $$('.auth-required').forEach((button) => button.addEventListener("click", async (event) => {

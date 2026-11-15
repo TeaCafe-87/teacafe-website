@@ -33,6 +33,66 @@
     }
   }
 
+  /* ---- Featured wall: admin-picked photos in a tilted 3-column waterfall ---- */
+  (async () => {
+    const section = document.querySelector('[data-featured-section]');
+    const wall = document.querySelector('[data-featured-wall]');
+    if (!section || !wall) return;
+    let data = null;
+    try {
+      const response = await fetch('/api/featured', { headers: { Accept: 'application/json' } });
+      if (!response.ok) return;
+      data = await response.json();
+    } catch { return; }
+    if (!data?.configured || data.enabled === false) return;
+    const items = (Array.isArray(data.items) ? data.items : [])
+      .filter((item) => typeof item?.url === 'string' && item.url.startsWith(MEDIA_PREFIX));
+    if (!items.length) return;
+
+    const tileFor = (item, index) => {
+      const link = document.createElement('a');
+      link.className = 'feat-item';
+      link.href = `/gallery.html?post=${encodeURIComponent(item.post_id)}`;
+      link.style.setProperty('--feat-ratio', ['4 / 3', '1 / 1', '4 / 5'][index % 3]);
+      link.tabIndex = -1;
+      const image = document.createElement('img');
+      image.src = item.url;
+      image.alt = item.label || '精選照片';
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      link.append(image);
+      if (item.label) {
+        const caption = document.createElement('figcaption');
+        caption.textContent = item.label;
+        link.append(caption);
+      }
+      return link;
+    };
+
+    const columns = [[], [], []];
+    items.forEach((item, index) => columns[index % 3].push(item));
+    const still = reduced() || items.length < 6;
+    wall.classList.toggle('feat-static', still);
+    // Differential speeds and a reversed middle column give the wall its parallax read.
+    const durations = [26, 19, 30];
+    wall.replaceChildren(...columns.map((columnItems, columnIndex) => {
+      const column = document.createElement('div');
+      column.className = 'feat-col' + (columnIndex === 1 && !still ? ' rev' : '');
+      column.style.setProperty('--feat-dur', `${durations[columnIndex] + columnItems.length}s`);
+      columnItems.forEach((item, index) => column.append(tileFor(item, columnIndex + index)));
+      if (!still) {
+        // Second, aria-hidden copy of the column makes the -50% translate loop seamless.
+        const copy = document.createElement('div');
+        copy.className = 'feat-copy';
+        copy.setAttribute('aria-hidden', 'true');
+        columnItems.forEach((item, index) => copy.append(tileFor(item, columnIndex + index)));
+        column.append(copy);
+      }
+      return column;
+    }));
+    section.hidden = false;
+  })();
+
   /* ---- Gallery preview (live, from the same API the gallery page uses) ---- */
   const host = document.querySelector('[data-home-gallery]');
   if (!host) return;

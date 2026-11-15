@@ -1,0 +1,119 @@
+/* Site-wide premium UI: settings dialog, volume bars, paused-feature notice, admin featured manager.
+   Loaded last by app.js so it wins over the legacy #settings rules in styles.css. */
+
+/* ---------- Settings dialog ---------- */
+dialog#settings.prm {
+  width: min(520px, calc(100vw - 32px)); max-width: none; height: auto; max-height: min(86vh, 720px);
+  margin: auto; padding: 0; border: 1px solid #e8e8e8; border-radius: 22px;
+  background: #fff; color: #111; box-shadow: 0 30px 80px rgb(0 0 0 / 22%);
+  overflow: hidden;
+}
+dialog#settings.prm::backdrop { background: rgb(17 17 17 / 42%); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+#settings.prm .prm-sheet { display: flex; flex-direction: column; min-height: 0; max-height: inherit; padding: 0; margin: 0; background: none; }
+#settings.prm .prm-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px 16px; border-bottom: 1px solid #ededed; flex: none;
+}
+#settings.prm .prm-head h2 { margin: 0; font: 800 19px/1 "Noto Sans TC", system-ui, sans-serif; letter-spacing: .01em; color: #111; text-shadow: none; }
+#settings.prm .prm-x {
+  width: 34px; height: 34px; border: 1px solid #e4e4e4; border-radius: 999px; background: #fff; color: #111;
+  font: 400 18px/1 system-ui; cursor: pointer; display: grid; place-items: center; padding: 0; box-shadow: none; text-shadow: none;
+}
+#settings.prm .prm-x:hover { background: #111; color: #fff; border-color: #111; }
+#settings.prm .prm-body { overflow-y: auto; padding: 4px 24px 20px; }
+#settings.prm .prm-group { padding: 14px 0 6px; border-bottom: 1px solid #f0f0f0; }
+#settings.prm .prm-group:last-of-type { border-bottom: 0; }
+#settings.prm .prm-group h3 { margin: 0 0 4px; font: 700 12px/1 system-ui, sans-serif; letter-spacing: .18em; text-transform: uppercase; color: #9a9a9a; text-shadow: none; }
+#settings.prm .prm-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 13px 0; }
+#settings.prm .prm-row.prm-col { flex-direction: column; align-items: stretch; gap: 4px; }
+#settings.prm .prm-text b { display: block; font: 600 15px/1.4 "Noto Sans TC", system-ui, sans-serif; color: #111; text-shadow: none; }
+#settings.prm .prm-text small { display: block; margin-top: 2px; font-size: 12.5px; color: #8b8b8b; font-family: "Noto Sans TC", system-ui, sans-serif; }
+#settings.prm .prm-foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 0 2px; }
+#settings.prm .prm-link { font: 600 14px/1 "Noto Sans TC", system-ui, sans-serif; color: #666; text-decoration: none; }
+#settings.prm .prm-link:hover { color: #111; text-decoration: underline; text-underline-offset: 4px; }
+
+.prm-switch {
+  flex: none; width: 46px; height: 26px; border-radius: 999px; border: 1px solid #d9d9d9; background: #e4e4e4;
+  position: relative; cursor: pointer; padding: 0; transition: background .22s ease, border-color .22s ease; box-shadow: none; text-shadow: none;
+}
+.prm-switch .prm-knob {
+  position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 999px; background: #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 25%); transition: transform .22s cubic-bezier(.3, .7, .2, 1.2);
+}
+.prm-switch[aria-checked="true"] { background: #111; border-color: #111; }
+.prm-switch[aria-checked="true"] .prm-knob { transform: translateX(20px); }
+.prm-switch:focus-visible, .prm-seg button:focus-visible, .prm-btn:focus-visible, #settings.prm .prm-x:focus-visible { outline: 2px solid #111; outline-offset: 3px; }
+
+.prm-seg { display: inline-flex; border: 1px solid #e0e0e0; border-radius: 999px; padding: 3px; gap: 2px; background: #f6f6f6; }
+.prm-seg button {
+  border: 0; background: transparent; color: #666; border-radius: 999px; padding: 7px 13px; cursor: pointer;
+  font: 600 13px/1 "Noto Sans TC", system-ui, sans-serif; transition: background .18s ease, color .18s ease; box-shadow: none; text-shadow: none;
+}
+.prm-seg button:hover { color: #111; }
+.prm-seg button[aria-pressed="true"] { background: #111; color: #fff; }
+
+.prm-btn {
+  border: 1.5px solid #111; border-radius: 999px; background: #fff; color: #111; cursor: pointer;
+  min-height: 38px; padding: 0 18px; font: 700 14px/1 "Noto Sans TC", system-ui, sans-serif;
+  transition: background .18s ease, color .18s ease; box-shadow: none; text-shadow: none;
+}
+.prm-btn:hover { background: #111; color: #fff; }
+.prm-btn-dark { background: #111; color: #fff; }
+.prm-btn-dark:hover { background: #333; border-color: #333; }
+
+/* ---------- Volume bars ---------- */
+.vol {
+  position: relative; height: 84px; border-radius: 14px; overflow: hidden; cursor: ew-resize;
+  touch-action: none; user-select: none; -webkit-user-select: none; background: #fff;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+.vol:focus-visible { outline: 2px solid #111; outline-offset: -2px; }
+.vol-track { position: absolute; top: 50%; left: 0; translate: 0 -50%; display: flex; align-items: center; gap: 4px; will-change: transform; }
+.vol-bar { flex: none; width: 3px; height: 8px; border-radius: 3px; background: #cfcfcf; }
+.vol-pin { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; pointer-events: none; }
+.vol-pill {
+  display: flex; align-items: center; justify-content: center; background: #0d0d0d; color: #fff; border-radius: 999px;
+  padding: 5px 11px; font: 700 13px/1 ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums;
+  box-shadow: 0 5px 14px rgb(0 0 0 / 28%); transform-origin: 50% 100%;
+  transition: opacity .3s ease, transform .3s cubic-bezier(.3, .7, .2, 1.1);
+}
+.vol-digit { display: inline-block; height: 1em; overflow: hidden; width: 1ch; transition: width .2s ease; }
+.vol-digit.off { width: 0; }
+.vol-reel { display: block; transition: transform .26s cubic-bezier(.3, .7, .2, 1); }
+.vol-reel i { display: block; height: 1em; line-height: 1; font-style: normal; text-align: center; }
+.vol-stem { width: 3px; border-radius: 3px; background: #0d0d0d; height: 34px; box-shadow: 0 2px 8px rgb(0 0 0 / 20%); transition: height .32s cubic-bezier(.3, .7, .2, 1); }
+.vol:not(.vol-live) .vol-pill { opacity: 0; transform: translateY(8px) scale(.4); }
+.vol.vol-live .vol-stem { height: 52px; }
+
+/* ---------- Paused feature notice ---------- */
+.feature-paused-notice { display: grid; place-items: center; min-height: 52vh; padding: 60px 20px; }
+.feature-paused-card {
+  max-width: 460px; text-align: center; background: #fff; color: #111; border: 1px solid #e8e8e8;
+  border-radius: 22px; padding: 44px 36px; box-shadow: 0 24px 60px rgb(0 0 0 / 12%);
+}
+.feature-paused-card .fp-mark { display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 999px; border: 1.5px solid #111; font-size: 22px; margin-bottom: 18px; }
+.feature-paused-card h2 { margin: 0 0 10px; font: 800 24px/1.3 "Noto Sans TC", system-ui, sans-serif; color: #111; text-shadow: none; }
+.feature-paused-card p { margin: 0 0 22px; color: #666; line-height: 1.8; font-size: 15px; }
+.feature-paused-card a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 22px; border-radius: 999px; background: #111; color: #fff; text-decoration: none; font-weight: 700; font-size: 14px; }
+
+/* ---------- Admin: featured wall manager & feature switches ---------- */
+.admin-featured-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
+.admin-featured-card { position: relative; border: 1px solid #4b5049; background: #20251f; border-radius: 10px; overflow: hidden; }
+.admin-featured-card img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.admin-featured-card figcaption { padding: 8px 10px; font-size: 12.5px; color: #cfd6cc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-featured-card .af-actions { display: flex; gap: 5px; padding: 0 8px 9px; flex-wrap: wrap; }
+.admin-featured-card .af-actions button { font-size: 12px; padding: 5px 9px; min-height: 0; }
+.admin-featured-card.af-broken { outline: 2px solid #e18474; }
+.admin-featured-pick summary { cursor: pointer; font-weight: 700; margin: 16px 0 6px; }
+.admin-feature-switches { display: grid; gap: 10px; margin-top: 14px; }
+.admin-feature-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #4b5049; border-radius: 10px; background: #20251f; }
+.admin-feature-row b { min-width: 120px; }
+.admin-feature-row input { flex: 1 1 220px; min-width: 0; padding: 8px 10px; }
+.admin-feature-row .prm-switch { border-color: #666; background: #555; }
+.admin-feature-row .prm-switch[aria-checked="true"] { background: #74a957; border-color: #74a957; }
+
+@media (prefers-reduced-motion: reduce) {
+  .prm-switch, .prm-switch .prm-knob, .prm-seg button, .prm-btn,
+  .vol-pill, .vol-reel, .vol-stem, .vol-digit { transition: none !important; }
+}

@@ -234,14 +234,6 @@ body.is-page-leaving .page-transition { transform: translate3d(0,0,0); }
 .page-transition-seal-text { font: 400 clamp(31px, 3.4vw, 46px)/1 "Noto Serif TC", "Songti TC", "PMingLiU", serif; }
 html[data-font-style="pixel"] .page-transition-seal-text { font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif !important; }
 
-/* Temporary full-screen hero screenshot (index.png). Keep the existing shade
- * and copy/image layers; only the home hero's backdrop is replaced. */
-.home-page .home-hero-fallback {
-  background: linear-gradient(90deg, rgba(5, 10, 9, .43), rgba(5, 10, 9, .18)),
-              url('/image/index.png') center center / cover no-repeat !important;
-  background-position: center center !important;
-  animation: none !important;
-}
 .home-page .home-hero-shade {
   background: linear-gradient(180deg, rgba(0,0,0,.11), rgba(0,0,0,.04) 50%, rgba(0,0,0,.51)) !important;
 }
