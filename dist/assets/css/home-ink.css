@@ -1,13 +1,31 @@
-/* Home: white page, giant black headline, liquid-ink hero (see assets/js/hero-ink.js). */
-html:has(body.ink-home) { scroll-snap-type: none; }
-body.ink-home { background: #fff; color: #0b0b0b; }
-body.ink-home .topbar.topbar-hidden { transform: none; }
+/* Home base: white page, giant black headline, liquid-ink hero (see assets/js/hero-ink.js).
+   Shared tokens, shell and buttons for every home section live here; the sections
+   themselves are in home-sections.css. */
+html:has(body.ink-home) { scroll-snap-type: none; scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html:has(body.ink-home) { scroll-behavior: auto; } }
 
+body.ink-home {
+  --h-ink: #0b0b0b;
+  --h-body: #413c33;
+  --h-muted: #6b6558;
+  --h-line: #e7e2d6;
+  --h-surface: #faf8f3;
+  --h-surface-2: #f3efe5;
+  --h-accent: #6b2cff;
+  --h-green: #2f7a3d;
+  --h-radius: 18px;
+  --h-gutter: clamp(16px, 5vw, 72px);
+  background: #fff; color: var(--h-ink);
+}
+body.ink-home .topbar.topbar-hidden { transform: none; }
+body.ink-home .shell { box-sizing: border-box; width: 100%; max-width: 1240px; margin-inline: auto; padding-inline: var(--h-gutter); }
+
+/* ---------- Hero ---------- */
 .ink-hero {
   position: relative; isolation: isolate; overflow: hidden;
   min-height: 100vh; min-height: 100svh;
   display: grid; place-items: center;
-  padding: calc(92px + env(safe-area-inset-top, 0px)) clamp(16px, 4vw, 64px) clamp(48px, 9svh, 96px);
+  padding: calc(92px + env(safe-area-inset-top, 0px)) clamp(16px, 4vw, 64px) clamp(64px, 11svh, 120px);
   background: #fff; color: #000;
 }
 .ink-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 2; pointer-events: none; }
@@ -21,9 +39,20 @@ body.ink-home .ink-title {
 }
 .ink-kicker, .ink-sub, .ink-actions { position: relative; z-index: 3; margin: 0; }
 .ink-kicker { font: 700 clamp(11px, 1.3vw, 14px) / 1.4 system-ui, sans-serif; letter-spacing: clamp(.12em, .6vw, .3em); text-transform: uppercase; color: #111; }
-.ink-sub { max-width: 34em; font-size: clamp(16px, 1.7vw, 22px); line-height: 1.6; font-weight: 500; color: #1d1d1d; }
+.ink-sub { max-width: 34em; font-size: clamp(16px, 1.7vw, 21px); line-height: 1.65; font-weight: 500; color: #1d1d1d; }
 .ink-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: clamp(4px, 1.5svh, 14px); }
 
+.ink-scroll-cue {
+  position: absolute; z-index: 3; left: 50%; translate: -50% 0; bottom: clamp(18px, 4svh, 40px);
+  width: 26px; height: 42px; border: 2px solid #0b0b0b; border-radius: 999px; display: grid; justify-items: center;
+}
+.ink-scroll-cue span { width: 3px; height: 8px; margin-top: 7px; border-radius: 2px; background: #0b0b0b; animation: ink-cue 1.8s ease-in-out infinite; }
+@keyframes ink-cue { 0%, 100% { transform: translateY(0); opacity: 1 } 60% { transform: translateY(12px); opacity: .2 } }
+.ink-scroll-cue:focus-visible { outline: 3px solid var(--h-accent); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .ink-scroll-cue span { animation: none } }
+@media (max-height: 620px) { .ink-scroll-cue { display: none } }
+
+/* ---------- Shared controls ---------- */
 .ink-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .55em;
   min-height: 52px; padding: 0 26px; border: 2px solid #000; border-radius: 999px;
@@ -35,50 +64,24 @@ body.ink-home .ink-title {
 .ink-btn:hover { transform: translateY(-2px); }
 .ink-btn.ghost { background: #fff; color: #000; }
 .ink-btn.ghost:hover { background: #000; color: #fff; }
-.ink-btn:focus-visible { outline: 3px solid #6b2cff; outline-offset: 3px; }
+.ink-btn.small { min-height: 44px; padding: 0 20px; font-size: 15px; }
+.ink-btn:focus-visible { outline: 3px solid var(--h-accent); outline-offset: 3px; }
 
-/* Lower sections: restyled for the white page; markup and data hooks are unchanged. */
-body.ink-home .home-page-main > section:not(.ink-hero) { display: block; min-height: 0; background: #fff; color: #111; border: 0; scroll-snap-align: none; }
-body.ink-home .home-page-main .scene-panel { min-height: 0; display: block; background: transparent; }
-body.ink-home .home-page-main .scene-panel > :is(.screen-inner, .server-overview-inner) { box-sizing: border-box; width: 100%; max-width: 1280px; margin-inline: auto; padding: clamp(56px, 9vw, 112px) clamp(16px, 5vw, 72px); }
-body.ink-home .home-page-main :is(h2, h3, p, strong, span) { color: inherit; text-shadow: none; animation: none; opacity: 1; transform: none; }
-body.ink-home .home-page-main h2 { font: 900 clamp(32px, 5vw, 60px) / 1.1 "Noto Sans TC", system-ui, sans-serif; letter-spacing: -.02em; margin: 0 0 12px; }
-body.ink-home .home-page-main .title-line { display: block; opacity: 1; transform: none; clip-path: none; }
-body.ink-home .server-overview { border-top: 1px solid #ece8df; }
-body.ink-home .server-overview-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; border: 0; padding: 0; }
-body.ink-home .server-live-state { background: #f5f2ea; border: 1px solid #e2ddd1; border-radius: 999px; padding: 8px 16px; box-shadow: none; }
-body.ink-home .server-live-state .status-online { color: #1f7a2e; }
-body.ink-home .server-live-state .status-offline { color: #b3261e; }
-body.ink-home .server-live-state .status-loading { color: #8a6a00; }
-body.ink-home .server-info-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)); }
-body.ink-home :is(.server-info-card, .home-link, .server-player-board) {
-  background: #faf8f3; color: #111; border: 1px solid #e6e1d5; border-radius: 16px; box-shadow: none;
-  backdrop-filter: none; -webkit-backdrop-filter: none; padding: 22px; text-shadow: none;
-}
-body.ink-home .server-info-label { display: block; color: #6b665a; font: 600 14px / 1.4 "Noto Sans TC", system-ui, sans-serif; margin-bottom: 8px; }
-/* Older community/styles rules force nowrap + ellipsis + a pixel font on these values; override so nothing is cut off. */
-body.ink-home .server-info-card strong, body.ink-home .server-info-card .server-uptime {
-  display: block; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; overflow-wrap: anywhere !important;
-  font: 800 clamp(20px, 2.1vw, 30px) / 1.3 "Noto Sans TC", system-ui, sans-serif !important; letter-spacing: 0 !important; font-variant-numeric: tabular-nums;
-}
-body.ink-home .home-link-grid { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 32px; }
-body.ink-home .home-link { display: block; color: #111; text-decoration: none; min-height: 150px; transition: transform .2s ease, border-color .2s ease; }
-body.ink-home .home-link:hover, body.ink-home .home-link:focus-visible { transform: translateY(-3px); border-color: #111; }
-body.ink-home .home-link h3 { margin: 0 0 8px; font-size: 22px; font-weight: 800; }
-body.ink-home .home-link p, body.ink-home .home-page-main .screen-heading > p { color: #4a463e !important; opacity: 1 !important; margin: 0; line-height: 1.7; }
-body.ink-home .home-news-layout { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
-body.ink-home .home-news-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-body.ink-home .home-news-actions :is(.mc-button, .discord-button) { border-radius: 999px; min-height: 52px; padding: 0 26px; display: inline-flex; align-items: center; justify-content: center; box-shadow: none; text-shadow: none; border: 2px solid #000; background: #000; color: #fff; text-decoration: none; font-weight: 700; }
-body.ink-home .home-news-actions .discord-button { background: #fff; color: #000; }
-body.ink-home .site-footer { background: #fff; color: #111; border-top: 1px solid #ece8df; }
+body.ink-home .text-link { color: var(--h-ink); font-weight: 700; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; text-decoration-color: var(--h-accent); }
+body.ink-home .text-link:hover { color: var(--h-accent); }
+
+/* Reveal-on-scroll (home-sections.js adds .is-in). No-JS and reduced motion keep content visible. */
+body.ink-home [data-reveal] { opacity: 0; transform: translateY(22px); transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
+body.ink-home [data-reveal].is-in { opacity: 1; transform: none; }
+html[data-motion='reduced'] body.ink-home [data-reveal],
+body.ink-home.reveal-off [data-reveal] { opacity: 1 !important; transform: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) { body.ink-home [data-reveal] { opacity: 1 !important; transform: none !important; transition: none !important; } }
+
+/* Footer on the white page */
+body.ink-home .site-footer { background: #fff; color: var(--h-ink); border-top: 1px solid var(--h-line); }
 body.ink-home .site-footer a { color: inherit; text-shadow: none; }
 
-@media (max-width: 1100px) {
-  body.ink-home .server-info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  body.ink-home .uptime-card { grid-column: 1 / -1; }
-}
 @media (max-width: 760px) {
-  body.ink-home .server-info-grid, body.ink-home .home-link-grid, body.ink-home .home-news-layout { grid-template-columns: 1fr; }
   .ink-actions { width: 100%; flex-direction: column; align-items: stretch; max-width: 360px; }
 }
 @media (prefers-reduced-motion: reduce) { .ink-btn { transition: none; } .ink-btn:hover { transform: none; } }
