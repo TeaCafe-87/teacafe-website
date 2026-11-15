@@ -42,12 +42,14 @@ if (motionStyle) document.head.append(motionStyle);
 else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/motion.css?v=20261018-3">');
 const cinematicStyle = document.querySelector('link[href^="/assets/css/teacafe-cinematic.css"]');
 if (cinematicStyle) document.head.append(cinematicStyle);
-if (document.body.classList.contains('home-page') && !document.querySelector('link[href^="/assets/css/home-motion.css"]')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/home-motion.css?v=20261107-2">');
+if (document.body.classList.contains('home-page') && !document.body.classList.contains('ink-home') && !document.querySelector('link[href^="/assets/css/home-motion.css"]')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/home-motion.css?v=20261107-2">');
 if (document.body.classList.contains('moderation-page')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/assets/css/admin-copy.css?v=20261019-2">');
 const homeMotionStyle = document.querySelector('link[href^="/assets/css/home-motion.css"]');
 if (homeMotionStyle) document.head.append(homeMotionStyle);
 const adminCopyStyle = document.querySelector('link[href^="/assets/css/admin-copy.css"]');
 if (adminCopyStyle) document.head.append(adminCopyStyle);
+const homeInkStyle = document.querySelector('link[href^="/assets/css/home-ink.css"]');
+if (homeInkStyle) document.head.append(homeInkStyle);
 document.body.insertAdjacentHTML("beforeend", `
 <div class="toast" id="toast" role="status"></div>
 <dialog id="settings"><form method="dialog"><div class="mc-menu-screen">
