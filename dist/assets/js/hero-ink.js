@@ -17,7 +17,12 @@
 
   // Colour field: deep blue (left) -> violet -> vivid pink -> orange (right). Anchored to the hero, never to the cursor.
   const STOPS = [[0, '#0a1fb4'], [0.34, '#6b2cff'], [0.68, '#ff2e92'], [1, '#ff7a18']];
-  const MAX_PARTICLES = 520;
+  const MAX_PARTICLES = 460;
+  // Follow response. Steady-state lag behind a moving cursor is v*DAMPING/STIFFNESS, so a high
+  // stiffness with a proportional damping keeps the ink close to the cursor while still trailing
+  // and overshooting like liquid (DAMPING sits just under critical, 2*sqrt(STIFFNESS)).
+  const STIFFNESS = 1000, DAMPING = 49;
+  const SPRING_STEP = 1 / 120; // sub-step size: keeps the stiff spring stable when frames are long
   const EDGE_LO = 0.40, EDGE_HI = 0.60; // metaball threshold band: wide enough to anti-alias the contour, narrow enough to stay crisp
   const FRAME_MS = 15;                  // caps 120 Hz displays at ~60 fps
 
@@ -47,6 +52,7 @@
   let box = null; // dirty rectangle of the last frame, CSS px
 
   const rand = (a, b) => a + Math.random() * (b - a);
+  const inkSize = () => clamp(Math.min(W, H) * 0.075, 34, 104); // blob radius, scaled to the smaller axis so phones match
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
   function measureGlyphs() {
@@ -82,7 +88,7 @@
     while (dpr > 1 && W * H * dpr * dpr > 5e6) dpr = Math.max(1, dpr - 0.25);
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
-    S = W * H > 3e6 ? 4 : W * H > 1.8e6 ? 3 : 2; // mask resolution divisor (area-based)
+    S = W * H > 2.6e6 ? 4 : W * H > 1.1e6 ? 3 : 2; // mask resolution divisor; larger blobs tolerate a coarser mask
     mw = Math.ceil(W / S);
     mh = Math.ceil(H / S);
     mask.width = mw;
@@ -108,7 +114,7 @@
   }
 
   function burst(x, y) {
-    const base = clamp(W * 0.03, 18, 46);
+    const base = inkSize();
     for (let i = 0; i < 7; i++) {
       const a = rand(0, Math.PI * 2), s = rand(90, 300);
       spawn(x + Math.cos(a) * 6, y + Math.sin(a) * 6, Math.cos(a) * s, Math.sin(a) * s, base * rand(0.22, 0.5), rand(0.7, 1.2), true);
@@ -129,26 +135,29 @@
 
     // Spring with slight overshoot: the ink lags and swings behind the cursor.
     const ox = head.x, oy = head.y;
-    head.vx += ((ptr.x - head.x) * 70 - head.vx * 11) * dt;
-    head.vy += ((ptr.y - head.y) * 70 - head.vy * 11) * dt;
-    head.x += head.vx * dt;
-    head.y += head.vy * dt;
+    for (let left = dt; left > 0; left -= SPRING_STEP) {
+      const h = left < SPRING_STEP ? left : SPRING_STEP;
+      head.vx += ((ptr.x - head.x) * STIFFNESS - head.vx * DAMPING) * h;
+      head.vy += ((ptr.y - head.y) * STIFFNESS - head.vy * DAMPING) * h;
+      head.x += head.vx * h;
+      head.y += head.vy * h;
+    }
 
     if (inside) {
       const dx = head.x - ox, dy = head.y - oy, dist = Math.hypot(dx, dy), speed = dist / dt;
-      if (speed > 18) {
-        const base = clamp(W * 0.03, 18, 46);
-        const r0 = base * (0.6 + Math.min(speed / 1400, 1) * 0.85);
-        const n = Math.min(Math.ceil(dist / Math.max(r0 * 0.45, 4)), 24);
+      if (speed > 8) {
+        const base = inkSize();
+        const r0 = base * (0.72 + Math.min(speed / 1600, 1) * 0.7);
+        const n = Math.min(Math.ceil(dist / Math.max(r0 * 0.26, 3)), 40);
         for (let i = 1; i <= n; i++) {
-          const k = i / n, r = r0 * rand(0.8, 1.22);
+          const k = i / n, r = r0 * rand(0.86, 1.16);
           spawn(ox + dx * k + rand(-1, 1) * r * 0.18, oy + dy * k + rand(-1, 1) * r * 0.18,
-            head.vx * 0.12 + rand(-14, 14), head.vy * 0.12 + rand(-14, 14), r, rand(1.0, 1.75), false);
-          if (Math.random() < Math.min(speed / 2600, 0.32)) { // detached droplet, thrown sideways
+            head.vx * 0.1 + rand(-12, 12), head.vy * 0.1 + rand(-12, 12), r, rand(0.85, 1.4), false);
+          if (Math.random() < Math.min(speed / 3400, 0.22)) { // detached droplet, thrown sideways
             const side = Math.random() < 0.5 ? -1 : 1, nx = -dy / dist * side, ny = dx / dist * side;
             const throwSpeed = speed * rand(0.12, 0.34) + 50;
             spawn(ox + dx * k, oy + dy * k, nx * throwSpeed + head.vx * 0.35, ny * throwSpeed + head.vy * 0.35,
-              base * rand(0.11, 0.24), rand(0.8, 1.4), true);
+              base * rand(0.1, 0.2), rand(0.7, 1.25), true);
           }
         }
       }
@@ -161,13 +170,13 @@
       if (p.age >= p.life) continue;
       swirl(p.x, p.y, time, flow);
       const drag = Math.exp(-dt * (p.droplet ? 1.2 : 2.4));
-      p.vx = p.vx * drag + flow[0] * 260 * dt;
-      p.vy = p.vy * drag + flow[1] * 260 * dt;
+      p.vx = p.vx * drag + flow[0] * 320 * dt;
+      p.vy = p.vy * drag + flow[1] * 320 * dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       const sp = Math.hypot(p.vx, p.vy);
       p.ang = Math.atan2(p.vy, p.vx);
-      p.stretch = 1 + Math.min(sp / 260, 1.5) * (p.droplet ? 0.6 : 0.95);
+      p.stretch = 1 + Math.min(sp / 300, 1.5) * (p.droplet ? 0.6 : 0.9);
       particles[w++] = p;
     }
     particles.length = w;

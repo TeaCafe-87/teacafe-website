@@ -410,7 +410,18 @@ async function loadNews() {
       if (!fallback.ok) throw new Error('news');
       data = await fallback.json();
     }
-    const items = Array.isArray(data.items) ? data.items : [];
+    const all = Array.isArray(data.items) ? data.items : [];
+    // Optional data-news-limit lets the home page show only the newest few; the news page sets none.
+    const limit = Number(list.dataset.newsLimit) > 0 ? Number(list.dataset.newsLimit) : all.length;
+    const items = all.slice(0, limit);
+    if (!items.length) {
+      const empty = document.createElement("article");
+      empty.className = "notice-row";
+      empty.innerHTML = "<time>公告</time><div><h3>目前還沒有公告</h3><p>有新消息時會更新在這裡，也會同步到 Discord。</p></div>";
+      list.replaceChildren(empty);
+      list.setAttribute("aria-busy", "false");
+      return;
+    }
     list.replaceChildren(...items.map((item) => {
       const article = document.createElement("article");
       article.className = "notice-row";
@@ -436,11 +447,13 @@ async function loadNews() {
       }
       return article;
     }));
+    list.setAttribute("aria-busy", "false");
   } catch {
     const article = document.createElement("article");
     article.className = "notice-row";
     article.innerHTML = "<time>公告</time><div><h3>暫時無法讀取公告</h3><p>請稍後重新整理。</p></div>";
     list.replaceChildren(article);
+    list.setAttribute("aria-busy", "false");
   }
 }
 loadNews();
