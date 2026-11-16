@@ -1,7 +1,7 @@
 @font-face{font-family:"Z Labs Pixel";src:url('/assets/fonts/zlabs-pixel-hc.woff2') format('woff2');font-display:swap}
 :root{--type-category-title:18px;--type-category-link:15px}
 html[data-text-size="large"]{--type-category-title:20px;--type-category-link:17px}
-.brand-icon{width:42px;height:42px;object-fit:cover;image-rendering:pixelated;border:3px solid #0b0e09;background:#f7dfc3;box-shadow:inset -2px -2px #a88765;flex:0 0 auto}
+.brand-icon{width:38px;height:38px;object-fit:cover;image-rendering:pixelated;border-radius:8px;background:#f7dfc3;flex:0 0 auto}
 .sidebar h3,.community-topics h2{font-family:inherit;font-size:var(--type-category-title);line-height:1.35;font-weight:900}
 .sidebar h3{padding:7px 10px 13px}
 .sidebar a,.community-topics nav button{font-size:var(--type-category-link);font-weight:800;line-height:1.45}
@@ -111,5 +111,5 @@ html[data-text-size] :is(.content-panel h2,.rule-section h2,.section-head h2,.su
 html[data-text-size] :is(.content-panel h3,.post-title,.community-post h3,.block-card h3){font-size:var(--type-h3)}
 html[data-text-size="150"] .topnav,html[data-text-size="200"] .topnav{display:none}
 html[data-text-size="150"] .mobile-menu,html[data-text-size="200"] .mobile-menu{display:block}
-html[data-text-size="150"] .topnav.mobile-open,html[data-text-size="200"] .topnav.mobile-open{display:grid;position:absolute;top:100%;left:12px;right:12px;padding:14px;background:#171b16;border:3px solid #51402a;grid-template-columns:repeat(2,minmax(0,1fr));z-index:99}
+html[data-text-size="150"] .topnav.mobile-open,html[data-text-size="200"] .topnav.mobile-open{display:grid;position:absolute;top:100%;left:0;right:0;padding:12px var(--tc-gutter) 20px;background:var(--tc-paper);border-bottom:1px solid var(--tc-line);grid-template-columns:repeat(2,minmax(0,1fr));z-index:99}
 html[data-text-size="150"] .nav-more>div,html[data-text-size="200"] .nav-more>div{right:auto;left:0}

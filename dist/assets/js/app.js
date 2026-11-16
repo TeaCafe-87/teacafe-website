@@ -35,8 +35,8 @@ if (footer) {
 }
 
 document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/effects.css?v=20261017">');
-document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/polish.css?v=20261018">');
-document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-refresh.css?v=20261018-2">');
+document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/polish.css?v=20261117">');
+document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-refresh.css?v=20261117">');
 const motionStyle = document.querySelector('link[href^="/assets/css/motion.css"]');
 if (motionStyle) document.head.append(motionStyle);
 else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/motion.css?v=20261018-3">');
@@ -47,7 +47,10 @@ const adminCopyStyle = document.querySelector('link[href^="/assets/css/admin-cop
 if (adminCopyStyle) document.head.append(adminCopyStyle);
 const homeInkStyle = document.querySelector('link[href^="/assets/css/home-ink.css"]');
 if (homeInkStyle) document.head.append(homeInkStyle);
-document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-ui.css?v=20261115">');
+// site-ui.css is linked in each page head so the shared theme paints on first frame; keep it last.
+const siteUiStyle = document.querySelector('link[href^="/assets/css/site-ui.css"]');
+if (siteUiStyle) document.head.append(siteUiStyle);
+else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-ui.css?v=20261117">');
 document.body.insertAdjacentHTML("beforeend", `
 <div class="toast" id="toast" role="status"></div>
 <dialog id="settings" class="prm" aria-label="網站設定"><form method="dialog" class="prm-sheet">

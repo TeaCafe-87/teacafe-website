@@ -26,11 +26,13 @@
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700;900&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500&amp;display=swap" rel="stylesheet"/>
-<link href="/assets/css/styles.css?v=20261017" rel="stylesheet"/>
-<link href="/assets/css/community.css?v=20261017" rel="stylesheet"/><meta property="og:image" content="https://teacafe.xyz/image/server_icon.png"><meta property="og:image:alt" content="茶咖暖居伺服器圖示"><meta name="twitter:image" content="https://teacafe.xyz/image/server_icon.png"><link href="/assets/css/motion.css?v=20261018-3" rel="stylesheet"/><link href="/assets/css/teacafe-cinematic.css?v=20261019-2" rel="stylesheet"/><link href="/assets/css/home-ink.css?v=20261115-2" rel="stylesheet"/><link href="/assets/css/home-sections.css?v=20261115-3" rel="stylesheet"/></head><body class="home-page ink-home"><div data-header=""></div>
+<link href="/assets/css/styles.css?v=20261117" rel="stylesheet"/>
+<link href="/assets/css/community.css?v=20261117" rel="stylesheet"/><meta property="og:image" content="https://teacafe.xyz/image/server_icon.png"><meta property="og:image:alt" content="茶咖暖居伺服器圖示"><meta name="twitter:image" content="https://teacafe.xyz/image/server_icon.png"><link href="/assets/css/motion.css?v=20261117" rel="stylesheet"/><link href="/assets/css/teacafe-cinematic.css?v=20261117" rel="stylesheet"/><link href="/assets/css/site-ui.css?v=20261117" rel="stylesheet"/><link href="/assets/css/home-ink.css?v=20261117" rel="stylesheet"/><link href="/assets/css/home-sections.css?v=20261117" rel="stylesheet"/></head><body class="home-page ink-home"><div data-header=""></div>
 
 <main class="page home-page-main">
+<div class="home-wash" aria-hidden="true" data-home-wash><i></i><i></i><i></i><i></i></div>
 
+<div class="handoff-scene" data-handoff>
 <section class="ink-hero" id="home" data-ink-hero>
 <canvas class="ink-canvas" data-ink-canvas aria-hidden="true"></canvas>
 <div class="ink-hero-inner">
@@ -45,11 +47,14 @@
 <a class="ink-scroll-cue" href="#server-info" aria-label="往下看伺服器資訊"><span></span></a>
 </section>
 
-<section class="home-strip" id="server-info" aria-label="伺服器即時狀態">
+<section class="home-strip" id="server-info" aria-labelledby="server-info-title">
+<div class="handoff-stage">
 <div class="shell">
+<h2 class="handoff-title" id="server-info-title" data-handoff-title>伺服器狀態</h2>
+<div class="handoff-rest" data-handoff-rest>
 <div class="strip-row">
 <div class="strip-item strip-status">
-<span class="strip-label">伺服器狀態</span>
+<span class="strip-label">目前狀態</span>
 <strong class="online status-loading" data-server-status="">查詢中</strong>
 </div>
 <div class="strip-item">
@@ -74,7 +79,10 @@
 <div aria-label="目前在線玩家" class="online-player-heads" data-online-player-heads=""></div>
 </div>
 </div>
+</div>
+</div>
 </section>
+</div>
 
 <section class="home-statement" id="about">
 <div class="shell">
@@ -95,27 +103,27 @@
 </header>
 <div class="feature-grid">
 <article class="feature feature-lead" data-reveal>
-<span class="feature-mark" aria-hidden="true">☕</span>
+<span class="feature-mark" aria-hidden="true">01</span>
 <h3>原味生存為主</h3>
 <p>保留 Minecraft 原本的生存樂趣，不會加入太破壞平衡的內容。想慢慢玩、慢慢蓋、慢慢收集，都很歡迎。</p>
 </article>
 <article class="feature" data-reveal>
-<span class="feature-mark" aria-hidden="true">🌾</span>
+<span class="feature-mark" aria-hidden="true">02</span>
 <h3>農作與生活玩法</h3>
 <p>農作、釣魚、經濟、商店等休閒內容，適合喜歡慢慢養成的玩家。</p>
 </article>
 <article class="feature" data-reveal>
-<span class="feature-mark" aria-hidden="true">🐱</span>
+<span class="feature-mark" aria-hidden="true">03</span>
 <h3>寵物與社交</h3>
 <p>主打溫暖社交與寵物陪伴，交流、互動、展示自己的家園。</p>
 </article>
 <article class="feature" data-reveal>
-<span class="feature-mark" aria-hidden="true">🏡</span>
+<span class="feature-mark" aria-hidden="true">04</span>
 <h3>領地保護</h3>
 <p>建立自己的領地，保護建築與物品，安心蓋家不怕被破壞。</p>
 </article>
 <article class="feature" data-reveal>
-<span class="feature-mark" aria-hidden="true">🎣</span>
+<span class="feature-mark" aria-hidden="true">05</span>
 <h3>釣魚與趣味道具</h3>
 <p>一些不影響平衡的小設定與特殊道具，讓生存過程更有趣。</p>
 </article>
@@ -242,4 +250,4 @@
 </div>
 </section>
 
-</main><div data-footer=""></div><script src="/assets/js/app.js?v=20261115-3"></script><script defer src="/assets/js/hero-ink.js?v=20261115-2"></script><script defer src="/assets/js/home-sections.js?v=20261115-3"></script></body></html>
+</main><div data-footer=""></div><script src="/assets/js/app.js?v=20261117"></script><script defer src="/assets/js/hero-ink.js?v=20261117"></script><script defer src="/assets/js/home-sections.js?v=20261117"></script></body></html>

@@ -1,5 +1,158 @@
-/* Site-wide premium UI: settings dialog, volume bars, paused-feature notice, admin featured manager.
-   Loaded last by app.js so it wins over the legacy #settings rules in styles.css. */
+/* Site-wide premium UI: shared tokens, navigation, controls, content-page shell, settings dialog,
+   volume bars, paused-feature notice, admin featured manager.
+   Linked in every page head (no flash) and moved last by app.js, so it wins over the legacy
+   Minecraft-bevel layers in styles.css / polish.css / site-refresh.css / community.css. */
+
+/* ---------- Tokens (the home page uses the same set) ---------- */
+:root {
+  --tc-ink: #0b0b0b;
+  --tc-body: #3d3a33;
+  --tc-muted: #6b6558;
+  --tc-line: #e6e1d6;
+  --tc-paper: #fff;
+  --tc-surface: #f5f3ee;
+  --tc-accent: #6b2cff;
+  --tc-green: #2f7a3d;
+  --tc-brand: linear-gradient(100deg, #0a1fb4, #6b2cff 34%, #ff2e92 68%, #ff7a18);
+  --tc-sans: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --tc-mono: ui-monospace, Menlo, Consolas, monospace;
+  --tc-ease: cubic-bezier(.22, 1, .36, 1);
+  --tc-gutter: clamp(20px, 5vw, 112px);
+  --tc-max: 1680px;
+  --tc-topbar: 72px;
+  /* Legacy layout tokens resolve to the shared ones. */
+  --screen-pad: var(--tc-gutter);
+  --index-width: clamp(220px, 18vw, 280px);
+  --type-h1: clamp(calc(48px * var(--text-scale, 1)), calc(8vw * var(--text-scale, 1)), calc(124px * var(--text-scale, 1)));
+  --type-h2: clamp(calc(30px * var(--text-scale, 1)), calc(4.4vw * var(--text-scale, 1)), calc(64px * var(--text-scale, 1)));
+}
+body { background: var(--tc-paper); color: var(--tc-ink); font-family: var(--tc-sans); }
+/* One continuous detail behind every section: two hairlines on the content gutters. */
+body::before {
+  content: ""; position: fixed; z-index: -1; pointer-events: none; top: 0; bottom: 0;
+  left: max(var(--tc-gutter), calc((100% - var(--tc-max)) / 2 + var(--tc-gutter)));
+  right: max(var(--tc-gutter), calc((100% - var(--tc-max)) / 2 + var(--tc-gutter)));
+  border-inline: 1px solid rgb(11 11 11 / 5.5%);
+}
+
+/* ---------- Topbar (position and reveal timing live in teacafe-cinematic.css) ---------- */
+body .topbar { min-height: var(--tc-topbar); padding: 0 var(--tc-gutter); gap: clamp(12px, 2vw, 32px); }
+.topbar .brand { gap: 12px; color: var(--tc-ink); }
+.topbar .brand b, .site-footer .brand b { font: 900 17px/1.1 var(--tc-sans); letter-spacing: .02em; color: var(--tc-ink); }
+.topbar .brand small, .site-footer .brand small { margin-top: 3px; font: 700 10.5px/1 var(--tc-sans) !important; letter-spacing: .28em; color: var(--tc-muted); }
+body .topbar .topnav { gap: clamp(2px, .6vw, 10px); }
+body .topbar .topnav .mc-nav, body .topbar .topnav .nav-more > summary.mc-nav {
+  position: relative; padding: 12px 10px; color: var(--tc-muted);
+  font: 600 15px/1 var(--tc-sans) !important; letter-spacing: .02em; transition: color .2s ease;
+}
+body .topbar .topnav .mc-nav::after {
+  content: ""; position: absolute; left: 10px; right: 10px; bottom: 4px; height: 2px; background: var(--tc-ink);
+  transform: scaleX(0); transform-origin: left center; transition: transform .35s var(--tc-ease);
+}
+body .topbar .topnav .mc-nav:is(:hover, :focus-visible, .active) { color: var(--tc-ink); background: transparent !important; }
+body .topbar .topnav .mc-nav.active::after { transform: scaleX(1); }
+body .topbar .topnav .mc-nav:focus-visible { outline: 2px solid var(--tc-accent) !important; outline-offset: 2px; }
+body .topbar .nav-more > div {
+  min-width: 190px; padding: 8px; border: 1px solid var(--tc-line); border-radius: 12px;
+  box-shadow: 0 18px 50px rgb(0 0 0 / 10%);
+}
+body .topbar .nav-more > div a { padding: 11px 12px; border-radius: 8px; color: var(--tc-ink); font: 600 15px/1.2 var(--tc-sans) !important; }
+body .topbar .nav-more > div a:hover { background: var(--tc-surface); }
+body .topbar .top-tools { gap: 8px; }
+body .topbar .top-tools .mc-nav {
+  display: inline-grid; place-items: center; width: 42px; height: 42px; flex: 0 0 42px; padding: 0;
+  border: 1px solid var(--tc-line) !important; border-radius: 50%; color: var(--tc-ink); font-size: 17px !important;
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+body .topbar .top-tools .mc-nav:is(:hover, :focus-visible) { background: var(--tc-ink) !important; border-color: var(--tc-ink) !important; color: var(--tc-paper); }
+body .topbar .topnav.mobile-open .mc-nav { padding: 14px 4px; text-align: left; border-bottom: 1px solid var(--tc-line) !important; }
+body .topbar .topnav.mobile-open .mc-nav::after { display: none; }
+
+/* ---------- Buttons: one control language for every page ---------- */
+.ink-btn, .mc-button, .discord-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: .55em;
+  min-height: 52px; padding: 0 26px; border: 2px solid var(--tc-ink); border-radius: 999px;
+  background: var(--tc-ink); color: var(--tc-paper); box-shadow: none; text-shadow: none; filter: none;
+  font: 700 16px / 1 var(--tc-sans); letter-spacing: .02em; text-decoration: none; text-align: center;
+  cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  transition: transform .18s ease, background-color .18s ease, color .18s ease;
+}
+.mc-button, .discord-button { min-height: 46px; padding: 0 22px; font-size: 15px; }
+.ink-btn small { font: 500 13px / 1 var(--tc-mono); opacity: .72; }
+.ink-btn:hover, .mc-button:hover, .discord-button:hover { transform: translateY(-2px); filter: none; }
+.mc-button:active, .discord-button:active { translate: none; transform: none; box-shadow: none; }
+.ink-btn.ghost, .mc-button.secondary { background: transparent; color: var(--tc-ink); }
+.ink-btn.ghost:hover, .mc-button.secondary:hover { background: var(--tc-ink); color: var(--tc-paper); }
+.mc-button:is(.green, .gold, .discord) { background: var(--tc-ink); }
+.ink-btn.small { min-height: 44px; padding: 0 20px; font-size: 15px; }
+:is(.ink-btn, .mc-button, .discord-button):focus-visible { outline: 3px solid var(--tc-accent); outline-offset: 3px; }
+.mc-button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.text-link { color: var(--tc-ink); font-weight: 700; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; text-decoration-color: var(--tc-accent); }
+.text-link:hover { color: var(--tc-accent); }
+@media (prefers-reduced-motion: reduce) { .ink-btn, .mc-button, .discord-button { transition: none; } :is(.ink-btn, .mc-button, .discord-button):hover { transform: none; } }
+
+/* ---------- Footer ---------- */
+.site-footer {
+  min-height: 0; padding: clamp(48px, 7vw, 96px) var(--tc-gutter); background: transparent; color: var(--tc-muted);
+  border-top: 1px solid var(--tc-line); align-items: flex-start; gap: 32px; flex-wrap: wrap;
+}
+.site-footer nav { gap: 10px 28px; font: 600 14px/1.4 var(--tc-sans); }
+.site-footer nav a { color: var(--tc-muted); text-shadow: none; }
+.site-footer nav a:hover { color: var(--tc-ink); }
+
+/* ---------- Content pages: title, index, reading column ---------- */
+.page:not(.home-page-main) > .page-title, .gallery-heading, .forum-main > .page-title {
+  min-height: 0; background: transparent; color: var(--tc-ink); border: 0;
+}
+.page:not(.home-page-main) > .page-title .page-title-inner, .forum-main .page-title-inner {
+  width: 100%; max-width: var(--tc-max); margin-inline: auto;
+  padding: calc(var(--tc-topbar) + clamp(56px, 11vh, 132px)) var(--tc-gutter) clamp(40px, 7vh, 80px);
+}
+.page-title h1 { margin: 18px 0 20px; color: var(--tc-ink); font-weight: 900; line-height: 1.02; letter-spacing: -.045em; }
+.page-title p { max-width: 38em; margin: 0; color: var(--tc-muted); font-size: clamp(17px, 1.5vw, 21px); line-height: 1.75; }
+.page-title .crumb { font: 700 13px/1.4 var(--tc-sans) !important; letter-spacing: .24em; color: var(--tc-muted); }
+.forum-main, .integration-page { background: transparent; }
+.content-layout, .community-layout, .forum-layout { max-width: var(--tc-max); margin-inline: auto; padding-top: clamp(24px, 4vh, 48px); padding-bottom: clamp(72px, 10vw, 140px); }
+.page:not(.home-page-main) > .content-layout { min-height: 0; }
+.content-panel h2 { padding-bottom: 18px; border-bottom: 1px solid var(--tc-line); color: var(--tc-ink); font-weight: 900; }
+.content-panel h3 { color: var(--tc-ink); }
+.content-panel :is(p, li), .rule-list span { color: var(--tc-body); }
+.content-panel > :is(p, ul, ol), .rule-section > p { max-width: 46em; }
+.content-panel code, .command-table code { font-family: var(--tc-mono); color: var(--tc-ink); }
+.tip, .warning, .rule-alert { background: var(--tc-surface); border-left: 3px solid var(--tc-ink); color: var(--tc-body); }
+.rule-section, .chapter-screen { border-bottom: 1px solid var(--tc-line); }
+.rule-list li { border-top-color: var(--tc-line); }
+.rule-list li::before { font-family: var(--tc-mono); color: var(--tc-muted); }
+.rule-list b, .rule-lead, .resident-welcome { color: var(--tc-ink) !important; }
+.new-resident-card { background: var(--tc-surface); }
+
+/* Flat, hairline-ruled surfaces replace the bevelled Minecraft panels. */
+:is(.wiki-card, .block-card, .rule-feature-grid article, .forum-post-card, .community-post, .gallery-comment,
+    .wiki-faq, .wiki-live-entry, .pass-price, .career-guide .job, .career-guide .note, .supporters-empty,
+    .moderation-compose, .moderation-login, .admin-member, .admin-content-card, .admin-overview a) {
+  background: var(--tc-paper); border: 1px solid var(--tc-line); border-radius: 0; box-shadow: none; transform: none;
+}
+:is(.wiki-card, .block-card, .forum-post-card, .community-post):hover { border-color: var(--tc-ink); transform: none; }
+.career-guide .job[aria-pressed="true"] { background: var(--tc-ink); color: var(--tc-paper); border-color: var(--tc-ink); box-shadow: none; }
+.pass-box, .forum-profile-card { background: var(--tc-ink); border: 0; box-shadow: none; }
+:is(.search-bar, .forum-search, .forum-toolbar select, .gallery-comment-form textarea, .gallery-upload-dialog :is(input, textarea)) {
+  background: var(--tc-paper); color: var(--tc-ink); border: 1px solid var(--tc-line); border-radius: 0; box-shadow: none;
+}
+.search-bar input { color: var(--tc-ink); }
+.search-bar:focus-within, .forum-search:focus-within { border-color: var(--tc-ink); outline: 0; }
+.command-table th, .command-table td { border: 0; border-bottom: 1px solid var(--tc-line); background: transparent; }
+.command-table th { color: var(--tc-muted); font-weight: 700; }
+:is(.wiki-forum-link, .career-jump-links a, .forum-sidebar nav a) { background: transparent; color: var(--tc-ink); border: 1px solid var(--tc-line); border-radius: 999px; box-shadow: none; }
+:is(.wiki-forum-link, .career-jump-links a, .forum-sidebar nav a):is(:hover, .active) { background: var(--tc-ink); color: var(--tc-paper); border-color: var(--tc-ink); box-shadow: none; transform: none; }
+.notice-list { border-top: 1px solid var(--tc-line); }
+.notice-row { border-bottom: 1px solid var(--tc-line); padding-inline: 0; }
+.notice-row time { font-family: var(--tc-mono); color: var(--tc-muted); }
+.gallery-stage { background: var(--tc-ink); }
+.gallery-shot { border: 0; box-shadow: none; }
+.gallery-arrow { background: transparent; color: #fff; border: 1px solid rgb(255 255 255 / 40%); border-radius: 50%; box-shadow: none; font-family: var(--tc-sans); }
+.gallery-arrow:hover { background: #fff; color: var(--tc-ink); }
+.gallery-discussion { background: transparent; border-top: 1px solid var(--tc-line); }
+.toast { background: var(--tc-ink); border: 0; border-radius: 999px; padding: 12px 22px; }
 
 /* ---------- Settings dialog ---------- */
 dialog#settings.prm {

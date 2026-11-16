@@ -5,10 +5,10 @@
 .topbar .top-tools{flex:0 0 auto;min-width:0}
 html[data-text-size] .topbar .mc-nav{font-size:15px!important;line-height:1.25;padding:9px 11px;white-space:nowrap}
 html[data-text-size] .topbar .settings-button,html[data-text-size] .topbar .mobile-menu{font-size:18px!important;padding:0;flex:0 0 41px}
-.discord-invite{display:grid;place-items:center;width:43px;height:43px;flex:0 0 43px;background:#5865f2;border:3px solid #22284b;box-shadow:inset 2px 2px #8991ff,inset -3px -3px #36409b,0 3px #191d43;transition:transform .15s ease,background-color .15s ease}
-.discord-invite:hover{background:#6e79f3;transform:translateY(-2px)}
-.discord-invite:focus-visible{outline:3px solid #e5d374;outline-offset:3px}
-.discord-invite img{display:block;width:25px;height:25px}
+.discord-invite{display:grid;place-items:center;width:42px;height:42px;flex:0 0 42px;background:var(--tc-ink);border-radius:50%;transition:background-color .2s ease}
+.discord-invite:hover{background:#5865f2}
+.discord-invite:focus-visible{outline:2px solid var(--tc-accent);outline-offset:3px}
+.discord-invite img{display:block;width:21px;height:21px}
 html[data-text-size] .home-video-hero .home-hero-content>h1{font-size:clamp(64px,10vw,150px)}
 html[data-text-size] .home-video-hero .home-hero-tagline{font-size:clamp(17px,2vw,30px);animation:tea-copy-in 2.25s ease-out .95s both}
 html .home-hero-content>h1{animation-duration:3.2s}
@@ -17,17 +17,18 @@ html :is(.page-title-inner>p,.career-hero h1+p){animation-duration:1.45s;animati
 .home-hero-fallback{background-size:100% 120%;animation:tea-hero-drift 18s ease-in-out infinite alternate}
 @keyframes tea-hero-drift{from{background-position:center top}to{background-position:center bottom}}
 
-/* Rules, Wiki, and forum share one Minecraft-style index. */
+/* Rules, Wiki, and forum share one quiet text index (tokens in site-ui.css). */
 :root{--index-width:clamp(280px,23vw,330px)}
 .content-layout,.community-layout{width:100%;grid-template-columns:var(--index-width) minmax(0,1fr);max-width:none;margin-inline:auto;gap:clamp(24px,3vw,48px);padding-left:var(--screen-pad,3vw);padding-right:var(--screen-pad,3vw)}
-body :is(.sidebar,.community-topics){width:100%;min-width:0;height:max-content;position:sticky;top:24px;align-self:start;margin:0;padding:15px;background:#272b26;border:3px solid #111;box-shadow:inset 2px 2px #4e534d,inset -3px -3px #171916;color:#fff}
-body :is(.sidebar h3,.community-topics h2){min-height:52px;margin:0;padding:8px 12px 14px;font-family:inherit;font-size:calc(21px * var(--text-scale))!important;line-height:1.4;font-weight:900;color:#b8d9a8}
-body :is(.sidebar .sidebar-links,.community-topics nav){display:grid;grid-template-columns:minmax(0,1fr);gap:5px;overflow:visible}
-body :is(.sidebar .sidebar-links a,.community-topics nav button){display:flex;align-items:center;width:100%;min-height:60px;margin:0!important;padding:13px 16px;background:#555852;color:#fff;border:2px solid #222;border-radius:0;box-shadow:inset 2px 2px #7c8078,inset -2px -2px #363834;font-size:calc(17px * var(--text-scale))!important;font-weight:800;line-height:1.45;text-align:left;white-space:normal;outline:0;transform:none;transition:transform .15s ease,background-color .15s ease,box-shadow .15s ease}
-body :is(.sidebar .sidebar-links a,.community-topics nav button):is(:hover,:focus-visible,.scroll-active,.active){background:#89ad74;color:#14220f;box-shadow:inset 3px 3px #4f7041,inset -2px -2px #d9ecd1;transform:translateX(2px);outline:2px solid #d9ecd1;outline-offset:-5px}
-.content-layout .content-panel{min-width:0;padding:clamp(28px,3vw,52px)}
-.rules-layout .rule-content{min-width:0;padding:30px clamp(28px,4vw,64px)}
-body .community-topic-note{margin-top:14px;border-top:1px solid #64705e;padding:12px 8px 4px;line-height:1.6}
+body :is(.sidebar,.community-topics){width:100%;min-width:0;height:max-content;position:sticky;top:calc(var(--tc-topbar) + 28px);align-self:start;margin:0;padding:0;background:transparent;border:0;box-shadow:none;color:var(--tc-ink)}
+body :is(.sidebar h3,.community-topics h2){min-height:0;margin:0 0 14px;padding:0;font-family:var(--tc-sans);font-size:calc(13px * var(--text-scale))!important;line-height:1.4;font-weight:700;letter-spacing:.24em;color:var(--tc-muted)}
+body :is(.sidebar .sidebar-links,.community-topics nav){display:grid;grid-template-columns:minmax(0,1fr);gap:0;overflow:visible}
+body :is(.sidebar .sidebar-links a,.community-topics nav button){display:flex;align-items:center;width:100%;min-height:44px;margin:0!important;padding:10px 0 10px 18px;background:transparent;color:var(--tc-muted);border:0;border-left:2px solid var(--tc-line);border-radius:0;box-shadow:none;font-size:calc(16px * var(--text-scale))!important;font-weight:600;line-height:1.45;text-align:left;white-space:normal;outline:0;transform:none;transition:color .2s ease,border-color .2s ease}
+body :is(.sidebar .sidebar-links a,.community-topics nav button):is(:hover,:focus-visible,.scroll-active,.active){background:transparent;color:var(--tc-ink);border-left-color:var(--tc-ink);box-shadow:none;transform:none;outline:0}
+body :is(.sidebar .sidebar-links a,.community-topics nav button):focus-visible{outline:2px solid var(--tc-accent);outline-offset:2px}
+.content-layout .content-panel{min-width:0;padding:0 0 clamp(28px,3vw,52px);background:transparent;border:0;box-shadow:none}
+.rules-layout .rule-content{min-width:0;padding:0}
+body .community-topic-note{margin-top:14px;border-top:1px solid var(--tc-line);padding:12px 0 4px;line-height:1.6;color:var(--tc-muted)}
 
 /* Text links use the guide's quiet underlined treatment. */
 :is(.content-panel,.rule-content,.career-guide,.supporters-content,.market-dashboard) :is(p,li,small) a:not(.mc-button):not(.wiki-card),.career-guide a.secondary{display:inline;border:0;border-bottom:1px solid currentColor;padding:0 0 4px;color:#3e5946;font-weight:700;text-decoration:none;transition:color .15s ease,border-color .15s ease}
@@ -94,7 +95,7 @@ body .page-title .community-create-error p{color:#362a1f}
 .admin-content-row .mc-button{flex:0 0 auto;padding:8px 11px}
 @media(max-width:1180px){.admin-content-grid{grid-template-columns:1fr}}
 
-@media(max-width:1100px){.topbar .topnav{display:none}.topbar .mobile-menu{display:inline-block}.topbar .topnav.mobile-open{display:grid;position:absolute;top:100%;left:12px;right:12px;padding:14px;background:#171b16;border:3px solid #51402a;grid-template-columns:repeat(2,minmax(0,1fr));z-index:99}.content-layout,.community-layout{grid-template-columns:1fr}body :is(.sidebar,.community-topics){position:static}body :is(.sidebar .sidebar-links,.community-topics nav){grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:1100px){.topbar .topnav{display:none}.topbar .mobile-menu{display:inline-block}.topbar .topnav.mobile-open{display:grid;position:absolute;top:100%;left:0;right:0;padding:12px var(--tc-gutter) 20px;background:var(--tc-paper);border-bottom:1px solid var(--tc-line);grid-template-columns:repeat(2,minmax(0,1fr));z-index:99}.content-layout,.community-layout{grid-template-columns:1fr}body :is(.sidebar,.community-topics){position:static}body :is(.sidebar .sidebar-links,.community-topics nav){grid-template-columns:repeat(2,minmax(0,1fr))}}
 html[data-text-size="150"] :is(.content-layout,.community-layout),html[data-text-size="200"] :is(.content-layout,.community-layout){grid-template-columns:1fr}
 html[data-text-size="150"] :is(.sidebar,.community-topics),html[data-text-size="200"] :is(.sidebar,.community-topics){position:static}
 html[data-text-size="150"] :is(.sidebar .sidebar-links,.community-topics nav),html[data-text-size="200"] :is(.sidebar .sidebar-links,.community-topics nav){grid-template-columns:repeat(2,minmax(0,1fr))}

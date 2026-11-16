@@ -42,7 +42,6 @@
   if (!mctx) return;
 
   let W = 1, H = 1, dpr = 1, S = 3, mw = 1, mh = 1;
-  let originX = 0, originY = 0;
   let gradient = null, glyphs = [], glyphFont = '';
   let particles = [];
   let enabled = false, visible = true, raf = 0, last = 0, time = 0;
@@ -82,8 +81,6 @@
     const r = hero.getBoundingClientRect();
     W = Math.max(1, Math.round(r.width));
     H = Math.max(1, Math.round(r.height));
-    originX = r.left + scrollX;
-    originY = r.top + scrollY;
     dpr = Math.min(devicePixelRatio || 1, 2);
     while (dpr > 1 && W * H * dpr * dpr > 5e6) dpr = Math.max(1, dpr - 0.25);
     canvas.width = Math.round(W * dpr);
@@ -268,8 +265,10 @@
   function onMove(e) {
     if (e.pointerType === 'touch' && e.type === 'pointermove' && !e.isPrimary) return;
     userMoved = true;
-    ptr.x = e.clientX + scrollX - originX;
-    ptr.y = e.clientY + scrollY - originY;
+    // Live rect, not a cached page offset: the hero pins (sticky) during the handoff to the next section.
+    const r = hero.getBoundingClientRect();
+    ptr.x = e.clientX - r.left;
+    ptr.y = e.clientY - r.top;
     ptr.active = true;
     if (e.type === 'pointerdown' && ptr.x >= 0 && ptr.x <= W && ptr.y >= 0 && ptr.y <= H) burst(ptr.x, ptr.y);
     wake();
