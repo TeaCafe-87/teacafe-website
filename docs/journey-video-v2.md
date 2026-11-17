@@ -8,8 +8,10 @@
 
 | 檔案 | 用途 |
 | --- | --- |
-| `dist/assets/video/journey-desktop.mp4` | 橫式 1600×900，24 秒，約 5 MB，無聲無字 |
-| `dist/assets/video/journey-portrait.mp4` | 直式 810×1440（手機），約 3 MB |
+| `dist/assets/video/journey-desktop.mp4` | 白天・橫式 1600×900，24 秒，無聲無字 |
+| `dist/assets/video/journey-portrait.mp4` | 白天・直式 810×1440（手機） |
+| `dist/assets/video/journey-night-desktop.mp4`、`journey-night-portrait.mp4` | 夜晚版（同一套運鏡） |
+| `dist/assets/video/journey-sprites-night.png` | 夜晚版的小舟剪影 |
 | `dist/assets/video/journey-*.camera.json` | 每一格的鏡頭參數、遮擋格、瀑布可見度、留白時段 |
 | `dist/assets/video/journey-*-start.jpg` | 第一格海報（影片載入前先顯示） |
 | `dist/assets/video/journey-live.json`、`journey-sprites.png` | 動態疊層的素材：飛鳥、小舟、瀑布與溪流路徑 |
@@ -26,10 +28,22 @@
 | 第二幕・穿山見瀑 | **0.31–0.41** | 遠方左側高峰與瀑布 | 桌機右半／手機下半（0.255 起淡入，0.47 淡出完） |
 | 轉場 | 0.41–0.58 | 順著溪往右，回到主峰山腳 | — |
 | 第三幕・順流過橋 | **0.58–0.67** | 主峰山腳的拱橋 | 桌機左半／手機下半（0.515 起淡入，0.735 淡出完） |
-| 轉場 | 0.67–0.88 | 沿主峰上升，穿過雲層 | — |
-| 第四幕・登頂雲海 | **0.88–1.00** | 山尖在雲海上，遠方可見瀑布山，飛鳥經過 | 桌機右半／手機下半（0.81 起淡入） |
+| 轉場 | 0.67–0.90 | 對準拱橋直接穿過橋洞（0.73–0.77），接著仰起、往上穿過三層雲 | — |
+| 第四幕・登頂雲海 | **0.90–1.00** | 雲海上的右側三座遠峰，另一群飛鳥經過 | 桌機右半／手機下半（0.84 起淡入） |
 
 每幕停留段的鏡頭只會極慢地推進，所以文字放在那段期間最穩。精確的淡入淡出時間在 `camera.json` 的 `wash` 欄位，與影片裡烘進去的留白一致。
+
+## 白天與夜晚
+
+兩個版本運鏡、時間軸、留白完全相同，只換畫面：
+
+- **夜晚**：每一層依深度做月光調色（遠山偏霧藍、近山偏剪影，保留青綠與淡金），天空為深藍漸層，留白為深夜藍（內容請改用淺色字）。月亮是畫面固定的光源（在無限遠，所以鏡頭平移時位置不變），被經過的山擋住時會隱去。
+- **動態層**（`journey-live.js` 依 `camera.json` 的 `theme` 自動切換）：
+  - 共用：瀑布水絲與潭霧、溪面反光、湖面／瀑布潭口／橋腳的飄動霧帶、湖面波光、小舟水紋、橋下流水
+  - 白天：兩群飛鳥（開場天空、第四幕雲海上方）
+  - 夜晚：閃爍星空與偶爾的流星、小舟燈籠與水面倒影、湖邊與橋邊螢火蟲、月光在湖面的倒影帶
+
+預覽頁右上角可切換「白天／夜晚」；網址加 `?night` 直接開夜晚版，加 `?portrait`／`?desktop` 強制版型。
 
 ## 為什麼往上捲水不會倒流
 
@@ -73,6 +87,8 @@ python3 additions.py                # 補畫瀑布、溪流、雲海
 python3 render.py preview desktop 0 0.31 0.6 0.9   # 先看關鍵影格
 python3 render.py encode desktop  ../../dist/assets/video/journey-desktop.mp4
 python3 render.py encode portrait ../../dist/assets/video/journey-portrait.mp4
+python3 render.py encode desktop  ../../dist/assets/video/journey-night-desktop.mp4 night
+python3 render.py encode portrait ../../dist/assets/video/journey-night-portrait.mp4 night
 ```
 
 - **拆層**（`build_layers.py`）：遠山、中景、主峰、左近山、右近山、水面 6 層。每層一個大致範圍，範圍內從「墨色強度第一次超過門檻」的地方往下歸屬該層，自動描出稜線；較遠的層會在較近的層底下補畫一小段，分開時不會露縫。霧（比紙白的部分）保持真實透明度，所以層與層分開時邊緣幾乎看不見；停在原位時合成結果與原圖相同。

@@ -43,9 +43,11 @@ KEYS = {
         (0.495, 3.52, 1.30, (4.6, 800, 470), (0.50, 0.46)),
         (0.580, 3.62, 1.12, (4.6, 870, 532), (0.70, 0.56)),
         (0.670, 3.66, 1.15, (4.6, 870, 532), (0.70, 0.56)),
-        (0.780, 3.69, 1.05, (4.6, 905, 330), (0.44, 0.50)),
-        (0.880, 3.72, 0.86, (4.6, 915, 170), (0.27, 0.64)),
-        (1.000, 3.76, 0.88, (4.6, 915, 170), (0.27, 0.64)),
+        (0.730, 4.00, 1.00, (4.6, 867, 530), (0.50, 0.50)),   # line up on the arch opening
+        (0.770, 4.82, 1.00, (4.6, 867, 530), (0.50, 0.50)),   # ...and fly straight through it
+        (0.840, 4.88, 1.00, (12.0, 1250, 330), (0.45, 0.55)), # tilt up, climb through the clouds
+        (0.900, 4.92, 1.25, (12.0, 1385, 200), (0.28, 0.44)), # act 4: far peaks above the cloud sea
+        (1.000, 4.96, 1.28, (12.0, 1385, 200), (0.28, 0.44)),
     ],
     'portrait': [
         (0.000, 0.00, 1.00, (4.6, 800, VC), (0.50, 0.50)),
@@ -57,9 +59,11 @@ KEYS = {
         (0.495, 3.52, 1.05, (4.6, 820, 470), (0.50, 0.27)),
         (0.580, 3.62, 0.76, (4.6, 868, 530), (0.54, 0.27)),
         (0.670, 3.66, 0.78, (4.6, 868, 530), (0.54, 0.27)),
-        (0.780, 3.69, 0.66, (4.6, 905, 330), (0.50, 0.28)),
-        (0.880, 3.72, 0.52, (4.6, 915, 172), (0.48, 0.27)),
-        (1.000, 3.76, 0.54, (4.6, 915, 172), (0.48, 0.27)),
+        (0.730, 4.00, 0.80, (4.6, 867, 530), (0.50, 0.50)),
+        (0.770, 4.82, 0.80, (4.6, 867, 530), (0.50, 0.50)),
+        (0.840, 4.88, 0.80, (12.0, 1250, 330), (0.50, 0.42)),
+        (0.900, 4.92, 0.95, (12.0, 1385, 200), (0.50, 0.24)),
+        (1.000, 4.96, 0.97, (12.0, 1385, 200), (0.50, 0.24)),
     ],
 }
 
@@ -68,22 +72,72 @@ WASH = {
     'desktop': [  # (p_in0, p_in1, p_out0, p_out1, side)
         (0.255, 0.310, 0.410, 0.470, 'right'),
         (0.515, 0.580, 0.670, 0.735, 'left'),
-        (0.810, 0.880, 1.10, 1.20, 'right'),
+        (0.840, 0.900, 1.10, 1.20, 'right'),
     ],
     'portrait': [
         (0.255, 0.310, 0.410, 0.470, 'bottom'),
         (0.515, 0.580, 0.670, 0.735, 'bottom'),
-        (0.810, 0.880, 1.10, 1.20, 'bottom'),
+        (0.840, 0.900, 1.10, 1.20, 'bottom'),
     ],
 }
 
-CLOUD_GATE = (0.69, 0.77)
+CLOUD_GATE = (0.74, 0.80)
+THEME = {'name': 'day'}
+
+NIGHT_DARK = np.array([9, 14, 27], np.float32)
+NIGHT_MOON = np.array([158, 176, 206], np.float32)
+NIGHT_HAZE = np.array([66, 82, 116], np.float32)
+NIGHT_HAZE_BY_DEPTH = lambda D: float(np.clip((D - 2.5) / 9.5, 0, 1)) * 0.5
+WASH_COLOR = {'day': (241, 234, 219), 'night': (15, 21, 37)}
+
+
+def night_grade(arr, depth):
+    """Moonlit version of a straight-alpha RGBA layer (in place)."""
+    rgb = arr[..., :3].astype(np.float32)
+    lum = (rgb @ np.array([0.30, 0.59, 0.11], np.float32)) / 255
+    t = np.clip(lum, 0, 1) ** 1.55 * 0.95
+    out = NIGHT_DARK + (NIGHT_MOON - NIGHT_DARK) * t[..., None]
+    chroma = rgb / 255 - lum[..., None]
+    chroma[..., 0] *= 0.6                                    # keep the blue-green, soften the gold
+    out += chroma * 115
+    h = NIGHT_HAZE_BY_DEPTH(depth)
+    out = out * (1 - h) + NIGHT_HAZE * h
+    arr[..., :3] = np.clip(out, 0, 255).astype(np.uint8)
+    return arr
+
+
+def night_sky(W, H):
+    y = np.linspace(0, 1, H)[:, None, None]
+    top, low = np.array([10, 15, 30], np.float32), np.array([36, 46, 72], np.float32)
+    sky = top + (low - top) * (y ** 1.3)
+    return Image.fromarray(np.broadcast_to(sky, (H, W, 3)).astype(np.uint8), 'RGB').convert('RGBA')
+
+
+def make_moon(R=22, K=1):
+    """Full moon with faint maria and a soft halo, as a screen sprite."""
+    S = int(12 * R * K)
+    yy, xx = (np.mgrid[0:S, 0:S].astype(np.float32) - S / 2) / K
+    d = np.hypot(xx, yy)
+    rng = np.random.default_rng(9)
+    g = rng.random((14, 14)).astype(np.float32)
+    from scipy.ndimage import zoom as nzoom
+    maria = np.clip(nzoom(g, S / 14, order=3)[:S, :S], 0, 1)
+    disc = np.clip((R - d) / 0.8, 0, 1)
+    col = np.zeros((S, S, 3), np.float32) + np.array([246, 238, 214], np.float32)
+    col -= (maria[..., None] > 0.58) * np.clip((maria[..., None] - 0.58) * 3, 0, 1) * np.array([30, 30, 26], np.float32) * disc[..., None]
+    limb = np.clip(1 - (d / R) ** 4 * 0.25, 0, 1)
+    col *= limb[..., None]
+    halo = np.exp(-np.clip(d - R, 0, None) / (R * 1.4)) * 0.38 + np.exp(-np.clip(d - R, 0, None) / (R * 0.35)) * 0.35
+    a = np.clip(disc + (1 - disc) * halo, 0, 1)
+    hc = np.array([190, 204, 228], np.float32)
+    col = col * disc[..., None] + hc * (1 - disc[..., None])
+    return Image.fromarray(np.dstack([np.clip(col, 0, 255), a * 255]).astype(np.uint8), 'RGBA')
 FALL_GATE = (0.10, 0.22)          # act 1 is the untouched painting; the waterfall appears on the way in
 # cloud rims (cloud image coords) and where they should sit on screen at the act-4 key
-CLOUD_RIM = {'cloud_front': (132, 60, 4.55), 'cloud_back': (318, 220, 7.0)}
-RIM_TARGET = {'desktop': {'cloud_front': 0.80, 'cloud_back': 0.70},
-              'portrait': {'cloud_front': 0.44, 'cloud_back': 0.36}}
-P_ACT4 = 0.88
+CLOUD_RIM = {'cloud_a': (120, 60, 5.3), 'cloud_b': (120, 60, 6.6), 'cloud_c': (120, 60, 9.0)}
+RIM_TARGET = {'desktop': {'cloud_a': 0.80, 'cloud_b': 0.70, 'cloud_c': 0.62},
+              'portrait': {'cloud_a': 0.47, 'cloud_b': 0.41, 'cloud_c': 0.35}}
+P_ACT4 = 0.90
 
 
 def smooth(x):
@@ -120,17 +174,19 @@ class Card:
     """A painted layer at one depth, with a small mip pyramid."""
     LEVELS = (8, 5.66, 4, 2.83, 2, 1.41, 1)
 
-    def __init__(self, path, depth, native=4, off=(0, 0), gain=None, gate=None, mask=None, name=''):
+    def __init__(self, path, depth, native=4, off=(0, 0), gain=None, gate=None, mask=None, name='', grade=True):
         img = Image.open(path).convert('RGBA')
         arr = np.asarray(img).copy()
         a = arr[..., 3]
         arr[..., :3][a < 3] = P                      # clean colour under zero alpha
+        if THEME['name'] == 'night' and grade:
+            night_grade(arr, depth)
         if mask is not None:
             arr[..., 3] = (a.astype(np.float32) * mask).astype(np.uint8)
         img = Image.fromarray(arr, 'RGBA')
         self.depth, self.off, self.gain, self.gate, self.name = depth, off, gain, gate, name
         self.mips = {}
-        for L in self.LEVELS:
+        for L in sorted(set(self.LEVELS) | {native}, reverse=True):
             if L > native:
                 continue
             if L == native:
@@ -150,8 +206,10 @@ class Card:
         alpha_mul = 1.0
         if self.gate:
             alpha_mul *= smooth((p - self.gate[0]) / (self.gate[1] - self.gate[0]))
-        if self.gain:
+        if self.gain and THEME['name'] == 'day':
             alpha_mul *= self.gain(D / (D - zc))
+        elif self.gain:
+            alpha_mul *= min(2.2, self.gain(D / (D - zc)))   # at night the far peaks need their ink to read against the sky
         if alpha_mul <= 0.003:
             return None
         # pick the level that is at least as dense as the screen
@@ -206,10 +264,11 @@ def build_cards():
     cards = [
         Card(L + 'far.png', 12.0, gain=aerial(2.3, 1.7), name='far'),
         Card(L + 'fall.png', 11.99, off=(250, 150), gain=aerial(1.5, 1.0), gate=FALL_GATE, name='fall'),
-        Card(L + 'cloud_back.png', 7.0, native=4, off=(300, 220), gate=CLOUD_GATE, name='cloud_back'),
+        Card(L + 'cloud_c.png', 9.0, native=3, off=(300, 60), gate=CLOUD_GATE, name='cloud_c'),
+        Card(L + 'cloud_b.png', 6.6, native=4, off=(500, 60), gate=CLOUD_GATE, name='cloud_b'),
+        Card(L + 'cloud_a.png', 5.3, native=6, off=(600, 60), gate=CLOUD_GATE, name='cloud_a'),
         Card(L + 'mid.png', 7.0, gain=aerial(1.6, 0.8), name='mid'),
-        Card(L + 'main.png', 4.6, name='main'),
-        Card(L + 'cloud_front.png', 4.55, native=7, off=(560, 60), gate=CLOUD_GATE, name='cloud_front'),
+        Card(L + 'main_arch.png', 4.6, name='main'),
         Card(L + 'near_right.png', 3.5, name='near_right'),
         Card(L + 'near_left.png', 2.8, name='near_left'),
     ]
@@ -233,7 +292,10 @@ def make_grain(F, seed=5):
 
 
 BIRD_DEPTH = 6.0
-OCC_GRID = {'desktop': (32, 18), 'portrait': (18, 32)}
+OCC_GRID = {'desktop': (24, 14), 'portrait': (14, 24)}
+NIGHT_SKY = {}
+MOON_AT = {'desktop': (0.45, 0.13, 30), 'portrait': (0.80, 0.10, 24)}   # screen x, y fraction, radius px
+MOON_IMG = {}
 FALL_PTS = [(326.5, 190), (327.5, 215), (328.5, 238), (330, 265), (331, 295), (332, 325), (333, 355), (333.6, 385)]
 
 
@@ -245,8 +307,9 @@ def project(F, cam, u, v, D):
 
 def frame(fmt, cards, cam, p, grain, occ_out=None):
     F = FORMATS[fmt]
-    canvas = Image.new('RGBA', (F['W'], F['H']), (*P, 255))
-    keep6, keep12 = None, None
+    night = THEME['name'] == 'night'
+    canvas = Image.new('RGBA', (F['W'], F['H']), (0, 0, 0, 0)) if night else Image.new('RGBA', (F['W'], F['H']), (*P, 255))
+    keep6, keep12, keepAll = None, None, None
     for c in cards:
         A = c.draw(canvas, cam, F, p)
         if A is None or occ_out is None:
@@ -256,11 +319,20 @@ def frame(fmt, cards, cam, p, grain, occ_out=None):
             keep12 = a if keep12 is None else 1 - (1 - keep12) * (1 - a)
         if c.depth < BIRD_DEPTH:
             keep6 = a if keep6 is None else 1 - (1 - keep6) * (1 - a)
+        if True:
+            keepAll = a if keepAll is None else 1 - (1 - keepAll) * (1 - a)
     if occ_out is not None:
         gw, gh = OCC_GRID[fmt]
         g = np.zeros((gh, gw)) if keep6 is None else np.asarray(
             Image.fromarray((keep6 * 255).astype(np.uint8)).resize((gw, gh), Image.BOX), np.float32) / 255
         occ_out['occ'] = ''.join(str(min(9, int(x * 9.99))) for x in g.ravel())
+        def grid(m):
+            if m is None:
+                return '0' * (gw * gh)
+            q = np.asarray(Image.fromarray((m * 255).astype(np.uint8)).resize((gw, gh), Image.BOX), np.float32) / 255
+            return ''.join(str(min(9, int(x * 9.99))) for x in q.ravel())
+        occ_out['occ12'] = grid(keep12)
+        occ_out['occAll'] = grid(keepAll)
         vis = []
         for (u, v) in FALL_PTS:
             x, y = project(F, cam, u, v, 12.0)
@@ -268,6 +340,22 @@ def frame(fmt, cards, cam, p, grain, occ_out=None):
             if 0 <= xi < F['W'] and 0 <= yi < F['H']:
                 vis.append(1.0 if keep12 is None else 1 - float(keep12[yi, xi]))
         occ_out['fall'] = round(float(np.mean(vis)) if vis else 0.0, 2)
+    if night:
+        # sky, then the moon (hidden by whatever covers it), then the scene
+        mx, my, mr = MOON_AT[fmt]
+        cx, cy = int(mx * F['W']), int(my * F['H'])
+        sc = np.asarray(canvas.getchannel('A'), np.float32)[max(cy - mr, 0):cy + mr, max(cx - mr, 0):cx + mr] / 255
+        vis = float(np.clip(1 - sc.mean() * 4.0, 0, 1)) ** 2 if sc.size else 1.0
+        if occ_out is not None:
+            occ_out['moon'] = round(vis, 2)
+        sky = NIGHT_SKY[fmt].copy()
+        if vis > 0.01:
+            m = MOON_IMG[fmt].copy()
+            if vis < 0.999:
+                m.putalpha(m.getchannel('A').point(lambda x, v=vis: int(x * v)))
+            sky.alpha_composite(m, (cx - m.width // 2, cy - m.height // 2))
+        sky.alpha_composite(canvas)
+        canvas = sky
     out = np.asarray(canvas.convert('RGB'), np.float32)
     W, H = F['W'], F['H']
     for side, w in wash_strength(fmt, p):
@@ -279,42 +367,51 @@ def frame(fmt, cards, cam, p, grain, occ_out=None):
             y = np.arange(H) / H
             m = smooth((y - 0.44) / 0.16)[:, None]
         m = m * w * 0.94
-        out = out * (1 - m[..., None]) + np.array([241, 234, 219], np.float32) * m[..., None]
-    out += grain[..., None]
+        out = out * (1 - m[..., None]) + np.array(WASH_COLOR[THEME['name']], np.float32) * m[..., None]
+    if grain is not None:
+        out += grain[..., None]
     return np.clip(out, 0, 255).astype(np.uint8)
 
 
 def main():
+    args = sys.argv[1:]
+    if 'night' in args:
+        THEME['name'] = 'night'
+        args.remove('night')
+    sys.argv = [sys.argv[0]] + args
     mode, fmt = sys.argv[1], sys.argv[2]
     F = FORMATS[fmt]
+    NIGHT_SKY[fmt] = night_sky(F['W'], F['H'])
+    MOON_IMG[fmt] = make_moon(MOON_AT[fmt][2])
     t0 = time.time()
     cards = build_cards()
     print(f'cards ready {time.time() - t0:.0f}s', flush=True)
     track = camera_track(fmt)
     place_clouds(cards, fmt, track)
-    grain = make_grain(F)
+    grain = make_grain(F) if mode == 'preview' else None   # the film ships clean; paper grain is a static page texture
     if mode == 'preview':
         os.makedirs('work/preview', exist_ok=True)
         ps = [float(x) for x in sys.argv[3:]] or [0, 0.12, 0.2, 0.31, 0.45, 0.6, 0.78, 0.9]
         for p in ps:
             i = int(round(p * (NF - 1)))
             Image.fromarray(frame(fmt, cards, track[i], i / (NF - 1), grain)).save(
-                f'work/preview/{fmt}_{int(p * 1000):04d}.jpg', quality=90)
+                f"work/preview/{fmt}{'_night' if THEME['name'] == 'night' else ''}_{int(p * 1000):04d}.jpg", quality=90)
             print('p', p, flush=True)
     elif mode == 'encode':
         out = sys.argv[3]
         tmp = out + '.tmp.mp4'
         cmd = ['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24',
                '-s', f"{F['W']}x{F['H']}", '-r', str(FPS), '-i', '-',
-               '-c:v', 'libx264', '-preset', 'slow', '-crf', '24',
-               '-x264-params', 'keyint=4:min-keyint=4:scenecut=0',
+               '-c:v', 'libx264', '-preset', 'slow', '-crf', '26',
+               '-x264-params', 'keyint=6:min-keyint=6:scenecut=0',
                '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', tmp]
         proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-        occ_rows, fall_rows = [], []
+        occ_rows, fall_rows, occ12_rows, occall_rows, moon_rows = [], [], [], [], []
         for i in range(NF):
             o = {}
             proc.stdin.write(frame(fmt, cards, track[i], i / (NF - 1), grain, o).tobytes())
             occ_rows.append(o['occ']); fall_rows.append(o['fall'])
+            occ12_rows.append(o['occ12']); occall_rows.append(o['occAll']); moon_rows.append(o.get('moon', 0))
             if i % 60 == 0:
                 print(f'{fmt} frame {i}/{NF} {time.time() - t0:.0f}s', flush=True)
         proc.stdin.close()
@@ -328,7 +425,8 @@ def main():
             'wash': WASH[fmt],
             'fallGate': FALL_GATE, 'cloudGate': CLOUD_GATE,
             'occGrid': OCC_GRID[fmt], 'birdDepth': BIRD_DEPTH,
-            'occ': occ_rows, 'fallVis': fall_rows,
+            'occ': occ_rows, 'fallVis': fall_rows, 'occ12': occ12_rows, 'occAll': occall_rows,
+            'theme': THEME['name'], 'moon': {'at': MOON_AT[fmt], 'vis': moon_rows} if THEME['name'] == 'night' else None,
         }
         json.dump(cam, open(out.replace('.mp4', '.camera.json'), 'w'), separators=(',', ':'))
         print('encoded', out, f'{time.time() - t0:.0f}s')

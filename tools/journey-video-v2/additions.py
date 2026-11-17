@@ -148,6 +148,19 @@ Image.fromarray(np.dstack([np.clip(wr, 0, 255), np.clip(wa, 0, 1) * 255]).astype
 print('waterfall painted')
 
 
+# ------------------------------------------------------------------ arch opening
+ARCH = [(846, 507), (858, 506), (870, 506), (882, 508), (890, 512), (887, 521), (882, 532), (877, 545),
+        (873, 557), (870, 564), (865, 556), (860, 545), (856, 534), (852, 522), (848, 512)]
+main = np.asarray(Image.open('work/layers/main.png')).copy()
+hole = Image.new('L', (main.shape[1], main.shape[0]), 0)
+ImageDraw.Draw(hole).polygon([(x * K, y * K) for x, y in ARCH], fill=255)
+hm = cv2.GaussianBlur(np.asarray(hole, np.float32) / 255, (0, 0), 0.8 * K)
+hm = np.clip((hm - 0.15) / 0.7, 0, 1)
+main[..., 3] = (main[..., 3] * (1 - hm)).astype(np.uint8)
+Image.fromarray(main, 'RGBA').save('work/layers/main_arch.png', compress_level=3)
+print('arch opened')
+
+
 # ------------------------------------------------------------------ clouds
 def cloud_bank(u0, u1, v0, v1, scale, rim_v, seed, rmin=16, rmax=50, rows=3, body=90, rim_line=0.12):
     """Layered billows, back to front, each with a bright crown, warm hollow
@@ -202,13 +215,19 @@ def cloud_bank(u0, u1, v0, v1, scale, rim_v, seed, rmin=16, rmax=50, rows=3, bod
     fill = np.broadcast_to(fill, a.shape)
     rgb, a = over(np.broadcast_to(low, rgb.shape).copy(), fill * 0.9, rgb, a)
     a = a * np.clip(1 - (vv - (body_top + rmax * rows * 0.4 + body)) / 20, 0, 1)
+    uu = np.arange(Wc)[None, :] / Wc                     # no hard card edges left/right
+    a = a * np.clip(uu / 0.1, 0, 1) * np.clip((1 - uu) / 0.1, 0, 1)
     return Image.fromarray(np.dstack([np.clip(rgb, 0, 255), np.clip(a, 0, 1) * 255]).astype(np.uint8), 'RGBA')
 
 
-CF = dict(u0=560, u1=1440, v0=60, v1=330, scale=7, rim_v=132, seed=3, rmin=8, rmax=26, rows=3, rim_line=0.12)
-CB = dict(u0=300, u1=1600, v0=220, v1=520, scale=4, rim_v=318, seed=11)
-cloud_bank(**CF).save('work/layers/cloud_front.png', compress_level=3)
-cloud_bank(rmin=22, rmax=64, rows=2, body=120, rim_line=0.16, **CB).save('work/layers/cloud_back.png', compress_level=3)
+CLOUDS = {
+    'cloud_a': dict(u0=600, u1=1700, v0=60, v1=420, scale=6, rim_v=120, seed=3, rmin=8, rmax=26, rows=3, body=200, rim_line=0.12),
+    'cloud_b': dict(u0=500, u1=2100, v0=60, v1=420, scale=4, rim_v=120, seed=7, rmin=12, rmax=38, rows=3, body=180, rim_line=0.12),
+    'cloud_c': dict(u0=300, u1=2600, v0=60, v1=400, scale=3, rim_v=120, seed=11, rmin=18, rmax=56, rows=2, body=150, rim_line=0.1),
+}
+for nm, kw in CLOUDS.items():
+    cloud_bank(**kw).save(f'work/layers/{nm}.png', compress_level=3)
+CF, CB = CLOUDS['cloud_a'], CLOUDS['cloud_c']
 print('clouds painted')
 
 geom = {

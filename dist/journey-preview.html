@@ -34,6 +34,12 @@
     .hero { top: auto; bottom: 18vh; }
   }
   .meter { position: fixed; z-index: 3; left: 12px; bottom: 10px; font: 12px/1 ui-monospace, monospace; color: var(--soft); }
+  .theme { position: fixed; z-index: 4; right: 14px; top: 14px; display: flex; border: 1px solid currentColor; border-radius: 999px; overflow: hidden; color: var(--ink); }
+  .theme button { appearance: none; border: 0; background: transparent; color: inherit; font: 600 14px/1 "Noto Sans TC", sans-serif; padding: 9px 16px; cursor: pointer; }
+  .theme button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  body.night { --paper: #0f1525; --ink: #e9edf7; --soft: #aab4c8; }
+  body.night .stage .grain { opacity: .35; }
+  body.capture .act, body.capture .meter, body.capture .theme { display: none; }
 </style>
 </head>
 <body>
@@ -53,23 +59,44 @@
 <section class="act left" data-at="0.53,0.58,0.67,0.71" data-portrait="bottom">
   <h2>第三幕・順流過橋</h2><p>拱橋在畫面一側，另一半留白放文字。</p>
 </section>
-<section class="act right" data-at="0.84,0.88,1.01,1.02" data-portrait="bottom">
-  <h2>第四幕・登頂雲海</h2><p>山尖在雲上，飛鳥從旁經過；留白處放結尾的行動按鈕。</p>
+<section class="act right" data-at="0.86,0.90,1.01,1.02" data-portrait="bottom">
+  <h2>第四幕・登頂雲海</h2><p>穿過拱橋、升上雲海，遠峰浮在雲上；留白處放結尾的行動按鈕。</p>
 </section>
 <div class="meter" id="meter"></div>
+<div class="theme" role="group" aria-label="日夜切換"><button type="button" data-theme="day">白天</button><button type="button" data-theme="night">夜晚</button></div>
 
 <script src="/assets/js/journey-live.js"></script>
 <script>
 (() => {
-  const portrait = innerWidth / innerHeight < 0.75;
-  const base = portrait ? 'journey-portrait' : 'journey-desktop';
+  const q = new URLSearchParams(location.search);
+  const portrait = q.has('portrait') || (!q.has('desktop') && innerWidth / innerHeight < 0.75);
+  const fmt = portrait ? 'portrait' : 'desktop';
+  let theme = q.has('night') ? 'night' : 'day';
+  const V = '/assets/video/';
+  const base = () => (theme === 'night' ? 'journey-night-' : 'journey-') + fmt;
   const film = document.getElementById('film');
   const poster = document.getElementById('poster');
-  poster.src = '/assets/video/' + base + '-start.jpg';
-  film.src = '/assets/video/' + base + '.mp4';
+  if (q.has('capture')) document.body.classList.add('capture');
+  function applyTheme() {
+    document.body.classList.toggle('night', theme === 'night');
+    document.querySelectorAll('.theme button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.theme === theme)));
+    poster.src = V + base() + '-start.jpg';
+    const t = film.currentTime || 0;
+    film.src = V + base() + '.mp4';
+    film.addEventListener('loadedmetadata', () => { film.currentTime = t; }, { once: true });
+  }
+  applyTheme();
   const live = TeaJourneyLive.attach(film, document.getElementById('live'), {
-    camera: '/assets/video/' + base + '.camera.json', live: '/assets/video/journey-live.json', sprites: '/assets/video/journey-sprites.png',
+    camera: V + base() + '.camera.json', live: V + 'journey-live.json',
+    sprites: V + 'journey-sprites.png', spritesNight: V + 'journey-sprites-night.png',
   });
+  window.__journey = { film, live };
+  document.querySelectorAll('.theme button').forEach((b) => b.addEventListener('click', () => {
+    if (b.dataset.theme === theme) return;
+    theme = b.dataset.theme;
+    applyTheme();
+    live.setCamera(V + base() + '.camera.json');
+  }));
 
   const track = document.getElementById('track');
   const acts = [...document.querySelectorAll('.act')].map((el) => ({ el, at: el.dataset.at.split(',').map(Number) }));
@@ -97,6 +124,7 @@
     document.getElementById('meter').textContent = 'p ' + p.toFixed(3);
   }
   film.addEventListener('loadedmetadata', () => {
+    if (q.has('capture')) return;
     duration = film.duration - 0.04;
     film.pause();
     document.body.classList.add('ready');

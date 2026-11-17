@@ -129,7 +129,9 @@ for li, (name, d, poly, t, floor, med) in enumerate(LAYERS):
         top = np.where(run.any(0), run.argmax(0), H0).astype(np.float32)
         from scipy.ndimage import median_filter
         if med > 1:
-            top = median_filter(top, size=med, mode='nearest')
+            # smooth the ridge, but let real narrow tips rise up to 25 px above it
+            m = median_filter(top, size=med, mode='nearest')
+            top = np.clip(top, m - 25, m)
         else:
             # never lower a real peak, but close one-column gaps
             top = np.minimum(top, median_filter(top, size=7, mode='nearest'))
@@ -143,6 +145,16 @@ for li, (name, d, poly, t, floor, med) in enumerate(LAYERS):
         floor_claim[li] = own & ~own_col
         body_col[li] = own_col & pm
     label[own] = li
+
+# give stray dark pieces left in the far layer back to the nearest nearer layer
+from scipy.ndimage import distance_transform_edt
+far_i = len(LAYERS) - 1
+frag = (label == far_i) & (vv > 430) & (a0s > 0.2)
+frag = cv2.dilate(frag.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool) & (label == far_i)
+nonfar = (label >= 0) & (label != far_i)
+_, idx = distance_transform_edt(~nonfar, return_indices=True)
+label[frag] = label[idx[0][frag], idx[1][frag]]
+print('fragments returned to near layers:', int(frag.sum()))
 
 # debug view
 cols = np.array([[220, 70, 60], [60, 120, 220], [90, 200, 220], [80, 170, 80], [230, 180, 40], [200, 200, 200]], np.uint8)
@@ -183,7 +195,8 @@ for li, (name, d, poly, t, floor, med) in enumerate(LAYERS):
         pm_big = np.zeros((H0 + 2 * PAD, W0 + 2 * PAD), np.uint8)
         cv2.fillPoly(pm_big, [np.array(poly, np.int32) + PAD], 1)
         din = cv2.distanceTransform(pm_big, cv2.DIST_L2, 5)[PAD:-PAD, PAD:-PAD]
-        pn = np.clip(din / 14.0, 0, 1); pn = pn * pn * (3 - 2 * pn)
+        nf = 40.0 if name == 'mid' else 14.0          # mid is seen from behind the bridge: soften its cut edges
+        pn = np.clip(din / nf, 0, 1); pn = pn * pn * (3 - 2 * pn)
         pw = np.clip(din / 42.0, 0, 1); pw = pw * pw * (3 - 2 * pw)
         bodyw = cv2.GaussianBlur(body_col.get(li, own).astype(np.float32), (0, 0), 6)
         soft = soft * (pn * bodyw + pw * (1 - bodyw))
@@ -205,6 +218,19 @@ for li, (name, d, poly, t, floor, med) in enumerate(LAYERS):
     ink = np.maximum(ink_dark, ink_light)
     col = np.clip(P + (rgb4 - P) / np.maximum(ink, 1e-3)[..., None], 0, 255)
     al = ink * cover4
+    if name == 'far':
+        # far mountains are pale; dark ink low in the frame is a stray piece of a nearer layer
+        frag = ((label == li) & (vv > 430) & (a0s > 0.2)).astype(np.uint8)
+        frag = cv2.dilate(frag, np.ones((9, 9), np.uint8)).astype(np.float32)
+        frag = np.clip(cv2.GaussianBlur(frag, (0, 0), 3) * 1.5, 0, 1)
+        al = al * (1 - up(frag))
+    # fade the outermost original pixels: the upscaler leaves a bright seam at the image border
+    bf = np.ones_like(al)
+    e = 14 * K
+    ramp = np.clip(np.arange(e) / e, 0, 1) ** 2
+    bf[:e, :] *= ramp[:, None]; bf[-e:, :] *= ramp[::-1][:, None]
+    bf[:, :e] *= ramp[None, :]; bf[:, -e:] *= ramp[::-1][None, :]
+    al = al * bf
     img = np.dstack([col, al * 255]).astype(np.uint8)
     Image.fromarray(img, 'RGBA').save(f'work/layers/{name}.png', compress_level=3)
     meta.append({'name': name, 'depth': d})
