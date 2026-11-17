@@ -189,9 +189,21 @@ body:not(.site-intro-pending):not(.site-nav-reveal) .topbar::after { transform: 
 html[data-font-style="pixel"] .site-intro-seal-text {
   font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif !important;
 }
-/* The ring and glyph begin fading with the split center line, and finish with every line. */
-.site-intro-seal { animation: tea-intro-seal-complete 1s ease-in-out .80s forwards !important; }
+/* The glyph fades with the split centre line. The ring is a progress stroke: on the home loader it
+   fills as the film loads (--intro-progress, intro-gate.js), then it erases over exactly the side
+   lines' window (1.5s linear from .30s), so the ring runs out the moment the lines reach the end. */
+.site-intro-seal-text { animation: tea-intro-seal-complete 1s ease-in-out .80s forwards; }
+.site-intro-seal { animation: tea-intro-seal-complete .12s linear 1.78s forwards !important; }
 @keyframes tea-intro-seal-complete { to { opacity: 0; } }
+.site-intro-seal-ring circle { stroke-dasharray: 100 !important; stroke-dashoffset: calc(100 - var(--intro-progress, 1) * 100) !important; stroke-width: .5; transition: stroke-dashoffset .45s ease; }
+.intro-play .site-intro-seal-ring circle { animation: tea-intro-ring-erase 1.5s linear .30s both; }
+@keyframes tea-intro-ring-erase { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -100; } }
+
+/* Gate: nothing animates until intro-gate.js says play; skipped intros never paint. */
+body:not(.intro-play) .site-intro, body:not(.intro-play) .site-intro * { animation: none !important; }
+.intro-skip .site-intro { display: none !important; }
+/* Home loader paints in the visitor's theme, so the night film never follows a flash of day. */
+body.ink-home.theme-night { --intro-paper: #0c1423; --intro-ink: #d9d3c4; }
 
 /* Avoid layout/size animation on the outgoing page curtain as well. */
 .page-transition {
@@ -235,12 +247,16 @@ html[data-font-style="pixel"] .page-transition-seal-text { font-family: "Noto Se
   .home-page .home-hero-fallback { background-position: 56% center !important; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .site-intro, .page-transition { display: none !important; }
+  .page-transition { display: none !important; }
+  /* the home loader still covers loading, then simply lifts */
+  .intro-play .site-intro { animation: tea-intro-finish .01s linear .2s forwards !important; }
+  .intro-play .site-intro * { animation: none !important; }
   body .topbar { animation: none !important; opacity: 1 !important; pointer-events: auto !important; }
   body .topbar::after { animation: none !important; transform: scaleX(1) !important; }
 }
-html[data-motion="reduced"] .site-intro,
 html[data-motion="reduced"] .page-transition { display: none !important; }
+html[data-motion="reduced"] .intro-play .site-intro { animation: tea-intro-finish .01s linear .2s forwards !important; }
+html[data-motion="reduced"] .intro-play .site-intro * { animation: none !important; }
 html[data-motion="reduced"] body .topbar { animation: none !important; opacity: 1 !important; pointer-events: auto !important; }
 html[data-motion="reduced"] body .topbar::after { animation: none !important; transform: scaleX(1) !important; }
 

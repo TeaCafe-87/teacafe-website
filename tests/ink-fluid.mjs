@@ -6,7 +6,8 @@ const read = (p) => readFileSync(new URL(`../dist/${p}`, import.meta.url), 'utf8
 const js = read('assets/js/ink-fluid.js'), html = read('index.html'), css = read('assets/css/home-journey.css');
 // Stable-fluids pipeline: advection, vorticity confinement, pressure projection, ink re-injection.
 for (const pass of ['advect', 'splat', 'curl', 'vorticity', 'divergence', 'pressure', 'gradient', 'ink', 'show']) assert.match(js, new RegExp(`${pass}: \``), `missing ${pass} pass`);
-assert.match(js, /mix\(1\., \.012, stir\)/, 'calm areas snap back to the live picture, stirred ones re-inject slowly like project_5');
+assert.match(js, /mix\(1\., \.0055, stir\)/, 'calm areas snap back to the live picture, stirred smoke re-settles slowly');
+assert.match(js, /now - lastInput > 11000/, 'the smoke drifts for a while before the raw film takes over');
 // The ink source is the film plus the live overlay, so the waterfall and birds smear too.
 assert.match(js, /uOverlay/);
 assert.match(js, /UNPACK_PREMULTIPLY_ALPHA_WEBGL, true/);

@@ -11,7 +11,25 @@ const html = read('index.html'), js = read('assets/js/home-journey.js'), css = r
 // video is muted/playsinline with a real poster image.
 assert.match(html, /class="journey" data-journey/);
 assert.match(html, /<video[^>]*data-journey-video[^>]*muted[^>]*playsinline/);
-assert.match(html, /journey-poster[^>]*src="\/assets\/video\/journey-desktop-start\.jpg"/);
+// The home poster has no default src: the theme is known first, so night never flashes day.
+assert.match(html, /<img alt="" class="journey-poster" decoding="async"\/>/);
+// Opening gate: decided before first paint, home holds a loader until the film is ready.
+const gate = read('assets/js/intro-gate.js');
+assert.ok(html.indexOf('intro-gate.js') < html.indexOf('class="site-intro"'), 'the gate runs before the intro paints');
+assert.match(gate, /intro-wait/);
+assert.match(gate, /theme-night/);
+assert.match(js, /teaIntro\.go\(\)/);
+assert.match(read('assets/css/teacafe-cinematic.css'), /body:not\(\.intro-play\) \.site-intro, body:not\(\.intro-play\) \.site-intro \* \{ animation: none !important; \}/);
+assert.match(read('assets/css/teacafe-cinematic.css'), /tea-intro-ring-erase 1\.5s linear \.30s/, 'the ring erases over the side lines\' exact window');
+for (const page of ['rules', 'news', 'wiki', 'forum', 'gallery', 'supporters', 'careers', 'market', 'index']) {
+  assert.ok(read(`${page}.html`).includes('/assets/js/intro-gate.js'), `${page}: intro gate`);
+}
+// Player scroll, live status fallbacks, footer seal back to top.
+assert.match(html, /data-player-scroll data-state="loading"/);
+assert.match(read('assets/js/app.js'), /data-to-top/);
+const status = readFileSync(new URL('../functions/api/server/status.js', import.meta.url), 'utf8');
+assert.match(status, /MINECRAFT_STATUS_ADDRESS/);
+assert.match(status, /fromMcstatus, fromMcsrvstat/);
 // Home picks the v2 four-act film (day/night, desktop/portrait) and drives the live overlay + ink fluid.
 assert.match(html, /data-journey data-film-set/);
 assert.match(html, /<canvas class="journey-overlay" data-journey-live>/);

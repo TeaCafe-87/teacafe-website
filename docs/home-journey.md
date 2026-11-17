@@ -7,6 +7,9 @@
 > - **一次捲動一卷**：滾輪一格、手機滑一下或 ↓／PageDown／空白鍵，就會自動滑到下一卷（主畫面 → 卷一～卷六 → 頁尾），中間的運鏡照常播放；比畫面還高的段落會先分頁看完再前進。捲軸、錨點連結與表單不受影響。只在首頁啟用（`home-journey.js` 結尾）。
 > - **標題書法字**：大標題用 `dist/assets/fonts/teacafe-shufa.woff2`，是莫大毛筆字體（Bakudai，SIL OFL 1.1）只含標題用字的子集，依授權改名為 TeaCafe Shufa。改了標題文字後執行 `python tools/build-title-font.py <Bakudai-Bold.ttf 路徑>` 重新產生。
 > - 首頁不再放最新公告、玩家相冊與常見問題（各有自己的頁面）；旅程之後只剩精選時刻（有設定時）與頁尾。
+> - **開場與載入**：`intro-gate.js` 在 `<body>` 最前面同步執行，先決定日夜與是否播放開場，CSS 動畫在它說「播」之前一律不動（舊版由晚載入的 `motion.js` 中途決定，是開場偶爾失常的原因）。首頁每次都先顯示載入畫面：中間圓圈是進度線（字型、海報、影片第一格），載入完才播放開場；兩側線條收完的同一刻圓圈剛好跑完。站內換頁後一律播放對應的開場。
+> - **Topbar**：首頁只在主畫面常駐；離開後收起，往上捲時短暫出現，滑鼠停在上面時不收。
+> - **伺服器狀態**：`/api/server/status` 依序試 mcstatus.io、mcsrvstat.us。若防 DDoS 代理擋掉狀態查詢，可在 Pages 設定 `MINECRAFT_STATUS_ADDRESS`（例如源站 `host:port`）只供查詢使用，玩家看到的位址仍是 `MINECRAFT_SERVER_ADDRESS`。卷一的玩家卷軸每分鐘更新一次。
 > - **游標效果**：`ink-fluid.js` 是 Art-Of-Ink `project_5.pde`（PixelFlow 流體）的 WebGL2 移植。墨水來源是影片加上 `journey-live.js` 的動態層，所以瀑布、飛鳥、小舟也會被推散，平靜後以 project_5 的比例（約 1%／格）慢慢回到原畫。只有被攪動時才渲染，靜止 4 秒後交回原本的影片層。沒有 WebGL2 或開啟「減少動態效果」時不啟用。
 
 相關檔案：`dist/index.html`、`dist/assets/js/home-journey.js`、`dist/assets/css/home-journey.css`、`dist/assets/video/journey.mp4`（連同 `journey-start.webp`、`journey-end.webp` 海報）、`tools/journey-video/`（影片產生器）、`tests/home-journey.mjs`。

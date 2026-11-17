@@ -1,14 +1,9 @@
 (() => {
   const root = document.documentElement;
   const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches || root.dataset.motion === 'reduced';
-  const intro = document.querySelector('.site-intro');
-  const INTRO_VERSION = 'tea-cinematic-2026-10-v2';
-  const introSeen = localStorage.getItem('teacafe-intro-seen-version') === INTRO_VERSION;
-  const introEnabled = localStorage.getItem('teacafe-intro-enabled') !== 'false';
-  const playedThisSession = sessionStorage.getItem('teacafe-intro-session-version') === INTRO_VERSION;
+  // intro-gate.js (top of <body>) decides and runs the opening; this file reacts when it ends.
   const adminPage = document.body.classList.contains('moderation-page');
-  const playIntro = Boolean(intro && !adminPage && !reduceMotion() && (!introSeen || introEnabled && !playedThisSession));
-  let introFinished = false;
+  const playIntro = document.body.classList.contains('site-intro-pending');
   let navRevealed = false;
   const revealNav = () => {
     if (navRevealed) return;
@@ -17,29 +12,14 @@
     if (window.teaRevealTopbar) window.teaRevealTopbar();
     else document.querySelector('.topbar')?.classList.remove('topbar-hidden');
   };
-  const finishIntro = (played = true) => {
-    if (introFinished) return;
-    introFinished = true;
-    if (played) {
-      localStorage.setItem('teacafe-intro-seen-version', INTRO_VERSION);
-      sessionStorage.setItem('teacafe-intro-session-version', INTRO_VERSION);
-    } else document.documentElement.dataset.introSkipped = 'true';
-    intro?.remove();
-    document.body.classList.remove('site-intro-pending');
+  const afterIntro = (played) => {
+    if (!played) document.documentElement.dataset.introSkipped = 'true';
     revealNav();
     startKinetic();
     window.teaIntroResult = { played };
-    dispatchEvent(new CustomEvent('teacafe-intro-finished', { detail: window.teaIntroResult }));
   };
-  if (playIntro) {
-    document.body.classList.add('site-intro-pending');
-    intro.addEventListener('animationend', (event) => {
-      if (event.target === intro && event.animationName === 'tea-intro-finish') finishIntro(true);
-    });
-    setTimeout(() => finishIntro(true), 5000);
-  } else {
-    queueMicrotask(() => finishIntro(false));
-  }
+  if (!window.teaIntro || window.teaIntro.done || !playIntro) queueMicrotask(() => afterIntro(Boolean(window.teaIntro?.done && playIntro)));
+  else addEventListener('teacafe-intro-finished', (event) => afterIntro(event.detail.played), { once: true });
 
   const transition = document.createElement('div');
   transition.className = 'page-transition';
@@ -58,6 +38,7 @@
     if (document.body.classList.contains('is-page-leaving')) { event.preventDefault(); return; }
     event.preventDefault();
     document.body.classList.add('is-page-leaving');
+    try { sessionStorage.setItem('teacafe-arrive', '1'); } catch {} // the next page opens with the matching arrival
     setTimeout(() => location.assign(url.href), 540);
   });
   addEventListener('pageshow', () => document.body.classList.remove('is-page-leaving'));

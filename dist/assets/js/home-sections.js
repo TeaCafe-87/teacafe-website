@@ -109,4 +109,17 @@
       timer = setTimeout(() => { pass.classList.remove('is-stamped'); if (label) label.textContent = idle; }, 2600);
     });
   }
+
+  /* ---- Player scroll (卷一): unrolls sideways once the status is in and the scene is on screen;
+     rolls back up when the scene leaves, so it unrolls again on every return ---- */
+  const playerScroll = document.querySelector('[data-player-scroll]');
+  if (playerScroll) {
+    let onScreen = false;
+    const sync = () => playerScroll.classList.toggle('is-open', onScreen && playerScroll.dataset.state !== 'loading');
+    if (typeof IntersectionObserver === 'function') {
+      new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; sync(); }, { threshold: 0.6 }).observe(playerScroll);
+    } else onScreen = true;
+    addEventListener('teacafe-players', sync);
+    sync();
+  }
 })();

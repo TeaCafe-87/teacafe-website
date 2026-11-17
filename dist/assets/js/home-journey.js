@@ -58,6 +58,25 @@
     }
   }
   chooseFilm();
+
+  // Home loader (intro-gate.js): fonts, the poster and the first film frame fill the seal ring;
+  // once all three are in, the opening plays, so the page appears complete and in the right theme.
+  if (filmSet && window.teaIntro && !window.teaIntro.done) {
+    const ready = { fonts: false, poster: false, film: false };
+    const tick = (key) => {
+      if (ready[key]) return;
+      ready[key] = true;
+      const n = Object.values(ready).filter(Boolean).length;
+      window.teaIntro.progress(n / 3);
+      if (n === 3) setTimeout(() => window.teaIntro.go(), 450); // let the ring visibly close first
+    };
+    (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => tick('fonts'));
+    if (!poster || (poster.complete && poster.naturalWidth)) tick('poster');
+    else { poster.addEventListener('load', () => tick('poster'), { once: true }); poster.addEventListener('error', () => tick('poster'), { once: true }); }
+    if (video.readyState >= 2) tick('film');
+    else { video.addEventListener('loadeddata', () => tick('film'), { once: true }); video.addEventListener('error', () => tick('film'), { once: true }); }
+    window.teaIntro.progress(0.08);
+  }
   if (fluidCanvas && window.TeaInkFluid) {
     window.TeaInkFluid.attach(fluidCanvas, { video, overlay: liveCanvas, active: () => !journey.classList.contains('journey-done') });
   }
@@ -207,37 +226,71 @@
     return [...list].reverse().find((s) => s < y - 8) ?? y;
   }
 
-  let gliding = false, quietUntil = 0, wheelSum = 0, wheelAt = 0;
-  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-  function glide(to) {
+  /* Glides. A gesture during a glide extends it toward the following stop instead of waiting,
+   * so a continuous scroll flows through the scenes without halting at each one. */
+  let gliding = false, glideTo = 0, glideRaf = 0, lastIntent = 0;
+  const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+  // Within an act (text to text) stays brisk; a change of act lets the camera move be watched.
+  const durationFor = (dist) => (dist <= innerHeight * 1.35
+    ? clamp(650 + dist * 0.42, 800, 1500)
+    : clamp(2200 + dist * 0.62, 3800, 7200));
+  function glide(to, { chained = false, duration } = {}) {
+    to = clamp(Math.round(to), 0, maxY());
     const from = scrollY, dist = to - from;
-    if (Math.abs(dist) < 2) return;
-    if (reduced()) { scrollTo({ top: to, behavior: 'instant' }); quietUntil = performance.now() + 250; return; }
+    cancelAnimationFrame(glideRaf);
+    if (Math.abs(dist) < 2) { gliding = false; return; }
+    if (reduced()) { gliding = false; scrollTo({ top: to, behavior: 'instant' }); return; }
     gliding = true;
-    // Long camera moves (between acts) take longer, so the film reads as a journey, not a jump.
-    const duration = clamp(650 + Math.abs(dist) * 0.42, 800, 2300);
+    glideTo = to;
+    const span = duration || durationFor(Math.abs(dist));
+    const curve = chained ? easeOut : easeInOut; // a chained glide is already moving: no slow start
     const t0 = performance.now();
     const step = (now) => {
-      const k = Math.min(1, (now - t0) / duration);
-      scrollTo({ top: from + dist * ease(k), behavior: 'instant' });
-      if (k < 1) requestAnimationFrame(step);
-      else { gliding = false; quietUntil = performance.now() + 380; } // swallow trackpad inertia
+      const k = Math.min(1, (now - t0) / span);
+      scrollTo({ top: from + dist * curve(k), behavior: 'instant' });
+      if (k < 1) glideRaf = requestAnimationFrame(step);
+      else gliding = false;
     };
-    requestAnimationFrame(step);
+    glideRaf = requestAnimationFrame(step);
   }
-  const go = (dir) => glide(nextTarget(dir));
+  function go(dir) {
+    if (dir < 0) peekTopbar();
+    if (gliding && Math.sign(glideTo - scrollY) === dir) {
+      // extend: plan from where this glide was heading
+      const y = scrollY;
+      scrollTo({ top: glideTo, behavior: 'instant' });
+      const next = nextTarget(dir);
+      scrollTo({ top: y, behavior: 'instant' });
+      if (next !== glideTo) glide(next, { chained: true });
+      return;
+    }
+    glide(nextTarget(dir), { chained: gliding });
+  }
+  window.teaGlideTo = (y, duration) => glide(y, { duration });
   const blocked = (target) => document.querySelector('dialog[open]')
     || (target instanceof Element && target.closest('input, textarea, select, [contenteditable], dialog'));
+  const intent = (dir) => {
+    const now = performance.now();
+    if (now - lastIntent < 300) return; // one step per beat, however fast the wheel spins
+    lastIntent = now;
+    go(dir);
+  };
 
+  // Wheel: a fresh push (a pause, or deltas holding or growing) is intent; decaying deltas are
+  // trackpad inertia and are ignored, so a flick never overshoots several scenes.
+  let wheelSum = 0, wheelAt = 0, lastDelta = 0;
   addEventListener('wheel', (event) => {
     if (event.ctrlKey || blocked(event.target)) return;
     event.preventDefault();
     const now = performance.now();
-    if (gliding || now < quietUntil) return;
-    if (now - wheelAt > 220) wheelSum = 0;
+    const delta = event.deltaMode === 1 ? event.deltaY * 32 : event.deltaY;
+    const fresh = now - wheelAt > 160 || Math.abs(delta) >= Math.abs(lastDelta) || Math.sign(delta) !== Math.sign(lastDelta);
     wheelAt = now;
-    wheelSum += event.deltaMode === 1 ? event.deltaY * 32 : event.deltaY;
-    if (Math.abs(wheelSum) >= 24) { go(Math.sign(wheelSum)); wheelSum = 0; }
+    lastDelta = delta;
+    if (!fresh) return;
+    wheelSum = Math.sign(wheelSum) === Math.sign(delta) ? wheelSum + delta : delta;
+    if (Math.abs(wheelSum) >= 24) { wheelSum = 0; intent(Math.sign(delta)); }
   }, { passive: false });
 
   let touchY = null;
@@ -249,7 +302,7 @@
     if (touchY === null) return;
     const dy = touchY - event.changedTouches[0].clientY;
     touchY = null;
-    if (Math.abs(dy) > 36 && !gliding) go(Math.sign(dy));
+    if (Math.abs(dy) > 36) intent(Math.sign(dy));
   }, { passive: true });
 
   addEventListener('keydown', (event) => {
@@ -259,9 +312,41 @@
     if (!down && !up && event.key !== 'Home' && event.key !== 'End') return;
     if (event.target instanceof Element && event.target.closest('button, a') && event.key === ' ') return;
     event.preventDefault();
-    if (gliding) return;
-    if (event.key === 'Home') glide(0);
+    if (event.key === 'Home') { peekTopbar(); glide(0); }
     else if (event.key === 'End') glide(maxY());
-    else go(down ? 1 : -1);
+    else intent(down ? 1 : -1);
   });
+
+  // In-page links (如何入住, the footer seal) glide slowly so the film plays the whole way there.
+  document.addEventListener('click', (event) => {
+    const link = event.target instanceof Element && event.target.closest('a[href^="#"]');
+    if (!link || event.defaultPrevented || event.button !== 0) return;
+    const id = decodeURIComponent(link.hash.slice(1));
+    const target = id ? document.getElementById(id) : null;
+    if (!target && id !== 'top') return;
+    event.preventDefault();
+    if (!target) { peekTopbar(); glide(0); return; }
+    const top = docTop(target), h = target.offsetHeight, vh = innerHeight;
+    const y = h < vh * 0.8 ? top + h / 2 - vh / 2 : top - vh * 0.12;
+    glide(y, { duration: clamp(2600 + Math.abs(y - scrollY) * 0.4, 3600, 8000) });
+    history.replaceState(null, '', '#' + encodeURIComponent(id));
+  }, true);
+
+  /* ---- Topbar: stays on the hero; elsewhere it tucks away and peeks briefly on the way back up ---- */
+  const topbar = document.querySelector('.topbar');
+  let peekUntil = 0, topbarTimer = 0;
+  function peekTopbar() { peekUntil = performance.now() + 2600; updateTopbar(); }
+  function updateTopbar() {
+    if (!topbar || document.body.classList.contains('site-intro-pending')) return;
+    const inHero = scrollY < innerHeight * 0.55;
+    const engaged = topbar.matches(':hover, :focus-within') || topbar.querySelector('details[open]');
+    const show = inHero || engaged || performance.now() < peekUntil;
+    topbar.classList.toggle('topbar-hidden', !show);
+    clearTimeout(topbarTimer);
+    if (show && !inHero) topbarTimer = setTimeout(updateTopbar, Math.max(400, peekUntil - performance.now() + 50));
+  }
+  addEventListener('scroll', updateTopbar, { passive: true });
+  addEventListener('teacafe-intro-finished', () => setTimeout(updateTopbar, 900));
+  topbar?.addEventListener('mouseleave', () => setTimeout(updateTopbar, 600));
+  topbar?.addEventListener('focusout', () => setTimeout(updateTopbar, 600));
 })();
