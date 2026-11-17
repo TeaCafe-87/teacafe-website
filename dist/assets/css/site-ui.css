@@ -191,7 +191,19 @@ html[data-motion='reduced'] .page-backdrop .journey-video { display: none; }
 .gallery-arrow { background: transparent; color: #fff; border: 1px solid rgb(255 255 255 / 40%); border-radius: 50%; box-shadow: none; font-family: var(--tc-sans); }
 .gallery-arrow:hover { background: #fff; color: var(--tc-ink); }
 .gallery-discussion { background: transparent; border-top: 1px solid var(--tc-line); }
-.toast { background: var(--tc-ink); border: 0; border-radius: 999px; padding: 12px 22px; }
+.toast {
+  display: flex; align-items: center; gap: 12px; padding: 9px 18px 9px 9px;
+  background: var(--tc-paper); color: var(--tc-ink); border: 1px solid var(--tc-line); border-radius: 6px;
+  box-shadow: 0 14px 40px rgb(0 0 0 / 20%); font: 600 15px/1.4 var(--tc-sans); text-shadow: none; opacity: 0;
+}
+.toast::before {
+  content: "印"; flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 4px;
+  background: #9e3b2e; color: #f6efe0; font: 400 21px/1 var(--tc-brush); transform: rotate(-6deg);
+}
+.toast.show { opacity: 1; }
+.toast.show::before { animation: tc-toast-stamp .5s cubic-bezier(.3, 1.5, .5, 1) both; }
+@keyframes tc-toast-stamp { 0% { transform: rotate(-18deg) scale(1.9); opacity: 0; } 60% { transform: rotate(-4deg) scale(.92); opacity: 1; } 100% { transform: rotate(-6deg) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .toast.show::before { animation: none; } }
 
 /* ---------- Settings dialog ---------- */
 dialog#settings.prm {

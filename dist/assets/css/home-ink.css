@@ -24,12 +24,12 @@ body.ink-home .ink-hero .ink-title {
   letter-spacing: .08em; margin-right: -.08em; color: var(--j-ink);
   text-shadow: 0 0 30px var(--j-glow), 0 0 4px var(--j-glow);
 }
-html[data-text-size] body.ink-home .ink-hero .ink-title { font-size: min(19vw, 22svh, calc(184px * var(--text-scale, 1))); }
+html[data-text-size] body.ink-home .ink-hero .ink-title { font-size: min(calc(19vw * min(var(--text-scale, 1), 1.05)), calc(22svh * var(--text-scale, 1)), calc(184px * var(--text-scale, 1))); }
 .ink-seal {
   position: absolute; top: 58%; right: calc(-1 * clamp(22px, 2.6vw, 40px));
   display: inline-grid; place-items: center; padding: 8px 5px; border-radius: 5px; background: var(--j-seal);
   writing-mode: vertical-rl; letter-spacing: .2em;
-  font: 400 clamp(12px, 1.1vw, 15px) / 1.1 var(--tc-brush); color: #f6efe0;
+  font: 400 calc(clamp(12px, 1.1vw, 15px) * var(--text-scale, 1)) / 1.1 var(--tc-brush); color: #f6efe0;
 }
 body.ink-home .ink-hero .ink-sub {
   margin: 0; max-width: 34em; font-size: clamp(15px, 1.5vw, 19px); line-height: 1.9; font-weight: 500; color: var(--j-ink);
@@ -54,7 +54,7 @@ body.ink-home .ink-hero .ink-sub {
 }
 .ink-pass-seal i {
   display: grid; place-items: center; width: 36px; height: 36px; border: 1.5px solid var(--j-seal); border-radius: 4px;
-  font: 400 24px / 1 var(--tc-brush); font-style: normal; color: var(--j-seal);
+  font: 400 calc(24px * var(--text-scale, 1)) / 1 var(--tc-brush); font-style: normal; color: var(--j-seal);
   transform: rotate(-6deg); transition: transform .25s ease, background-color .2s ease, color .2s ease;
 }
 .ink-pass:hover { transform: translateY(-2px); background: color-mix(in srgb, var(--j-paper) 92%, transparent); }

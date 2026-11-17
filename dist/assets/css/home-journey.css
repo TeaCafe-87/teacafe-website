@@ -87,7 +87,7 @@ body.ink-home.theme-night .topbar .discord-invite { background: #2b3a55; }
   margin: 0 0 .55em;
   /* Brush titles: phrases never split (keep-all); sized so the longest phrase fits the blank half. */
   font: 400 clamp(30px, 3.6vw, 60px) / 1.3 var(--tc-brush);
-  font-size: clamp(22px, 8.2cqi, 60px); /* the longest phrase is 10 brush glyphs (~1.1em each) */
+  font-size: calc(clamp(22px, 8.2cqi, 60px) * var(--text-scale, 1)); /* the longest phrase is 10 brush glyphs (~1.1em each) */
   letter-spacing: .06em; color: var(--j-ink); text-wrap: balance; word-break: keep-all;
 }
 .scene-title em { font-style: normal; color: var(--j-slate); white-space: nowrap; }
@@ -114,6 +114,40 @@ body.ink-home .server-player-board .strip-label { display: block; margin-bottom:
 body.ink-home .online-player-heads { display: flex; flex-wrap: wrap; gap: 8px; }
 body.ink-home .online-player-head { width: 36px; height: 36px; padding: 0; border-radius: 4px; border: 1px solid var(--j-hair); background: var(--j-paper-deep); box-shadow: none; }
 
+/* Player scroll: a hand scroll whose paper unrolls from the left rod toward the right one. */
+.player-scroll { margin-top: 22px; }
+.player-scroll-label { display: block; margin-bottom: 10px; font: 500 13px/1 var(--tc-sans); letter-spacing: .14em; color: var(--j-ink-soft); }
+.player-scroll-body {
+  display: grid; grid-template-columns: 12px 0fr 12px; align-items: stretch;
+  transition: grid-template-columns 1.6s cubic-bezier(.45, .05, .2, 1);
+}
+.player-scroll.is-open .player-scroll-body { grid-template-columns: 12px 1fr 12px; }
+.scroll-rod {
+  position: relative; min-height: 78px; border-radius: 6px;
+  background: linear-gradient(90deg, #4a3320, #8a6a42 45%, #4a3320);
+}
+.scroll-rod::before, .scroll-rod::after {
+  content: ""; position: absolute; left: 50%; width: 18px; height: 7px; translate: -50% 0; border-radius: 4px; background: #3a2818;
+}
+.scroll-rod::before { top: -5px; }
+.scroll-rod::after { bottom: -5px; }
+.scroll-paper {
+  min-width: 0; overflow: hidden;
+  background: color-mix(in srgb, var(--j-paper-deep) 88%, var(--j-tea) 12%);
+  border-block: 1px solid color-mix(in srgb, var(--j-tea) 35%, transparent);
+}
+body.ink-home .scroll-paper .online-player-heads {
+  display: flex; flex-wrap: nowrap; gap: 12px; width: max-content; max-width: 100%; overflow-x: auto;
+  padding: 12px 16px; scrollbar-width: thin;
+}
+body.ink-home .scroll-paper .online-player-heads:empty { display: none; }
+.player-head { display: grid; justify-items: center; gap: 4px; margin: 0; }
+body.ink-home .player-head .online-player-head { width: 40px; height: 40px; border-radius: 3px; image-rendering: pixelated; border: 0; }
+.player-head figcaption { max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 11px/1.2 var(--tc-sans); color: var(--j-ink-soft); }
+.scroll-empty { display: none; margin: 0; padding: 26px 18px; white-space: nowrap; font: 400 calc(17px * var(--text-scale, 1)) / 1 var(--tc-display); letter-spacing: .12em; color: var(--j-ink-soft); }
+.online-player-heads:empty + .scroll-empty { display: block; }
+@media (prefers-reduced-motion: reduce) { .player-scroll-body { transition: none; } }
+
 /* ---------- 過橋 / 行旅: ruled lists ---------- */
 .scene-list { list-style: none; margin: 0; padding: 0; display: grid; }
 .scene-list > li { padding: 16px 2px; border-top: 1px solid var(--j-hair); }
@@ -135,7 +169,7 @@ body.ink-home .online-player-head { width: 36px; height: 36px; padding: 0; borde
 .journey-steps .j-no {
   display: grid; place-items: center; width: 44px; height: 44px; margin-top: 2px;
   border: 1.5px solid var(--j-ink); border-radius: 6px;
-  font: 400 24px / 1 var(--tc-brush); color: var(--j-ink);
+  font: 400 calc(24px * var(--text-scale, 1)) / 1 var(--tc-brush); color: var(--j-ink);
 }
 .journey-steps h3 { margin: 0 0 6px; font: 700 21px / 1.5 var(--tc-display); letter-spacing: .05em; color: var(--j-ink); }
 .journey-steps p { margin: 0 0 8px; font-size: 15px; line-height: 1.9; color: var(--j-ink-soft); }
@@ -149,13 +183,13 @@ body.ink-home .online-player-head { width: 36px; height: 36px; padding: 0; borde
 .j-chip:focus-visible { outline: 3px solid var(--j-seal); outline-offset: 3px; }
 
 /* ---------- 雲深: closing invitation ---------- */
-body.ink-home .home-page-main #join-cta .scene-title { font-size: clamp(26px, 9.6cqi, 70px); letter-spacing: .08em; }
+body.ink-home .home-page-main #join-cta .scene-title { font-size: calc(clamp(26px, 9.6cqi, 70px) * var(--text-scale, 1)); letter-spacing: .08em; }
 #join-cta .ink-actions { justify-content: flex-start; }
 .cta-seal {
   display: inline-grid; place-items: center; margin-top: clamp(22px, 4svh, 40px);
   padding: 10px 7px; border-radius: 6px; background: var(--j-seal);
   writing-mode: vertical-rl; letter-spacing: .3em;
-  font: 400 15px / 1.15 var(--tc-brush); color: #f6efe0;
+  font: 400 calc(15px * var(--text-scale, 1)) / 1.15 var(--tc-brush); color: #f6efe0;
 }
 
 /* Buttons on the night film */

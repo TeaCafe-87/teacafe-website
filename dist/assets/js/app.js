@@ -28,14 +28,20 @@ if (header) {
 const footer = $("[data-footer]");
 if (footer) {
   footer.innerHTML = `<footer class="site-footer">
-    <a class="brand" href="/"><img class="brand-icon" src="/image/brand/teacafe-icon-192.png" alt=""><span><b>茶咖暖居</b><small>TEACAFE</small></span></a>
+    <a class="brand" href="#top" data-to-top aria-label="回到頁面頂端"><img class="brand-icon" src="/image/brand/teacafe-icon-192.png" alt=""><span><b>茶咖暖居</b><small>TEACAFE</small></span></a>
     <nav><a href="/">主頁</a><a href="/rules.html">規則</a><a href="/news.html">公告</a><a href="/wiki.html">Wiki</a><a href="/forum.html">論壇</a><a href="/gallery.html">玩家相冊</a><a href="/supporters.html">感謝支持</a><a href="/careers.html">職業指南</a><a href="/market.html">月映茶行</a><a data-official-link href="/admin" hidden>管理後台</a></nav>
   </footer>`;
+  // The footer seal returns to the top of this page (the home page glides, see home-journey.js).
+  footer.querySelector("[data-to-top]")?.addEventListener("click", (event) => {
+    if (event.defaultPrevented) return;
+    event.preventDefault();
+    scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  });
 }
 
 document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/effects.css?v=20261017">');
-document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/polish.css?v=20261119icon">');
-document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-refresh.css?v=20261119">');
+document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/polish.css?v=20261120icon">');
+document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-refresh.css?v=20261120">');
 const motionStyle = document.querySelector('link[href^="/assets/css/motion.css"]');
 if (motionStyle) document.head.append(motionStyle);
 else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/motion.css?v=20261018-3">');
@@ -49,7 +55,7 @@ if (homeInkStyle) document.head.append(homeInkStyle);
 // site-ui.css is linked in each page head so the shared theme paints on first frame; keep it last.
 const siteUiStyle = document.querySelector('link[href^="/assets/css/site-ui.css"]');
 if (siteUiStyle) document.head.append(siteUiStyle);
-else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-ui.css?v=20261119">');
+else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-ui.css?v=20261120">');
 document.body.insertAdjacentHTML("beforeend", `
 <div class="toast" id="toast" role="status"></div>
 <dialog id="settings" class="prm" aria-label="網站設定"><form method="dialog" class="prm-sheet">
@@ -387,57 +393,71 @@ applyInterfaceSettings();
 
 $$('[data-copy]').forEach((button) => button.addEventListener("click", async () => {
   const value = button.dataset.copy === "SERVER_IP" ? "mc.teacafe.xyz" : button.dataset.copy;
-  try { await navigator.clipboard.writeText(value); toast(value + " 已複製"); }
+  try { await navigator.clipboard.writeText(value); toast("已拓下 " + value + "・可直接貼上"); }
   catch { toast(value); }
 }));
 
+// Live status, refreshed every minute. The player scroll (卷一) unrolls with a head per player.
+function renderPlayerScroll(state, players = []) {
+  const scroll = $("[data-player-scroll]");
+  const heads = $("[data-online-player-heads]");
+  if (!heads) return;
+  heads.replaceChildren(...players.map((player) => {
+    const figure = document.createElement("figure");
+    figure.className = "player-head";
+    const image = document.createElement("img");
+    image.className = "online-player-head";
+    image.src = `https://mc-heads.net/avatar/${encodeURIComponent(player.uuid)}/40`;
+    image.alt = player.name ? `${player.name} 的頭像` : "玩家頭像";
+    image.width = 40;
+    image.height = 40;
+    image.loading = "lazy";
+    image.decoding = "async";
+    figure.append(image);
+    if (player.name) {
+      const caption = document.createElement("figcaption");
+      caption.textContent = player.name;
+      figure.append(caption);
+    }
+    return figure;
+  }));
+  if (!scroll) return;
+  scroll.dataset.state = state;
+  const empty = scroll.querySelector("[data-player-empty]");
+  if (empty) empty.textContent = { online: "山中暫無旅人，等你來", offline: "山門暫閉，稍後再來", unknown: "暫時看不見山中的動靜" }[state] || "";
+  window.dispatchEvent(new CustomEvent("teacafe-players", { detail: { state, count: players.length } }));
+}
 async function loadServerStatus() {
   const status = $("[data-server-status]");
   if (!status) return;
+  status.classList.remove("status-loading", "status-offline", "status-online");
   try {
-    const response = await fetch("/api/server/status", { headers: { Accept: "application/json" } });
-    if (!response.ok) throw new Error("status");
-    const data = await response.json();
+    const response = await fetch("/api/server/status", { headers: { Accept: "application/json" }, cache: "no-store" });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok && data.online !== false) throw new Error("status");
     const address = $("[data-server-address]");
-    if (address) address.textContent = "mc.teacafe.xyz";
-    status.classList.remove("status-loading", "status-offline", "status-online");
+    if (address) address.textContent = data.address || "mc.teacafe.xyz";
     if (data.online) {
       status.textContent = "● 線上";
       status.classList.add("status-online");
       $("[data-server-players]").textContent = `${data.players.online} / ${data.players.max}`;
-      $("[data-server-version]").textContent = data.version || "未知";
-      const panel = $("[data-online-player-panel]");
-      const heads = $("[data-online-player-heads]");
-      const players = Array.isArray(data.players?.list) ? data.players.list : [];
-      if (panel && heads) {
-        heads.replaceChildren(...players.map((player) => {
-          const image = document.createElement("img");
-          image.className = "online-player-head";
-          image.src = `https://mc-heads.net/avatar/${encodeURIComponent(player.uuid)}/40`;
-          image.alt = "";
-          image.width = 40;
-          image.height = 40;
-          image.loading = "lazy";
-          image.decoding = "async";
-          return image;
-        }));
-        panel.hidden = players.length === 0;
-      }
+      $("[data-server-version]").textContent = data.version || "26.3";
+      renderPlayerScroll("online", Array.isArray(data.players?.list) ? data.players.list : []);
     } else {
       status.textContent = "● 離線";
       status.classList.add("status-offline");
       $("[data-server-players]").textContent = "0 / 0";
       $("[data-server-version]").textContent = "26.3";
-      $("[data-online-player-heads]")?.replaceChildren();
-      if ($("[data-online-player-panel]")) $("[data-online-player-panel]").hidden = true;
+      renderPlayerScroll("offline");
     }
   } catch {
     status.textContent = "狀態無法取得";
-    status.classList.remove("status-loading");
     status.classList.add("status-offline");
+    renderPlayerScroll("unknown");
   }
 }
 loadServerStatus();
+if ($("[data-server-status]")) setInterval(() => { if (!document.hidden) loadServerStatus(); }, 60000);
 
 const TEACAFE_STARTED_AT = Date.parse("2026-08-07T00:00:00+08:00");
 const uptimeEl = $("[data-server-uptime]");
@@ -767,5 +787,5 @@ if (ruleSections.length) {
 }
 
 const motionScript = document.createElement('script');
-motionScript.src = '/assets/js/motion.js?v=20261019-2';
+motionScript.src = '/assets/js/motion.js?v=20261120';
 document.body.append(motionScript);

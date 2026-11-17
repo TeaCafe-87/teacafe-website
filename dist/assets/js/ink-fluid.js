@@ -64,8 +64,8 @@ vec3 source(vec2 uv){
     // the live picture quickly where calm, slowly (project_5's 0.009) where stirred.
     ink: `uniform sampler2D uVel, uInk; uniform vec2 uTexel; uniform float uDt;
       void main(){ vec2 v = texture(uVel, vUv).xy; vec4 ink = texture(uInk, vUv - uDt * v * uTexel * .5);
-        float stir = max(ink.a * .982, smoothstep(6., 160., length(v)));
-        o = vec4(mix(ink.rgb, source(vUv), mix(1., .012, stir)), stir); }`,
+        float stir = max(ink.a * .9935, smoothstep(6., 160., length(v)));
+        o = vec4(mix(ink.rgb, source(vUv), mix(1., .0055, stir)), stir); }`,
     // Fresh ink buffer: the live picture, nothing stirred yet (alpha = how stirred).
     seed: `void main(){ o = vec4(source(vUv), 0.); }`,
     show: `uniform sampler2D uInk;
@@ -204,7 +204,7 @@ precision highp float; in vec2 vUv; out vec4 o; ${['ink', 'show', 'seed'].includ
         fresh = false;
       }
 
-      run('advect', vel.write, { uVel: vel.read.tex, uSrc: vel.read.tex, uTexel: texel, uDt: dt, uDecay: 0.955 }); vel.swap();
+      run('advect', vel.write, { uVel: vel.read.tex, uSrc: vel.read.tex, uTexel: texel, uDt: dt, uDecay: 0.984 }); vel.swap();
       for (const s of splats.splice(0)) {
         const force = 0.9 * s.boost / dt; // pointer delta (sim px/frame) -> sim px/second
         run('splat', vel.write, { uSrc: vel.read.tex, uPoint: [s.x, s.y], uForce: [s.dx * force, s.dy * force], uRadius: 0.0016 * s.boost, uAspect: simW / simH });
@@ -219,8 +219,8 @@ precision highp float; in vec2 vUv; out vec4 o; ${['ink', 'show', 'seed'].includ
       run('show', null, Object.assign({ uInk: ink.read.tex }, src));
 
       if (!visible) { visible = true; canvas.classList.add('is-stirred'); }
-      // Calm for 4 s: the ink has fully re-settled into the picture, so hand back to the raw layers.
-      if (now - lastInput > 4000) { visible = false; canvas.classList.remove('is-stirred'); fresh = true; return; }
+      // Calm for 11 s: the smoke has drifted and settled back into the picture; hand back to the raw layers.
+      if (now - lastInput > 11000) { visible = false; canvas.classList.remove('is-stirred'); fresh = true; return; }
       raf = requestAnimationFrame(frame);
     }
 
