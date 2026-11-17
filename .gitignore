@@ -5,3 +5,5 @@
 .dev.vars.*
 node_modules/
 tools/journey-video/__pycache__/
+tools/journey-video-v2/work/
+tools/journey-video-v2/*.pth

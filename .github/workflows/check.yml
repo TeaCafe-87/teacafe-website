@@ -22,5 +22,6 @@ jobs:
           node tests/site-regressions.mjs
           node tests/hero-ink.mjs
           node tests/home-journey.mjs
+          node tests/journey-v2.mjs
           node tests/home-sections.mjs
           node tests/home-featured.mjs
