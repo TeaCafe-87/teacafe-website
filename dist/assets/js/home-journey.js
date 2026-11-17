@@ -36,7 +36,7 @@
     return h >= 18 || h < 6;
   };
   let base = '';
-  const pickBase = () => (isNight() ? 'journey-night-' : 'journey-') + (innerWidth / innerHeight < 0.75 ? 'portrait' : 'desktop');
+  const pickBase = () => (isNight() ? 'journey-night-' : 'journey-') + (innerWidth / innerHeight <= 0.75 ? 'portrait' : 'desktop');
   let live = null;
 
   function chooseFilm() {
@@ -167,4 +167,101 @@
   new MutationObserver(syncMotion).observe(root, { attributes: true, attributeFilter: ['data-motion'] });
   measure();
   onScroll();
+
+  /* ---- Home: one scroll gesture = the next scroll (卷) ----
+   * A wheel notch, a swipe or Arrow/Page/Space glides to the next stop: the hero, then each scene
+   * centred in its act's blank half, then the page end. The glide is a timed scroll, so the film
+   * plays the camera move between acts. A scene taller than the screen is paged through first.
+   * The scrollbar, anchor links and text fields keep working normally. */
+  if (!filmSet) return;
+  const scenes = [...journey.querySelectorAll('.act .scene')];
+  const docTop = (el) => el.getBoundingClientRect().top + scrollY;
+  const maxY = () => document.documentElement.scrollHeight - innerHeight;
+  function stops() {
+    const vh = innerHeight, list = [0];
+    for (const el of scenes) {
+      const top = docTop(el), h = el.offsetHeight;
+      list.push(h < vh * 0.8 ? top + h / 2 - vh / 2 : top - vh * 0.12);
+    }
+    const featured = document.querySelector('[data-featured-section]');
+    if (featured && !featured.hidden) list.push(docTop(featured));
+    list.push(maxY());
+    return list.map((y) => clamp(Math.round(y), 0, maxY())).filter((y, i, a) => i === 0 || y > a[i - 1] + 8);
+  }
+  // The stop whose scene is on screen, and how much of a tall scene is still below the fold.
+  function nextTarget(dir) {
+    const list = stops(), y = scrollY, vh = innerHeight;
+    if (dir > 0) {
+      const cur = scenes.find((el) => { const r = el.getBoundingClientRect(); return r.top < vh * 0.5 && r.bottom > vh * 0.5; });
+      if (cur) {
+        const bottom = cur.getBoundingClientRect().bottom;
+        if (bottom > vh + 24) return y + Math.min(bottom - vh + 48, vh * 0.75);
+      }
+      return list.find((s) => s > y + 8) ?? y;
+    }
+    const cur = scenes.find((el) => { const r = el.getBoundingClientRect(); return r.top < vh * 0.5 && r.bottom > vh * 0.5; });
+    if (cur) {
+      const top = cur.getBoundingClientRect().top;
+      if (top < -24) return y + Math.max(top - vh * 0.12, -vh * 0.75);
+    }
+    return [...list].reverse().find((s) => s < y - 8) ?? y;
+  }
+
+  let gliding = false, quietUntil = 0, wheelSum = 0, wheelAt = 0;
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  function glide(to) {
+    const from = scrollY, dist = to - from;
+    if (Math.abs(dist) < 2) return;
+    if (reduced()) { scrollTo({ top: to, behavior: 'instant' }); quietUntil = performance.now() + 250; return; }
+    gliding = true;
+    // Long camera moves (between acts) take longer, so the film reads as a journey, not a jump.
+    const duration = clamp(650 + Math.abs(dist) * 0.42, 800, 2300);
+    const t0 = performance.now();
+    const step = (now) => {
+      const k = Math.min(1, (now - t0) / duration);
+      scrollTo({ top: from + dist * ease(k), behavior: 'instant' });
+      if (k < 1) requestAnimationFrame(step);
+      else { gliding = false; quietUntil = performance.now() + 380; } // swallow trackpad inertia
+    };
+    requestAnimationFrame(step);
+  }
+  const go = (dir) => glide(nextTarget(dir));
+  const blocked = (target) => document.querySelector('dialog[open]')
+    || (target instanceof Element && target.closest('input, textarea, select, [contenteditable], dialog'));
+
+  addEventListener('wheel', (event) => {
+    if (event.ctrlKey || blocked(event.target)) return;
+    event.preventDefault();
+    const now = performance.now();
+    if (gliding || now < quietUntil) return;
+    if (now - wheelAt > 220) wheelSum = 0;
+    wheelAt = now;
+    wheelSum += event.deltaMode === 1 ? event.deltaY * 32 : event.deltaY;
+    if (Math.abs(wheelSum) >= 24) { go(Math.sign(wheelSum)); wheelSum = 0; }
+  }, { passive: false });
+
+  let touchY = null;
+  addEventListener('touchstart', (event) => {
+    touchY = event.touches.length === 1 && !blocked(event.target) ? event.touches[0].clientY : null;
+  }, { passive: true });
+  addEventListener('touchmove', (event) => { if (touchY !== null && event.cancelable) event.preventDefault(); }, { passive: false });
+  addEventListener('touchend', (event) => {
+    if (touchY === null) return;
+    const dy = touchY - event.changedTouches[0].clientY;
+    touchY = null;
+    if (Math.abs(dy) > 36 && !gliding) go(Math.sign(dy));
+  }, { passive: true });
+
+  addEventListener('keydown', (event) => {
+    if (event.altKey || event.ctrlKey || event.metaKey || blocked(event.target)) return;
+    const down = ['ArrowDown', 'PageDown'].includes(event.key) || (event.key === ' ' && !event.shiftKey);
+    const up = ['ArrowUp', 'PageUp'].includes(event.key) || (event.key === ' ' && event.shiftKey);
+    if (!down && !up && event.key !== 'Home' && event.key !== 'End') return;
+    if (event.target instanceof Element && event.target.closest('button, a') && event.key === ' ') return;
+    event.preventDefault();
+    if (gliding) return;
+    if (event.key === 'Home') glide(0);
+    else if (event.key === 'End') glide(maxY());
+    else go(down ? 1 : -1);
+  });
 })();
