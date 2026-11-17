@@ -48,7 +48,7 @@
   function renderPost(post) {
     const article = make('article', 'community-post');
     const head = make('header', 'post-head');
-    const avatar = make('img', 'post-avatar'); avatar.src = post.author_avatar_url || '/image/server_icon.png'; avatar.alt = '';
+    const avatar = make('img', 'post-avatar'); avatar.src = post.author_avatar_url || '/image/brand/teacafe-icon-192.png'; avatar.alt = '';
     const main = make('div', 'post-head-main');
     main.append(make('strong', '', post.author_name || post.author_username || '玩家'), make('small', '', new Date(post.created_at).toLocaleString('zh-TW')), make('h3', 'post-title', post.title));
     head.append(avatar, main, make('span', 'post-category', categoryName[post.category] || post.category));
@@ -88,7 +88,7 @@
 
   function renderMember(member) {
     const card = make('article', 'admin-member');
-    const avatar = make('img'); avatar.src = member.avatar_url || '/image/server_icon.png'; avatar.alt = '';
+    const avatar = make('img'); avatar.src = member.avatar_url || '/image/brand/teacafe-icon-192.png'; avatar.alt = '';
     const details = make('div', 'admin-member-details');
     details.append(make('strong', '', member.global_name || member.username), make('small', '', `@${member.username} · Discord ID ${member.discord_id}`));
     if (member.minecraft_name) details.append(make('small', '', `Minecraft：${member.minecraft_name}`));
