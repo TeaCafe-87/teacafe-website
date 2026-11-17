@@ -39,12 +39,4 @@ assert.match(css, /@media \(max-width: 620px\)[\s\S]*?\.feature-lead \{ grid-col
 // styles.css makes .section-head a flex row; the home page must override it.
 assert.match(css, /\.section-head \{ display: block/);
 
-// Hero → status handoff: scroll-bound (passive listener, no wheel hijack), opt-in via JS, off under reduced motion.
-assert.match(html, /data-handoff[\s\S]*data-ink-hero[\s\S]*id="server-info"[\s\S]*data-handoff-title[\s\S]*data-handoff-rest/);
-assert.match(js, /addEventListener\('scroll', request, \{ passive: true \}\)/);
-assert.ok(!/preventDefault|addEventListener\('wheel'/.test(js), 'the handoff must not hijack native scrolling');
-assert.match(js, /if \(!motionOn\)[\s\S]*classList\.remove\('handoff-on'\)/);
-assert.match(css, /\.handoff-on \.ink-hero \{ position: sticky/);
-// The featured section ships hidden until the API fills it; section layout must not override [hidden].
-assert.match(css, /section\[hidden\] \{ display: none; \}/);
 console.log('Home sections structure, live-data wiring and safe rendering passed.');

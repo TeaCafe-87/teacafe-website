@@ -1,81 +1,10 @@
-/* Home page sections: hero handoff + background parallax, scroll reveal, live gallery preview.
+/* Home page sections: scroll reveal + live gallery preview.
  * Announcements are rendered by app.js loadNews() into [data-news-list]; nothing here duplicates that. */
 (() => {
   'use strict';
   const root = document.documentElement;
   const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
   const reduced = () => motionQuery.matches || root.dataset.motion === 'reduced';
-
-  /* ---- Hero handoff + parallax wash, both tied to scroll position so they reverse exactly ----
-   * The hero pins while the status section scrolls over it. The hero is clipped at that section's top
-   * edge, where the oversized title rides; once pinned, the title shrinks into its heading slot, then
-   * the figures enter. Native scrolling is untouched: sticky positioning plus one passive listener. */
-  const scene = document.querySelector('[data-handoff]');
-  const hero = scene && scene.querySelector('[data-ink-hero]');
-  const strip = scene && scene.querySelector('#server-info');
-  const stage = strip && strip.querySelector('.handoff-stage');
-  const title = scene && scene.querySelector('[data-handoff-title]');
-  const rest = scene && scene.querySelector('[data-handoff-rest]');
-  const wash = document.querySelector('[data-home-wash]');
-  const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
-  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
-  let fit = null, ticking = false, motionOn = false;
-
-  function measure() {
-    fit = null;
-    if (!motionOn || !hero || !stage || !title || !rest) return;
-    const vh = innerHeight;
-    // A hero taller than the screen cannot pin without hiding its lower part; fall back to plain flow.
-    scene.classList.toggle('handoff-on', hero.offsetHeight <= vh + 1);
-    if (!scene.classList.contains('handoff-on')) { title.style.transform = rest.style.cssText = hero.style.clipPath = hero.style.visibility = ''; return; }
-    const w = title.offsetWidth, h = title.offsetHeight, vw = stage.clientWidth;
-    const scale = Math.max(1, Math.min((vw * 0.96) / w, (vh * 0.42) / h));
-    fit = {
-      scale,
-      x: (vw - w * scale) / 2 - title.offsetLeft, // centred across the full width…
-      y: Math.max(8, vh * 0.02) - title.offsetTop, // …riding the section's top edge
-    };
-  }
-
-  function update() {
-    ticking = false;
-    if (wash && motionOn) wash.style.setProperty('--wash', (scrollY * 0.5).toFixed(1));
-    if (!fit) return;
-    const top = strip.getBoundingClientRect().top;
-    const heroBox = hero.getBoundingClientRect();
-    const cut = Math.max(0, Math.min(heroBox.bottom - top, heroBox.height));
-    hero.style.clipPath = cut > 0 ? `inset(0 0 ${cut.toFixed(1)}px 0)` : '';
-    hero.style.visibility = cut >= heroBox.height ? 'hidden' : '';
-    const pinned = clamp01(-top / Math.max(1, strip.offsetHeight - stage.offsetHeight));
-    const t = ease(clamp01(pinned / 0.6));
-    const s = fit.scale + (1 - fit.scale) * t;
-    title.style.transform = `translate3d(${(fit.x * (1 - t)).toFixed(1)}px, ${(fit.y * (1 - t)).toFixed(1)}px, 0) scale(${s.toFixed(4)})`;
-    const r = clamp01((pinned - 0.55) / 0.35);
-    rest.style.opacity = r.toFixed(3);
-    rest.style.transform = r < 1 ? `translate3d(0, ${((1 - r) * 48).toFixed(1)}px, 0)` : '';
-  }
-  const request = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
-
-  function syncMotion() {
-    motionOn = !reduced();
-    if (!motionOn) {
-      scene && scene.classList.remove('handoff-on');
-      if (title) title.style.transform = '';
-      if (rest) rest.style.cssText = '';
-      if (hero) hero.style.clipPath = hero.style.visibility = '';
-      if (wash) wash.style.removeProperty('--wash');
-    }
-    measure();
-    update();
-  }
-  if (scene || wash) {
-    addEventListener('scroll', request, { passive: true });
-    addEventListener('resize', () => { measure(); request(); }, { passive: true });
-    motionQuery.addEventListener ? motionQuery.addEventListener('change', syncMotion) : motionQuery.addListener(syncMotion);
-    new MutationObserver(syncMotion).observe(root, { attributes: true, attributeFilter: ['data-motion', 'data-text-size', 'data-font-style'] });
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); request(); });
-    syncMotion();
-  }
 
   /* ---- Reveal on scroll ---- */
   const targets = [...document.querySelectorAll('[data-reveal]')];
