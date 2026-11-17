@@ -17,13 +17,17 @@ assert.ok(!app.includes('home-motion.css'), 'app.js must not reference the remov
 const z = (sel) => Number(new RegExp(`${sel}[^}]*z-index:\\s*(\\d+)`).exec(css)?.[1]);
 assert.ok(z('\\.ink-title') < z('\\.ink-canvas') && z('\\.ink-canvas') < z('\\.ink-kicker, \\.ink-sub, \\.ink-actions'));
 assert.match(css, /\.ink-canvas\s*\{[^}]*pointer-events:\s*none/);
-assert.match(css, /background:\s*#fff/);
+// The hero floats over the journey painting: its own background must stay transparent.
+assert.match(css, /\.ink-hero\s*\{[^}]*background:\s*transparent/);
 assert.match(css, /\.ink-title\s*\{[\s\S]*?font:\s*900[\s\S]*?color:\s*#000/);
 
 // Colour field is page-anchored: gradient is built from hero size only, never from pointer/head state.
 const gradientLine = /createLinearGradient\([^)]*\)/.exec(js)?.[0] || '';
 assert.ok(gradientLine && !/ptr|head|clientX|clientY/.test(gradientLine), 'gradient must not depend on the cursor');
-for (const stop of ['#0a1fb4', '#6b2cff', '#ff2e92', '#ff7a18']) assert.ok(js.includes(stop));
+for (const stop of ['#22303f', '#3c566d', '#546274', '#6e5a3c']) assert.ok(js.includes(stop), `ink palette lost stop ${stop}`);
+// The cursor ink blends out as the journey begins, separately from the video.
+assert.match(js, /applyScrollFade/);
+assert.match(css, /\.ink-canvas\s*\{[^}]*transition:\s*opacity/);
 // Compositing: ink mask -> colour only inside it -> white glyphs only inside it.
 const order = ['source-in', 'source-atop'].map((m) => js.indexOf(`'${m}'`));
 assert.ok(order[0] > 0 && order[1] > order[0]);

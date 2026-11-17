@@ -1,0 +1,46 @@
+// Contract checks for the home scroll-journey: a fixed background video whose
+// playback position follows scroll progress, with poster/reduced-motion
+// fallbacks.  Frame-level behaviour is verified in a real browser; this guards
+// the wiring against regressions.
+import assert from 'node:assert/strict';
+import { readFileSync, statSync } from 'node:fs';
+const read = (p) => readFileSync(new URL(`../dist/${p}`, import.meta.url), 'utf8');
+const html = read('index.html'), js = read('assets/js/home-journey.js'), css = read('assets/css/home-journey.css');
+
+// Markup: journey block wraps the scenes, the backdrop is decorative, the
+// video is muted/playsinline with a real poster image.
+assert.match(html, /class="journey" data-journey/);
+assert.match(html, /<video[^>]*data-journey-video[^>]*muted[^>]*playsinline/);
+assert.match(html, /journey-poster[^>]*src="\/assets\/video\/journey-start\.webp"/);
+assert.match(html, /class="journey-backdrop" aria-hidden="true"/);
+assert.ok(html.includes('/assets/js/home-journey.js') && html.includes('/assets/css/home-journey.css'));
+// Every journey scene stays inside the journey block so scroll progress maps to film time.
+const journeyPart = html.slice(html.indexOf('data-journey'), html.indexOf('data-featured-section'));
+for (const id of ['home', 'server-info', 'about', 'features', 'play', 'join', 'join-cta']) {
+  assert.ok(journeyPart.includes(`id="${id}"`), `scene #${id} left the journey block`);
+}
+
+// The film is scrubbed, never played: playback position follows scroll in both
+// directions and holds when scrolling stops.
+assert.match(js, /video\.pause\(\)/);
+assert.ok(!/video\.play\(\)/.test(js), 'the journey video must never autoplay');
+assert.match(js, /currentTime/);
+assert.match(js, /getBoundingClientRect/);
+// Reduced motion / load errors fall back to the still painting.
+assert.match(js, /prefers-reduced-motion:\s*reduce/);
+assert.match(js, /dataset\.motion === 'reduced'/);
+assert.match(js, /addEventListener\('error'/);
+assert.match(css, /\.journey-still \.journey-video\s*\{\s*display:\s*none/);
+
+// Backdrop: fixed full-viewport cover behind the content, hidden once the
+// archive has scrolled over it.
+assert.match(css, /\.journey-backdrop\s*\{[^}]*position:\s*fixed/);
+assert.match(css, /\.journey-poster, \.journey-video\s*\{[^}]*object-fit:\s*cover/);
+assert.match(css, /\.journey-done \.journey-backdrop\s*\{[^}]*visibility:\s*hidden/);
+
+// The film itself ships with the page and stays light enough for a background.
+const film = statSync(new URL('../dist/assets/video/journey.mp4', import.meta.url));
+assert.ok(film.size > 500_000, 'journey.mp4 looks truncated');
+assert.ok(film.size < 9_000_000, `journey.mp4 is ${film.size} bytes; keep the background film under ~9 MB`);
+
+console.log('Home journey wiring, scrub contract, fallbacks and film size passed.');

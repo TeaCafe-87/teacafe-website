@@ -1,7 +1,9 @@
-/* TeaCafe hero: liquid-ink cursor effect.
+/* TeaCafe hero: liquid-ink cursor effect over the journey painting.
  * A page-anchored colour field is revealed only where the fluid currently is.
  * Where the fluid crosses the headline, those parts of the glyphs turn white.
- * Canvas 2D only, no dependencies. Respects reduced motion and pauses off-screen. */
+ * Canvas 2D only, no dependencies. Respects reduced motion and pauses off-screen.
+ * Runs separately from the scroll-scrubbed background video (home-journey.js)
+ * and thins away smoothly as the camera journey begins. */
 (() => {
   'use strict';
   const hero = document.querySelector('[data-ink-hero]');
@@ -15,8 +17,9 @@
   const noHover = matchMedia('(hover: none)');
   const reduced = () => motionQuery.matches || root.dataset.motion === 'reduced';
 
-  // Colour field: deep blue (left) -> violet -> vivid pink -> orange (right). Anchored to the hero, never to the cursor.
-  const STOPS = [[0, '#0a1fb4'], [0.34, '#6b2cff'], [0.68, '#ff2e92'], [1, '#ff7a18']];
+  // Colour field in the painting's own pigments: night ink (left) -> mountain
+  // slate -> tea gold (right). Anchored to the hero, never to the cursor.
+  const STOPS = [[0, '#22303f'], [0.5, '#3c566d'], [0.85, '#546274'], [1, '#6e5a3c']];
   const MAX_PARTICLES = 460;
   // Follow response. Steady-state lag behind a moving cursor is v*DAMPING/STIFFNESS, so a high
   // stiffness with a proportional damping keeps the ink close to the cursor while still trailing
@@ -312,6 +315,19 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
+
+  // The journey begins with the first scroll: the cursor ink thins out with it
+  // (the canvas has a CSS opacity transition) and clears once fully faded.
+  let fade = 1;
+  function applyScrollFade() {
+    const f = clamp(1 - scrollY / (innerHeight * 0.55), 0, 1);
+    if (f === fade) return;
+    const wasVisible = fade > 0;
+    fade = f;
+    canvas.style.opacity = String(f);
+    if (f === 0 && wasVisible && particles.length) { particles = []; render(); }
+  }
+  addEventListener('scroll', applyScrollFade, { passive: true });
 
   const sync = () => (reduced() ? disable() : enable());
   motionQuery.addEventListener ? motionQuery.addEventListener('change', sync) : motionQuery.addListener(sync);

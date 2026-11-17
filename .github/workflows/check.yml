@@ -21,5 +21,6 @@ jobs:
           node tests/community-moderation.mjs
           node tests/site-regressions.mjs
           node tests/hero-ink.mjs
+          node tests/home-journey.mjs
           node tests/home-sections.mjs
           node tests/home-featured.mjs
