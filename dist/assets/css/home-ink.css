@@ -1,6 +1,6 @@
-/* Home hero: act one of the journey film, the untouched painting. The title rides the empty sky,
-   the invitation sits in the misty water below; the ink-fluid cursor effect (ink-fluid.js) stirs
-   the painting itself. Tokens come from site-ui.css and home-journey.css. */
+/* Home hero: act one of the journey film, the untouched painting. The brush-written title rides the
+   empty sky, the invitation sits in the misty water below; the ink-fluid cursor effect (ink-fluid.js)
+   stirs the painting itself. Tokens come from site-ui.css and home-journey.css. */
 html:has(body.ink-home) { scroll-snap-type: none; scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html:has(body.ink-home) { scroll-behavior: auto; } }
 
@@ -10,42 +10,64 @@ body.ink-home .shell { box-sizing: border-box; width: 100%; max-width: var(--tc-
   position: relative; isolation: isolate;
   min-height: 100vh; min-height: 100svh;
   display: grid; grid-template-rows: auto 1fr auto; justify-items: center;
-  padding: calc(var(--tc-topbar) + clamp(18px, 6svh, 64px) + env(safe-area-inset-top, 0px)) var(--tc-gutter) clamp(56px, 9svh, 96px);
+  padding: calc(var(--tc-topbar) + clamp(18px, 6svh, 64px) + env(safe-area-inset-top, 0px)) var(--tc-gutter) clamp(48px, 9svh, 96px);
   background: transparent; color: var(--j-ink);
   text-align: center;
 }
-.hero-sky { position: relative; display: grid; justify-items: center; gap: clamp(8px, 1.6svh, 16px); }
-.hero-shore { grid-row: 3; display: grid; justify-items: center; gap: clamp(14px, 2.4svh, 24px); }
+.hero-sky { position: relative; display: grid; justify-items: center; }
+.hero-shore { grid-row: 3; display: grid; justify-items: center; gap: clamp(16px, 2.8svh, 28px); }
 
+/* One line at every width: the size follows the viewport so four characters always fit. */
 body.ink-home .ink-hero .ink-title {
-  position: relative; margin: 0; max-width: 100%;
-  font: 700 calc(clamp(64px, 11vw, 168px) * var(--text-scale, 1)) / 1.05 var(--tc-display);
-  letter-spacing: .14em; margin-right: -.14em; color: var(--j-ink);
+  position: relative; margin: 0; white-space: nowrap;
+  font: 400 calc(min(19vw, 22svh, 184px) * var(--text-scale, 1)) / 1.05 var(--tc-brush);
+  letter-spacing: .08em; margin-right: -.08em; color: var(--j-ink);
   text-shadow: 0 0 30px var(--j-glow), 0 0 4px var(--j-glow);
-  word-break: keep-all; overflow-wrap: anywhere;
 }
-.ink-kicker { margin: 0; font: 500 clamp(12px, 1.2vw, 15px) / 1.4 var(--tc-sans); letter-spacing: clamp(.2em, .7vw, .42em); text-transform: uppercase; color: var(--j-ink-soft); }
+html[data-text-size] body.ink-home .ink-hero .ink-title { font-size: min(19vw, 22svh, calc(184px * var(--text-scale, 1))); }
 .ink-seal {
-  position: absolute; top: 46%; right: calc(-1 * clamp(26px, 3vw, 44px));
+  position: absolute; top: 58%; right: calc(-1 * clamp(22px, 2.6vw, 40px));
   display: inline-grid; place-items: center; padding: 8px 5px; border-radius: 5px; background: var(--j-seal);
   writing-mode: vertical-rl; letter-spacing: .2em;
-  font: 700 clamp(11px, 1vw, 13px) / 1.1 var(--tc-display); color: #f6efe0;
+  font: 400 clamp(12px, 1.1vw, 15px) / 1.1 var(--tc-brush); color: #f6efe0;
 }
 body.ink-home .ink-hero .ink-sub {
-  margin: 0; max-width: 30em; font-size: clamp(16px, 1.55vw, 19px); line-height: 1.9; font-weight: 500; color: var(--j-ink);
+  margin: 0; max-width: 34em; font-size: clamp(15px, 1.5vw, 19px); line-height: 1.9; font-weight: 500; color: var(--j-ink);
+  word-break: keep-all; overflow-wrap: anywhere;
   text-shadow: 0 0 16px var(--j-glow), 0 0 3px var(--j-glow);
 }
-.ink-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 0; }
+.ink-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px; margin: 0; }
 
-.ink-scroll-cue {
-  position: absolute; left: 50%; translate: -50% 0; bottom: clamp(14px, 2.6svh, 28px);
-  width: 22px; height: 36px; border: 1.5px solid var(--j-ink); border-radius: 999px; display: grid; justify-items: center;
+/* Seal pass: the server address as an inscription with a seal. Clicking copies it and "rubs" the
+   seal: red ink stamps down and the line confirms (home-sections.js). */
+.ink-pass {
+  display: inline-flex; align-items: stretch; gap: 0; padding: 0; min-height: 60px; cursor: pointer;
+  border: 1.5px solid var(--j-ink); border-radius: 6px; background: color-mix(in srgb, var(--j-paper) 78%, transparent);
+  color: var(--j-ink); font: inherit; text-align: left; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  transition: transform .2s ease, background-color .2s ease;
 }
-.ink-scroll-cue span { width: 2px; height: 7px; margin-top: 6px; border-radius: 2px; background: var(--j-ink); animation: ink-cue 1.8s ease-in-out infinite; }
-@keyframes ink-cue { 0%, 100% { transform: translateY(0); opacity: 1 } 60% { transform: translateY(11px); opacity: .2 } }
-.ink-scroll-cue:focus-visible { outline: 3px solid var(--tc-accent); outline-offset: 3px; }
-@media (prefers-reduced-motion: reduce) { .ink-scroll-cue span { animation: none } }
-@media (max-height: 620px) { .ink-scroll-cue { display: none } }
+.ink-pass-text { display: grid; align-content: center; gap: 4px; padding: 8px 16px 8px 18px; }
+.ink-pass-label { font: 500 12px / 1.2 var(--tc-sans); letter-spacing: .18em; color: var(--j-ink-soft); white-space: nowrap; }
+.ink-pass-addr { font: 600 clamp(16px, 1.5vw, 19px) / 1.1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .02em; white-space: nowrap; }
+.ink-pass-seal {
+  display: grid; place-items: center; width: 60px; flex: none; border-left: 1.5px dashed color-mix(in srgb, var(--j-ink) 45%, transparent);
+}
+.ink-pass-seal i {
+  display: grid; place-items: center; width: 36px; height: 36px; border: 1.5px solid var(--j-seal); border-radius: 4px;
+  font: 400 24px / 1 var(--tc-brush); font-style: normal; color: var(--j-seal);
+  transform: rotate(-6deg); transition: transform .25s ease, background-color .2s ease, color .2s ease;
+}
+.ink-pass:hover { transform: translateY(-2px); background: color-mix(in srgb, var(--j-paper) 92%, transparent); }
+.ink-pass:hover .ink-pass-seal i { transform: rotate(0deg) scale(1.06); }
+.ink-pass:focus-visible { outline: 3px solid var(--j-seal); outline-offset: 3px; }
+.ink-pass.is-stamped .ink-pass-seal i { background: var(--j-seal); color: #f6efe0; animation: ink-stamp .5s cubic-bezier(.3, 1.5, .5, 1) both; }
+.ink-pass.is-stamped .ink-pass-label { color: var(--j-seal); }
+@keyframes ink-stamp {
+  0% { transform: rotate(-18deg) scale(1.9); opacity: 0; }
+  60% { transform: rotate(-4deg) scale(.92); opacity: 1; }
+  100% { transform: rotate(-6deg) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) { .ink-pass, .ink-pass-seal i { transition: none; } .ink-pass.is-stamped .ink-pass-seal i { animation: none; } .ink-pass:hover { transform: none; } }
 
 /* Reveal-on-scroll (home-sections.js adds .is-in). No-JS and reduced motion keep content visible. */
 body.ink-home [data-reveal] { opacity: 0; transform: translateY(28px); transition: opacity .8s var(--tc-ease), transform .8s var(--tc-ease); }
@@ -56,5 +78,6 @@ body.ink-home.reveal-off [data-reveal] { opacity: 1 !important; transform: none 
 
 @media (max-width: 760px) {
   .ink-actions { width: 100%; flex-direction: column; align-items: stretch; max-width: 340px; }
-  .ink-seal { right: -18px; }
+  .ink-pass { justify-content: space-between; }
+  .ink-seal { right: -16px; }
 }

@@ -21,7 +21,6 @@ if (header) {
       <a class="discord-invite" href="https://discord.gg/FHCSjfD9Fq" target="_blank" rel="noopener noreferrer" aria-label="加入茶咖暖居 Discord 伺服器" title="加入 Discord 伺服器"><img src="/image/discord.svg" alt=""></a>
       <button class="topbar-music-toggle" data-music-toggle type="button" aria-label="關閉背景音樂" aria-pressed="true" title="背景音樂"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="speaker-body" d="M3 9v6h4l5 4V5L7 9H3Z"/><path class="speaker-on" d="M16 8a6 6 0 0 1 0 8m2-11a10 10 0 0 1 0 14"/><path class="speaker-off" d="m16 9 5 6m0-6-5 6"/></svg></button>
       <button class="mc-nav settings-button" data-settings aria-label="設定">⚙</button>
-      <button class="mc-nav mobile-menu" data-mobile aria-label="選單">☰</button>
     </div>
   </header>`;
 }
@@ -35,8 +34,8 @@ if (footer) {
 }
 
 document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/effects.css?v=20261017">');
-document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/polish.css?v=20261118-icon">');
-document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-refresh.css?v=20261117">');
+document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/polish.css?v=20261119icon">');
+document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-refresh.css?v=20261119">');
 const motionStyle = document.querySelector('link[href^="/assets/css/motion.css"]');
 if (motionStyle) document.head.append(motionStyle);
 else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/motion.css?v=20261018-3">');
@@ -50,7 +49,7 @@ if (homeInkStyle) document.head.append(homeInkStyle);
 // site-ui.css is linked in each page head so the shared theme paints on first frame; keep it last.
 const siteUiStyle = document.querySelector('link[href^="/assets/css/site-ui.css"]');
 if (siteUiStyle) document.head.append(siteUiStyle);
-else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-ui.css?v=20261117">');
+else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-ui.css?v=20261119">');
 document.body.insertAdjacentHTML("beforeend", `
 <div class="toast" id="toast" role="status"></div>
 <dialog id="settings" class="prm" aria-label="網站設定"><form method="dialog" class="prm-sheet">
@@ -142,7 +141,6 @@ applyInterfaceSettings();
 const settings = $("#settings");
 const auth = $("#auth");
 $("[data-settings]")?.addEventListener("click", () => settings.showModal());
-$$('[data-mobile]').forEach((button) => button.addEventListener("click", () => $(".topnav")?.classList.toggle("mobile-open")));
 settings?.addEventListener('click', (event) => { if (event.target === settings) settings.close(); });
 
 document.addEventListener("keydown", (event) => {

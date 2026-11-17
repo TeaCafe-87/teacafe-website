@@ -3,7 +3,7 @@
  * is the background, with the live overlay (waterfall, boat, birds: journey-live.js) and the
  * ink-fluid cursor layer on top. Acts two to four leave half of the frame blank (right / left /
  * right on wide screens, the bottom half in portrait); each act's copy sits in that half.
- * The archive (news / gallery / FAQ) returns to solid paper after the journey. */
+ * After the journey the featured wall and footer sit on solid paper. */
 
 body.ink-home {
   --j-paper: #ede7d7;          /* the films' blank wash */
@@ -69,7 +69,7 @@ body.ink-home.theme-night .topbar .discord-invite { background: #2b3a55; }
 .act > .scene + .scene { margin-top: 34svh; }
 
 .scene { position: relative; }
-.scene-copy { position: relative; box-sizing: border-box; width: 50%; padding: 0 clamp(32px, 5.5vw, 112px); }
+.scene-copy { position: relative; box-sizing: border-box; width: 50%; padding: 0 clamp(32px, 5.5vw, 112px); container-type: inline-size; }
 .act--right .scene-copy { margin-left: 50%; }
 .act--left .scene-copy { margin-right: 50%; }
 .scene-copy > * { max-width: 36rem; }
@@ -85,8 +85,10 @@ body.ink-home.theme-night .topbar .discord-invite { background: #2b3a55; }
 
 .scene-title {
   margin: 0 0 .55em;
-  font: 700 clamp(36px, 4.6vw, 64px) / 1.25 var(--tc-display);
-  letter-spacing: .08em; color: var(--j-ink); text-wrap: balance;
+  /* Brush titles: phrases never split (keep-all); sized so the longest phrase fits the blank half. */
+  font: 400 clamp(30px, 3.6vw, 60px) / 1.3 var(--tc-brush);
+  font-size: clamp(22px, 8.2cqi, 60px); /* the longest phrase is 10 brush glyphs (~1.1em each) */
+  letter-spacing: .06em; color: var(--j-ink); text-wrap: balance; word-break: keep-all;
 }
 .scene-title em { font-style: normal; color: var(--j-slate); white-space: nowrap; }
 .scene-lead { margin: 0 0 1.6em; font-size: clamp(15px, 1.4vw, 17px); line-height: 2; color: var(--j-ink-soft); }
@@ -133,7 +135,7 @@ body.ink-home .online-player-head { width: 36px; height: 36px; padding: 0; borde
 .journey-steps .j-no {
   display: grid; place-items: center; width: 44px; height: 44px; margin-top: 2px;
   border: 1.5px solid var(--j-ink); border-radius: 6px;
-  font: 700 22px / 1 var(--tc-display); color: var(--j-ink);
+  font: 400 24px / 1 var(--tc-brush); color: var(--j-ink);
 }
 .journey-steps h3 { margin: 0 0 6px; font: 700 21px / 1.5 var(--tc-display); letter-spacing: .05em; color: var(--j-ink); }
 .journey-steps p { margin: 0 0 8px; font-size: 15px; line-height: 1.9; color: var(--j-ink-soft); }
@@ -147,13 +149,13 @@ body.ink-home .online-player-head { width: 36px; height: 36px; padding: 0; borde
 .j-chip:focus-visible { outline: 3px solid var(--j-seal); outline-offset: 3px; }
 
 /* ---------- 雲深: closing invitation ---------- */
-body.ink-home .home-page-main #join-cta .scene-title { font-size: clamp(40px, 5.6vw, 76px); letter-spacing: .12em; }
+body.ink-home .home-page-main #join-cta .scene-title { font-size: clamp(26px, 9.6cqi, 70px); letter-spacing: .08em; }
 #join-cta .ink-actions { justify-content: flex-start; }
 .cta-seal {
   display: inline-grid; place-items: center; margin-top: clamp(22px, 4svh, 40px);
   padding: 10px 7px; border-radius: 6px; background: var(--j-seal);
   writing-mode: vertical-rl; letter-spacing: .3em;
-  font: 700 14px / 1.15 var(--tc-display); color: #f6efe0;
+  font: 400 15px / 1.15 var(--tc-brush); color: #f6efe0;
 }
 
 /* Buttons on the night film */
@@ -161,38 +163,7 @@ body.ink-home .home-page-main #join-cta .scene-title { font-size: clamp(40px, 5.
 .theme-night .ink-btn.ghost { background: color-mix(in srgb, var(--j-paper) 60%, transparent); color: var(--j-ink); }
 .theme-night .ink-btn.ghost:hover { background: var(--j-ink); color: var(--j-paper); }
 
-/* ---------- Archive: back on solid paper for the living content ---------- */
-.archive { position: relative; z-index: 2; background: var(--j-paper); }
-.archive::before { content: ""; display: block; height: 1px; background: var(--j-hair); margin-inline: var(--tc-gutter); }
-.archive-section { padding: clamp(56px, 9vw, 110px) 0 clamp(26px, 4vw, 54px); }
-.archive-section:last-of-type { padding-bottom: clamp(70px, 10vw, 130px); }
-body.ink-home .archive .section-head h2 { font: 700 clamp(28px, 3.2vw, 42px) / 1.35 var(--tc-display); letter-spacing: .08em; margin: 0 0 6px; color: var(--j-ink); }
-body.ink-home .archive .section-head p { color: var(--j-ink-soft); line-height: 1.9; }
-body.ink-home .notice-row { grid-template-columns: 120px 1fr auto; border-bottom: 1px solid var(--j-hair); background: transparent; }
-body.ink-home :is(.notice-list, .news-list) { border-top: 1px solid var(--j-hair); }
-body.ink-home .notice-row time { font: 500 13px / 1 var(--tc-sans); color: var(--j-tea); letter-spacing: .06em; }
-body.ink-home .notice-row h3 { font: 700 19px / 1.6 var(--tc-display); letter-spacing: .04em; margin: 0 0 4px; color: var(--j-ink); }
-body.ink-home .notice-row p { color: var(--j-ink-soft); line-height: 1.8; }
-body.ink-home .notice-row .mc-button { min-height: 40px; background: transparent; color: var(--j-ink); border-color: var(--j-ink); font-size: 14px; }
-body.ink-home .notice-row .mc-button:hover { background: var(--j-ink); color: var(--j-paper); }
-body.ink-home .gallery-preview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-body.ink-home .gal-tile { position: relative; display: block; border-radius: 6px; overflow: hidden; border: 1px solid var(--j-hair); background: var(--j-paper-deep); }
-body.ink-home .gal-tile img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
-body.ink-home .gal-meta { position: absolute; inset: auto 0 0; padding: 26px 12px 10px; display: grid; background: linear-gradient(transparent, rgba(27, 31, 36, .72)); color: #f4efe3; }
-body.ink-home .gal-meta b { font: 700 15px / 1.5 var(--tc-display); }
-body.ink-home .gal-meta i { font: 400 12px / 1.4 var(--tc-sans); font-style: normal; opacity: .82; }
-body.ink-home .state-note { color: var(--j-ink-soft); line-height: 1.9; }
-body.ink-home .faq-list { border-top: 1px solid var(--j-hair); }
-body.ink-home .faq-item { border-bottom: 1px solid var(--j-hair); }
-body.ink-home .faq-item summary {
-  cursor: pointer; list-style: none; position: relative; padding: 18px 40px 18px 2px;
-  font: 700 18px / 1.7 var(--tc-display); letter-spacing: .03em; color: var(--j-ink);
-}
-body.ink-home .faq-item summary::-webkit-details-marker { display: none; }
-body.ink-home .faq-item > summary::after { border-color: var(--j-ink-soft); border-width: 1.5px; }
-body.ink-home .faq-item > div { padding: 0 2px 20px; }
-body.ink-home .faq-item p { margin: 0; line-height: 1.95; color: var(--j-ink-soft); }
-body.ink-home .faq-item summary:focus-visible { outline: 3px solid var(--j-seal); outline-offset: 3px; }
+/* ---------- After the journey: featured wall and footer on solid paper ---------- */
 body.ink-home .home-featured { position: relative; z-index: 2; background: var(--j-paper); padding-top: clamp(56px, 9vw, 110px); }
 body.ink-home [hidden] { display: none !important; }
 body.ink-home .site-footer { position: relative; z-index: 2; background: var(--j-paper-deep); color: var(--j-ink); border-top: 1px solid var(--j-hair); }
@@ -223,6 +194,4 @@ body.ink-home.reveal-off .ink-fluid { display: none; }
   .gate-row dd { font-size: 16px; }
   .journey-steps > li { grid-template-columns: 42px 1fr; gap: 12px; }
   .journey-steps .j-no { width: 36px; height: 36px; font-size: 17px; }
-  body.ink-home .notice-row { grid-template-columns: 1fr; }
-  body.ink-home .gallery-preview { grid-template-columns: 1fr 1fr; gap: 10px; }
 }

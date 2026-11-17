@@ -1,10 +1,11 @@
-/* Home page sections: scroll reveal + live gallery preview.
+/* Home page sections: scroll reveal, featured wall, seal pass.
  * Announcements are rendered by app.js loadNews() into [data-news-list]; nothing here duplicates that. */
 (() => {
   'use strict';
   const root = document.documentElement;
   const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
   const reduced = () => motionQuery.matches || root.dataset.motion === 'reduced';
+  const MEDIA_PREFIX = '/api/community/media/';
 
   /* ---- Reveal on scroll ---- */
   const targets = [...document.querySelectorAll('[data-reveal]')];
@@ -94,62 +95,18 @@
     section.hidden = false;
   })();
 
-  /* ---- Gallery preview (live, from the same API the gallery page uses) ---- */
-  const host = document.querySelector('[data-home-gallery]');
-  if (!host) return;
-  const MEDIA_PREFIX = '/api/community/media/';
-  const LIMIT = 6;
-
-  const note = (text) => {
-    const p = document.createElement('p');
-    p.className = 'state-note';
-    p.textContent = text;
-    host.replaceChildren(p);
-    host.setAttribute('aria-busy', 'false');
-  };
-
-  const firstImage = (post) => (Array.isArray(post.media) ? post.media : [])
-    .find((m) => typeof m?.url === 'string' && m.url.startsWith(MEDIA_PREFIX) && String(m.type || '').startsWith('image/'));
-
-  const tile = (post, media) => {
-    const link = document.createElement('a');
-    link.className = 'gal-tile';
-    link.href = `/gallery.html?post=${encodeURIComponent(post.id)}`;
-    const image = document.createElement('img');
-    image.src = media.url;
-    image.alt = post.title ? `相冊貼文：${post.title}` : '玩家相冊貼文';
-    image.loading = 'lazy';
-    image.decoding = 'async';
-    const meta = document.createElement('span');
-    meta.className = 'gal-meta';
-    const title = document.createElement('b');
-    title.textContent = post.title || '未命名貼文';
-    const author = document.createElement('i');
-    author.textContent = post.author_name || post.author_username || '居民';
-    meta.append(title, author);
-    link.append(image, meta);
-    return link;
-  };
-
-  fetch('/api/community/posts?kind=gallery', { headers: { Accept: 'application/json' } })
-    .then((response) => { if (!response.ok) throw new Error('gallery'); return response.json(); })
-    .then((data) => {
-      if (data && data.configured === false) {
-        note('相冊尚未完成設定，暫時沒有內容可以顯示。');
-        return;
-      }
-      const tiles = [];
-      for (const post of Array.isArray(data?.posts) ? data.posts : []) {
-        const media = firstImage(post);
-        if (media) tiles.push(tile(post, media));
-        if (tiles.length >= LIMIT) break;
-      }
-      if (!tiles.length) {
-        note('還沒有相冊貼文。到相冊頁貼上你的第一張建築照吧。');
-        return;
-      }
-      host.replaceChildren(...tiles);
-      host.setAttribute('aria-busy', 'false');
-    })
-    .catch(() => note('暫時無法讀取相冊，請稍後重新整理。'));
+  /* ---- Seal pass: copying the address "rubs" a seal (app.js does the copy + toast) ---- */
+  for (const pass of document.querySelectorAll('[data-stamp]')) {
+    const label = pass.querySelector('[data-stamp-label]');
+    const idle = label ? label.textContent : '';
+    let timer = 0;
+    pass.addEventListener('click', () => {
+      pass.classList.remove('is-stamped');
+      void pass.offsetWidth; // restart the stamp animation on repeat clicks
+      pass.classList.add('is-stamped');
+      if (label) label.textContent = '已拓印・到「多人遊戲」貼上';
+      clearTimeout(timer);
+      timer = setTimeout(() => { pass.classList.remove('is-stamped'); if (label) label.textContent = idle; }, 2600);
+    });
+  }
 })();

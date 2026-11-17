@@ -17,6 +17,8 @@
   /* Text in Song/serif, titles in a brush-like Kai, matching the painting. */
   --tc-sans: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
   --tc-display: "LXGW WenKai TC", "Noto Serif TC", "Kaiti TC", "DFKai-SB", serif;
+  /* Brush calligraphy for the big fixed titles (subset; see tools/build-title-font.py). */
+  --tc-brush: "TeaCafe Shufa", "LXGW WenKai TC", "Kaiti TC", "DFKai-SB", serif;
   --tc-mono: ui-monospace, Menlo, Consolas, monospace;
   --tc-ease: cubic-bezier(.22, 1, .36, 1);
   --tc-gutter: clamp(20px, 5vw, 112px);
@@ -29,6 +31,22 @@
   --type-h2: clamp(calc(30px * var(--text-scale, 1)), calc(4.4vw * var(--text-scale, 1)), calc(64px * var(--text-scale, 1)));
 }
 body { background: var(--tc-paper); color: var(--tc-ink); font-family: var(--tc-sans); }
+@font-face { font-family: "TeaCafe Shufa"; src: url(/assets/fonts/teacafe-shufa.woff2) format("woff2"); font-display: swap; }
+
+/* Line breaking: headings and short labels never split a phrase (CJK breaks only at punctuation,
+   overflow-wrap is the last resort); body copy avoids a lone character on its last line. */
+:is(h1, h2, h3, h4, dt, .crumb, .brand b, .mc-nav, .ink-btn, .mc-button) { word-break: keep-all; overflow-wrap: anywhere; text-wrap: balance; }
+:is(p, li, dd, summary, figcaption) { text-wrap: pretty; }
+/* Titles are artwork: no accidental selection or long-press callout. */
+:is(h1, h2, .scene-title, .scene-mark, .ink-seal, .cta-seal, .j-no, .brand) { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.page-title h1 { font-family: var(--tc-brush); font-weight: 400; letter-spacing: .06em; }
+#settings.prm .prm-head h2 { font-family: var(--tc-brush) !important; font-weight: 400 !important; }
+@media (max-width: 1100px) {
+  :root { --tc-topbar: 104px; }
+  body .topbar .topnav .nav-more > div a { padding: 12px 10px; border-radius: 0; color: var(--tc-muted); white-space: nowrap; font: 600 15px/1 var(--tc-sans) !important; }
+  body .topbar .topnav .nav-more > div a:hover { background: transparent; color: var(--tc-ink); }
+  body .topbar .topnav .mc-nav { white-space: nowrap; }
+}
 /* One continuous detail behind every section: two hairlines on the content gutters. */
 body::before {
   content: ""; position: fixed; z-index: -1; pointer-events: none; top: 0; bottom: 0;
