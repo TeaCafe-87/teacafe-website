@@ -1,8 +1,14 @@
 # 首頁：水墨山水捲動旅程
 
+> **2026-11 更新**：首頁改用 v2 四幕影片（見 `docs/journey-video-v2.md`），本文件下方的 v1 影片（`journey.mp4`）現在是規則、公告、Wiki、論壇、相冊、感謝支持、職業指南與月映茶行的固定背景。
+>
+> - **影片選擇**：寬高比小於 3:4 用直式，否則用橫式；台灣時間 18:00–06:00 用夜晚版，設定「首頁山水」可改為固定白天／夜晚（`localStorage` 的 `teacafe-theme`）。
+> - **內容與留白對齊**：`home-journey.js` 以內容為錨點換算捲動進度。每個 `[data-p="a,b"]` 元素：頂端進入視窗底部時影片在進度 a，底端離開視窗頂部時在 b。第二～四幕的文字（`.act`）因此一定在該幕的留白停留段經過，文字多長都一樣；`.journey-gap` 負責幕與幕之間的運鏡。
+> - **游標效果**：`ink-fluid.js` 是 Art-Of-Ink `project_5.pde`（PixelFlow 流體）的 WebGL2 移植。墨水來源是影片加上 `journey-live.js` 的動態層，所以瀑布、飛鳥、小舟也會被推散，平靜後以 project_5 的比例（約 1%／格）慢慢回到原畫。只有被攪動時才渲染，靜止 4 秒後交回原本的影片層。沒有 WebGL2 或開啟「減少動態效果」時不啟用。
+
 相關檔案：`dist/index.html`、`dist/assets/js/home-journey.js`、`dist/assets/css/home-journey.css`、`dist/assets/video/journey.mp4`（連同 `journey-start.webp`、`journey-end.webp` 海報）、`tools/journey-video/`（影片產生器）、`tests/home-journey.mjs`。
 
-設計參考：[Art-Of-Ink](https://github.com/clouder118/Art-Of-Ink) 的水墨流體概念——首頁以一幅山水為背景，游標推動墨水（見 `docs/hero-ink.md`），捲動則推動鏡頭進入畫中。
+設計參考：[Art-Of-Ink](https://github.com/clouder118/Art-Of-Ink) 的水墨流體概念——首頁以一幅山水為背景，游標推動墨水（`dist/assets/js/ink-fluid.js`），捲動則推動鏡頭進入畫中。
 
 ## 一、背景影片（鏡頭推入畫中）
 

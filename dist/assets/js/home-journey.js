@@ -1,10 +1,15 @@
-/* TeaCafe home: scroll-scrubbed journey into the ink landscape.
- * The fixed background video's playback position follows scroll progress
- * through the .journey block: scrolling down advances into the painting,
- * scrolling up reverses the camera, stopping holds the frame.  The video
- * is never "played" — only seeked — so no autoplay policy applies.
- * Reduced motion, missing video or load errors fall back to the static
- * poster painting; content stays fully readable either way. */
+/* TeaCafe scroll journey: a fixed background film whose playback position follows scroll.
+ * Scrolling down advances the camera, scrolling up reverses it, stopping holds the frame.
+ * The film is never "played", only seeked, so no autoplay policy applies.
+ *
+ * Inner pages: one film (journey.mp4), progress = scroll through the [data-journey] block.
+ * Home ([data-film-set]): the v2 four-act films, picked by orientation (portrait below 3:4) and
+ * day/night (Taipei clock, or the visitor's setting), with the journey-live overlay (waterfall,
+ * boat, birds) and the ink-fluid cursor effect. Progress there is anchored to content: every
+ * [data-p="a,b"] element maps "top enters the viewport bottom" to film progress a and "bottom
+ * leaves the viewport top" to b, so each act's text scrolls past while its half-blank frame
+ * holds, however long the text is; the gaps between them carry the camera moves.
+ * Reduced motion, missing video or load errors fall back to the still poster. */
 (() => {
   'use strict';
   const journey = document.querySelector('[data-journey]');
@@ -16,30 +21,96 @@
   const reduced = () => motionQuery.matches || root.dataset.motion === 'reduced';
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
+  /* ---- Film choice (home only) ---- */
+  const V = '/assets/video/';
+  const filmSet = journey.hasAttribute('data-film-set');
+  const poster = journey.querySelector('.journey-poster');
+  const liveCanvas = journey.querySelector('[data-journey-live]');
+  const fluidCanvas = journey.querySelector('[data-ink-fluid]');
+  const taipeiHour = () => Number(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Taipei', hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
+  const isNight = () => {
+    let pref = 'auto';
+    try { pref = localStorage.getItem('teacafe-theme') || 'auto'; } catch {}
+    if (pref === 'day' || pref === 'night') return pref === 'night';
+    const h = taipeiHour();
+    return h >= 18 || h < 6;
+  };
+  let base = '';
+  const pickBase = () => (isNight() ? 'journey-night-' : 'journey-') + (innerWidth / innerHeight < 0.75 ? 'portrait' : 'desktop');
+  let live = null;
+
+  function chooseFilm() {
+    if (!filmSet) return;
+    const next = pickBase();
+    document.body.classList.toggle('theme-night', next.includes('night'));
+    if (next === base) return;
+    const resume = video.currentTime || 0;
+    base = next;
+    if (poster) poster.src = V + base + '-start.jpg';
+    video.src = V + base + '.mp4';
+    video.addEventListener('loadedmetadata', () => { video.currentTime = Math.min(resume, video.duration || 0); }, { once: true });
+    const camera = V + base + '.camera.json';
+    if (live) live.setCamera(camera);
+    else if (liveCanvas && window.TeaJourneyLive) {
+      live = window.TeaJourneyLive.attach(video, liveCanvas, {
+        camera, live: V + 'journey-live.json', sprites: V + 'journey-sprites.png', spritesNight: V + 'journey-sprites-night.png',
+      });
+    }
+  }
+  chooseFilm();
+  if (fluidCanvas && window.TeaInkFluid) {
+    window.TeaInkFluid.attach(fluidCanvas, { video, overlay: liveCanvas, active: () => !journey.classList.contains('journey-done') });
+  }
+
+  /* ---- Scroll -> film progress ---- */
+  let anchors = [];            // [scrollY, p] pairs, ascending
+  function measure() {
+    const marks = [...journey.querySelectorAll('[data-p]')];
+    const vh = innerHeight;
+    anchors = [];
+    for (const el of marks) {
+      const [a, b] = el.dataset.p.split(',').map(Number);
+      const top = el.getBoundingClientRect().top + scrollY;
+      anchors.push([top - vh, a], [top + el.offsetHeight, b]);
+    }
+    anchors.sort((x, y) => x[0] - y[0]);
+  }
+  const progress = () => {
+    if (!anchors.length) {
+      const rect = journey.getBoundingClientRect();
+      const span = rect.height - innerHeight;
+      return span > 60 ? clamp(-rect.top / span, 0, 1) : 0;
+    }
+    const y = scrollY;
+    if (y <= anchors[0][0]) return clamp(anchors[0][1], 0, 1);
+    for (let i = 1; i < anchors.length; i++) {
+      const [y1, p1] = anchors[i];
+      if (y <= y1) {
+        const [y0, p0] = anchors[i - 1];
+        return clamp(p0 + (p1 - p0) * ((y - y0) / Math.max(y1 - y0, 1)), 0, 1);
+      }
+    }
+    return clamp(anchors[anchors.length - 1][1], 0, 1);
+  };
+
   let duration = 0;          // seconds of film
   let target = 0;            // where scroll wants the film to be
   let current = 0;           // where we have asked the decoder to be
   let raf = 0;
-  let live = false;          // metadata ready and scrubbing active
+  let playing = false;       // metadata ready and scrubbing active
   let lastSeekAt = 0;
 
   const still = () => {
     journey.classList.remove('journey-live');
     journey.classList.add('journey-still');
-    live = false;
-  };
-
-  const progress = () => {
-    const rect = journey.getBoundingClientRect();
-    const span = rect.height - innerHeight;
-    return span > 60 ? clamp(-rect.top / span, 0, 1) : 0;
+    playing = false;
   };
 
   // Chase the target time with a light ease so fast flicks stay fluid, and
   // never queue a new seek while the decoder is still working on one.
   function frame(now) {
     raf = 0;
-    if (!live) return;
+    if (!playing) return;
     const delta = target - current;
     if (Math.abs(delta) < 0.018) {
       if (current !== target && !video.seeking) {
@@ -55,13 +126,13 @@
     }
     raf = requestAnimationFrame(frame);
   }
-  const wake = () => { if (!raf && live) raf = requestAnimationFrame(frame); };
+  const wake = () => { if (!raf && playing) raf = requestAnimationFrame(frame); };
 
   function onScroll() {
     // past the journey: the archive covers the viewport, stop compositing
     const rect = journey.getBoundingClientRect();
     journey.classList.toggle('journey-done', rect.bottom < -8);
-    if (!live) return;
+    if (!playing) return;
     target = progress() * duration;
     wake();
   }
@@ -71,7 +142,7 @@
     duration = Math.max((video.duration || 0) - 0.05, 0);
     if (!duration) { still(); return; }
     video.pause();
-    live = true;
+    playing = true;
     journey.classList.remove('journey-still');
     journey.classList.add('journey-live');
     target = progress() * duration;
@@ -83,12 +154,17 @@
   video.addEventListener('error', still);
   if (video.readyState >= 1) start();
 
+  const relayout = () => { chooseFilm(); measure(); onScroll(); };
   addEventListener('scroll', onScroll, { passive: true });
-  addEventListener('resize', onScroll, { passive: true });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) { onScroll(); } });
+  addEventListener('resize', relayout, { passive: true });
+  addEventListener('load', relayout);
+  addEventListener('teacafe-theme', relayout);
+  if (typeof ResizeObserver === 'function') new ResizeObserver(() => { measure(); onScroll(); }).observe(journey);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { chooseFilm(); onScroll(); } });
 
-  const syncMotion = () => { if (reduced()) still(); else if (!live && video.readyState >= 1) start(); };
+  const syncMotion = () => { if (reduced()) still(); else if (!playing && video.readyState >= 1) start(); };
   motionQuery.addEventListener ? motionQuery.addEventListener('change', syncMotion) : motionQuery.addListener(syncMotion);
   new MutationObserver(syncMotion).observe(root, { attributes: true, attributeFilter: ['data-motion'] });
+  measure();
   onScroll();
 })();

@@ -1,96 +1,60 @@
-/* Home base: ink-landscape paper, giant ink headline, liquid-ink hero
-   (see assets/js/hero-ink.js).  The hero now floats over the scroll-scrubbed
-   journey painting (home-journey.css / home-journey.js): its own background is
-   transparent and the cursor-ink canvas fades out as the camera sets off. */
+/* Home hero: act one of the journey film, the untouched painting. The title rides the empty sky,
+   the invitation sits in the misty water below; the ink-fluid cursor effect (ink-fluid.js) stirs
+   the painting itself. Tokens come from site-ui.css and home-journey.css. */
 html:has(body.ink-home) { scroll-snap-type: none; scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html:has(body.ink-home) { scroll-behavior: auto; } }
 
-body.ink-home {
-  --h-ink: #2b3138;
-  --h-body: #4c555f;
-  --h-muted: #6b6558;
-  --h-line: rgba(43, 49, 56, .22);
-  --h-surface: #f2ecdd;
-  --h-surface-2: #e9e1cd;
-  --h-accent: #8a6a42;
-  --h-green: #3c6e49;
-  --h-radius: 8px;
-  --h-gutter: clamp(16px, 5vw, 72px);
-  background: #f2ecdd; color: var(--h-ink);
-}
-body.ink-home .topbar.topbar-hidden { transform: none; }
-body.ink-home .shell { box-sizing: border-box; width: 100%; max-width: 1240px; margin-inline: auto; padding-inline: var(--h-gutter); }
+body.ink-home .shell { box-sizing: border-box; width: 100%; max-width: var(--tc-max); margin-inline: auto; padding-inline: var(--tc-gutter); }
 
-/* ---------- Hero (floats over the journey painting) ---------- */
 .ink-hero {
-  position: relative; isolation: isolate; overflow: hidden;
+  position: relative; isolation: isolate;
   min-height: 100vh; min-height: 100svh;
-  display: grid; place-items: center;
-  padding: calc(92px + env(safe-area-inset-top, 0px)) clamp(16px, 4vw, 64px) clamp(64px, 11svh, 120px);
-  background: transparent; color: #000;
+  display: grid; grid-template-rows: auto 1fr auto; justify-items: center;
+  padding: calc(var(--tc-topbar) + clamp(18px, 6svh, 64px) + env(safe-area-inset-top, 0px)) var(--tc-gutter) clamp(56px, 9svh, 96px);
+  background: transparent; color: var(--j-ink);
+  text-align: center;
 }
-.ink-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 2; pointer-events: none; transition: opacity .3s linear; }
-@media (prefers-reduced-motion: reduce) { .ink-canvas { transition: none; } }
-.ink-hero-inner { position: relative; display: grid; justify-items: center; gap: clamp(14px, 2.6svh, 28px); max-width: 100%; text-align: center; }
+.hero-sky { position: relative; display: grid; justify-items: center; gap: clamp(8px, 1.6svh, 16px); }
+.hero-shore { grid-row: 3; display: grid; justify-items: center; gap: clamp(14px, 2.4svh, 24px); }
 
-/* Stack: black headline (1) < ink + white glyphs (canvas, 2) < every other UI element (3). */
-body.ink-home .ink-title {
-  position: relative; z-index: 1; margin: 0; max-width: 100%;
-  font: 900 calc(clamp(68px, 19vw, 210px) * var(--text-scale, 1)) / 1.06 "Noto Serif TC", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", serif;
-  letter-spacing: .02em; color: #000; text-shadow: none; animation: none; transform: none; word-break: keep-all; overflow-wrap: anywhere;
+body.ink-home .ink-hero .ink-title {
+  position: relative; margin: 0; max-width: 100%;
+  font: 700 calc(clamp(64px, 11vw, 168px) * var(--text-scale, 1)) / 1.05 var(--tc-display);
+  letter-spacing: .14em; margin-right: -.14em; color: var(--j-ink);
+  text-shadow: 0 0 30px var(--j-glow), 0 0 4px var(--j-glow);
+  word-break: keep-all; overflow-wrap: anywhere;
 }
-.ink-kicker, .ink-sub, .ink-actions, .ink-seal { position: relative; z-index: 3; margin: 0; }
-.ink-kicker { font: 500 clamp(12px, 1.3vw, 15px) / 1.4 "Noto Serif TC", serif; letter-spacing: clamp(.18em, .7vw, .4em); text-transform: uppercase; color: #3a424b; }
-.ink-sub { max-width: 30em; font-size: clamp(16px, 1.7vw, 20px); line-height: 1.9; font-weight: 500; color: #333a42; }
-.ink-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: clamp(4px, 1.5svh, 14px); }
+.ink-kicker { margin: 0; font: 500 clamp(12px, 1.2vw, 15px) / 1.4 var(--tc-sans); letter-spacing: clamp(.2em, .7vw, .42em); text-transform: uppercase; color: var(--j-ink-soft); }
 .ink-seal {
-  display: inline-grid; place-items: center; margin-top: clamp(14px, 2.4svh, 26px);
-  padding: 9px 6px; border-radius: 6px; background: #9e3b2e;
-  writing-mode: vertical-rl; letter-spacing: .26em;
-  font: 700 12px / 1.15 "Noto Serif TC", serif; color: #f6efe0;
-  box-shadow: 0 2px 8px rgba(158, 59, 46, .28);
+  position: absolute; top: 46%; right: calc(-1 * clamp(26px, 3vw, 44px));
+  display: inline-grid; place-items: center; padding: 8px 5px; border-radius: 5px; background: var(--j-seal);
+  writing-mode: vertical-rl; letter-spacing: .2em;
+  font: 700 clamp(11px, 1vw, 13px) / 1.1 var(--tc-display); color: #f6efe0;
 }
+body.ink-home .ink-hero .ink-sub {
+  margin: 0; max-width: 30em; font-size: clamp(16px, 1.55vw, 19px); line-height: 1.9; font-weight: 500; color: var(--j-ink);
+  text-shadow: 0 0 16px var(--j-glow), 0 0 3px var(--j-glow);
+}
+.ink-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 0; }
 
 .ink-scroll-cue {
-  position: absolute; z-index: 3; left: 50%; translate: -50% 0; bottom: clamp(18px, 4svh, 40px);
-  width: 26px; height: 42px; border: 2px solid #2b3138; border-radius: 999px; display: grid; justify-items: center;
+  position: absolute; left: 50%; translate: -50% 0; bottom: clamp(14px, 2.6svh, 28px);
+  width: 22px; height: 36px; border: 1.5px solid var(--j-ink); border-radius: 999px; display: grid; justify-items: center;
 }
-.ink-scroll-cue span { width: 3px; height: 8px; margin-top: 7px; border-radius: 2px; background: #2b3138; animation: ink-cue 1.8s ease-in-out infinite; }
-@keyframes ink-cue { 0%, 100% { transform: translateY(0); opacity: 1 } 60% { transform: translateY(12px); opacity: .2 } }
-.ink-scroll-cue:focus-visible { outline: 3px solid var(--h-accent); outline-offset: 3px; }
+.ink-scroll-cue span { width: 2px; height: 7px; margin-top: 6px; border-radius: 2px; background: var(--j-ink); animation: ink-cue 1.8s ease-in-out infinite; }
+@keyframes ink-cue { 0%, 100% { transform: translateY(0); opacity: 1 } 60% { transform: translateY(11px); opacity: .2 } }
+.ink-scroll-cue:focus-visible { outline: 3px solid var(--tc-accent); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .ink-scroll-cue span { animation: none } }
 @media (max-height: 620px) { .ink-scroll-cue { display: none } }
 
-/* ---------- Shared controls ---------- */
-.ink-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: .55em;
-  min-height: 52px; padding: 0 26px; border: 1.5px solid #2b3138; border-radius: 7px;
-  background: #2b3138; color: #f2ecdd; font: 700 16px / 1 "Noto Sans TC", system-ui, sans-serif; letter-spacing: .04em;
-  text-decoration: none; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-  transition: transform .18s ease, background .18s ease, color .18s ease;
-}
-.ink-btn small { font: 500 13px / 1 ui-monospace, Menlo, monospace; opacity: .78; }
-.ink-btn:hover { transform: translateY(-2px); }
-.ink-btn.ghost { background: rgba(242, 236, 221, .78); color: #2b3138; }
-.ink-btn.ghost:hover { background: #2b3138; color: #f2ecdd; }
-.ink-btn.small { min-height: 44px; padding: 0 20px; font-size: 15px; }
-.ink-btn:focus-visible { outline: 3px solid var(--h-accent); outline-offset: 3px; }
-
-body.ink-home .text-link { color: var(--h-ink); font-weight: 700; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; text-decoration-color: var(--h-accent); }
-body.ink-home .text-link:hover { color: var(--h-accent); }
-
 /* Reveal-on-scroll (home-sections.js adds .is-in). No-JS and reduced motion keep content visible. */
-body.ink-home [data-reveal] { opacity: 0; transform: translateY(22px); transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
+body.ink-home [data-reveal] { opacity: 0; transform: translateY(28px); transition: opacity .8s var(--tc-ease), transform .8s var(--tc-ease); }
 body.ink-home [data-reveal].is-in { opacity: 1; transform: none; }
 html[data-motion='reduced'] body.ink-home [data-reveal],
 body.ink-home.reveal-off [data-reveal] { opacity: 1 !important; transform: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) { body.ink-home [data-reveal] { opacity: 1 !important; transform: none !important; transition: none !important; } }
 
-/* Footer on the paper page */
-body.ink-home .site-footer { background: #e9e1cd; color: var(--h-ink); border-top: 1px solid var(--h-line); }
-body.ink-home .site-footer a { color: inherit; text-shadow: none; }
-
 @media (max-width: 760px) {
-  .ink-actions { width: 100%; flex-direction: column; align-items: stretch; max-width: 360px; }
+  .ink-actions { width: 100%; flex-direction: column; align-items: stretch; max-width: 340px; }
+  .ink-seal { right: -18px; }
 }
-@media (prefers-reduced-motion: reduce) { .ink-btn { transition: none; } .ink-btn:hover { transform: none; } }

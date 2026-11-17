@@ -20,7 +20,7 @@ jobs:
           node tests/site-integration.mjs
           node tests/community-moderation.mjs
           node tests/site-regressions.mjs
-          node tests/hero-ink.mjs
+          node tests/ink-fluid.mjs
           node tests/home-journey.mjs
           node tests/journey-v2.mjs
           node tests/home-sections.mjs

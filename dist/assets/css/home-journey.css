@@ -1,246 +1,228 @@
-/* TeaCafe home: the scroll journey into the ink landscape.
- * A fixed, scroll-scrubbed video (assets/video/journey.mp4, driven by
- * assets/js/home-journey.js) is the page background; content lives in
- * full-screen "scenes" whose copy sits in the painting's empty areas.
- * The archive (news / gallery / FAQ) returns to solid paper after the
- * journey ends.  Tokens extend home-ink.css. */
+/* TeaCafe home: the four-act journey through the Art-Of-Ink landscape (v2 films).
+ * A fixed, scroll-scrubbed film (journey-[night-]desktop|portrait.mp4, driven by home-journey.js)
+ * is the background, with the live overlay (waterfall, boat, birds: journey-live.js) and the
+ * ink-fluid cursor layer on top. Acts two to four leave half of the frame blank (right / left /
+ * right on wide screens, the bottom half in portrait); each act's copy sits in that half.
+ * The archive (news / gallery / FAQ) returns to solid paper after the journey. */
 
 body.ink-home {
-  --j-paper: #f2ecdd;
-  --j-paper-deep: #e9e1cd;
+  --j-paper: #ede7d7;          /* the films' blank wash */
+  --j-paper-deep: #e4dac6;
   --j-ink: #2b3138;
-  --j-ink-soft: #4c555f;
-  --j-slate: #5d7183;
+  --j-ink-soft: #4f5862;
+  --j-slate: #3c566d;
   --j-tea: #8a6a42;
   --j-seal: #9e3b2e;
-  --j-hair: rgba(43, 49, 56, .22);
+  --j-hair: rgba(43, 49, 56, .2);
+  --j-glow: rgba(237, 231, 215, .9);
   background: var(--j-paper);
   color: var(--j-ink);
-  /* scene backplates and marks may poke past the paper edge by design */
   overflow-x: hidden;
   overflow-x: clip;
 }
+/* Night films: moonlit navy wash, light ink. */
+body.ink-home.theme-night {
+  --j-paper: #0c1423;
+  --j-paper-deep: #111b2e;
+  --j-ink: #ebe5d6;
+  --j-ink-soft: #b6bdc8;
+  --j-slate: #a9bfd4;
+  --j-tea: #d6b47c;
+  --j-seal: #b0483a;
+  --j-hair: rgba(235, 229, 214, .2);
+  --j-glow: rgba(12, 20, 35, .85);
+  --tc-ink: #ebe5d6;
+  --tc-body: #cfd4dc;
+  --tc-muted: #a7afba;
+  --tc-line: rgba(235, 229, 214, .18);
+  --tc-paper: #0c1423;
+  --tc-surface: #16213a;
+  --tc-accent: #d6b47c;
+  --tea-nav-backdrop: rgba(12, 20, 35, .9);
+  color-scheme: dark;
+}
+body.ink-home .topbar { border-bottom: 1px solid var(--j-hair) !important; }
+body.ink-home.theme-night .topbar .discord-invite { background: #2b3a55; }
 
-/* ---------- Topbar: paper and ink instead of the inner pages' dark bar.
-   teacafe-cinematic.css pins the bar's look with !important through the
-   --tea-nav-backdrop variable, so the home page recolours it by redefining
-   the variable and out-weighing the few hard-set colours. ---------- */
-body.ink-home { --tea-nav-backdrop: rgba(242, 236, 221, .86); }
-body.ink-home .topbar { color: var(--j-ink); border-bottom: 1px solid var(--j-hair) !important; }
-/* cinematic.css hard-sets a dark bar under 760px; the home stays paper */
-@media (max-width: 760px) {
-  body.ink-home .topbar { background: var(--tea-nav-backdrop) !important; }
-}
-body.ink-home .topbar .brand b { color: var(--j-ink); }
-body.ink-home .topbar .brand small { color: var(--j-tea); font-family: "Noto Serif TC", serif; letter-spacing: 2px; }
-body.ink-home .topbar .mc-nav { color: var(--j-ink-soft); font-weight: 600; }
-body.ink-home .topbar .mc-nav:is(:hover, :focus-visible, .active),
-body.ink-home .topbar .nav-more > summary.mc-nav:is(:hover, :focus-visible) {
-  background: rgba(43, 49, 56, .08) !important; color: var(--j-ink);
-}
-body.ink-home .topbar .nav-more > div,
-body.ink-home .topbar .topnav.mobile-open {
-  background: var(--j-paper) !important; border: 1px solid var(--j-hair);
-  box-shadow: 0 10px 28px rgba(43, 49, 56, .14);
-}
-body.ink-home .topbar .nav-more > div a { color: var(--j-ink); }
-body.ink-home .topbar-music-toggle { color: var(--j-ink-soft); border-color: var(--j-hair); }
-body.ink-home .topbar-music-toggle:hover, body.ink-home .topbar-music-toggle:focus-visible { background: rgba(43, 49, 56, .08); }
-
-/* ---------- Journey frame ---------- */
+/* ---------- Film stage ---------- */
 .journey { position: relative; z-index: 1; }
 .journey-backdrop { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: var(--j-paper); }
-.journey-poster, .journey-video {
+.journey-poster, .journey-video, .journey-overlay, .ink-fluid {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; object-position: 50% 56%;
+  object-fit: cover; object-position: 50% 50%;
 }
 .journey-video { opacity: 0; transition: opacity .6s ease; }
 .journey-live .journey-video { opacity: 1; }
-.journey-still .journey-video { display: none; }
+.journey-still .journey-video, .journey-still .journey-overlay, .journey-still .ink-fluid { display: none; }
+.ink-fluid { opacity: 0; }
+.ink-fluid.is-stirred { opacity: 1; }
+.journey-grain { position: absolute; inset: 0; background: url(/assets/video/journey-grain.png); mix-blend-mode: overlay; opacity: .55; }
+.theme-night .journey-grain { opacity: .3; }
 .journey-done .journey-backdrop { visibility: hidden; }
 
-/* ---------- Scenes ---------- */
-.scene { position: relative; min-height: 128svh; display: grid; align-items: center; padding: 14svh var(--h-gutter); }
-.scene--hero { min-height: 100svh; min-height: 100vh; padding: 0; }
-.scene--cta { min-height: 110svh; }
+/* ---------- Acts: copy in the blank half ---------- */
+.journey-gap--1 { height: 240vh; height: 240svh; }   /* opening pan to the waterfall */
+.journey-gap--2 { height: 205vh; height: 205svh; }   /* downstream to the bridge */
+.journey-gap--3 { height: 260vh; height: 260svh; }   /* through the arch, up through the clouds */
+.act { position: relative; padding-block: 14svh 20svh; }
+.act--last { padding-bottom: 26svh; }
+.act > .scene + .scene { margin-top: 34svh; }
 
-.scene-copy { position: relative; max-width: 34rem; padding: clamp(26px, 4vw, 52px); }
-.scene--left   .scene-copy { margin-right: auto; }
-.scene--right  .scene-copy { margin-left: auto; }
-.scene--center .scene-copy { margin-inline: auto; text-align: center; }
-.scene--wide   .scene-copy { max-width: 44rem; }
-
-/* a breath of mist behind the words keeps them readable over the painting */
-.scene-copy::before {
-  content: ""; position: absolute; inset: -14% -18%; z-index: -1; border-radius: 50%;
-  background: radial-gradient(58% 58% at 50% 46%,
-    color-mix(in srgb, var(--j-paper) 92%, transparent) 0%,
-    color-mix(in srgb, var(--j-paper) 72%, transparent) 52%,
-    transparent 76%);
-}
+.scene { position: relative; }
+.scene-copy { position: relative; box-sizing: border-box; width: 50%; padding: 0 clamp(32px, 5.5vw, 112px); }
+.act--right .scene-copy { margin-left: 50%; }
+.act--left .scene-copy { margin-right: 50%; }
+.scene-copy > * { max-width: 36rem; }
 
 .scene-mark {
-  position: absolute; top: clamp(90px, 16svh, 170px); right: clamp(14px, 4vw, 56px);
+  position: absolute; top: .4em; right: clamp(14px, 2.4vw, 40px);
   writing-mode: vertical-rl; letter-spacing: .42em;
-  font: 500 clamp(12px, 1.2vw, 15px) / 1 "Noto Serif TC", serif;
-  color: rgba(43, 49, 56, .58);
+  font: 500 clamp(12px, 1.1vw, 14px) / 1 var(--tc-display);
+  color: var(--j-ink-soft);
   padding-block: 2px 14px; border-inline-start: 1px solid var(--j-hair);
 }
-.scene--right .scene-mark { right: auto; left: clamp(14px, 4vw, 56px); }
+.act--left .scene-mark { right: auto; left: clamp(14px, 2.4vw, 40px); }
 
 .scene-title {
-  margin: 0 0 .5em;
-  font: 700 clamp(34px, 4.6vw, 54px) / 1.3 "Noto Serif TC", "Noto Sans TC", serif;
-  letter-spacing: .08em; color: var(--j-ink);
+  margin: 0 0 .55em;
+  font: 700 clamp(36px, 4.6vw, 64px) / 1.25 var(--tc-display);
+  letter-spacing: .08em; color: var(--j-ink); text-wrap: balance;
 }
-.scene-title em { font-style: normal; color: var(--j-slate); }
-.scene-lead { margin: 0 0 1.6em; font-size: clamp(15px, 1.5vw, 17px); line-height: 2; color: var(--j-ink-soft); }
-.scene-copy .text-link { font-weight: 600; text-decoration-color: var(--j-tea); }
+.scene-title em { font-style: normal; color: var(--j-slate); white-space: nowrap; }
+.scene-lead { margin: 0 0 1.6em; font-size: clamp(15px, 1.4vw, 17px); line-height: 2; color: var(--j-ink-soft); }
+.scene-copy .text-link { font-weight: 600; color: var(--j-ink); text-decoration-color: var(--j-seal); }
 
 /* ---------- 山門: live server inscription ---------- */
-.gate-stats { margin: 0; display: grid; gap: 0; }
-.gate-row {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 18px;
-  padding: 14px 2px; border-top: 1px solid var(--j-hair);
-}
+.gate-stats { margin: 0; display: grid; }
+.gate-row { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; padding: 15px 2px; border-top: 1px solid var(--j-hair); }
 .gate-row:last-child { border-bottom: 1px solid var(--j-hair); }
-.gate-row dt { font: 500 13px / 1 "Noto Sans TC", sans-serif; letter-spacing: .14em; color: var(--j-ink-soft); }
-.gate-row dd { margin: 0; font: 600 clamp(17px, 1.8vw, 21px) / 1.4 "Noto Serif TC", serif; color: var(--j-ink); text-align: right; }
-.gate-row dd.gate-strong { font-size: clamp(19px, 2vw, 24px); }
-/* styles.css/community.css pin a pixel font on .server-uptime; the gate stays serif */
+.gate-row dt { font: 500 13px / 1.4 var(--tc-sans); letter-spacing: .14em; color: var(--j-ink-soft); }
+.gate-row dd { margin: 0; font: 600 clamp(17px, 1.7vw, 21px) / 1.4 var(--tc-sans); color: var(--j-ink); text-align: right; }
+.gate-row dd.gate-strong { font: 700 clamp(19px, 2vw, 25px) / 1.4 var(--tc-display); }
 body.ink-home .gate-row dd.server-uptime {
-  font: 600 clamp(15px, 1.6vw, 20px) / 1.6 "Noto Serif TC", "Noto Sans TC", serif !important;
+  font: 600 clamp(15px, 1.5vw, 20px) / 1.6 var(--tc-sans) !important;
   letter-spacing: .02em; white-space: normal !important; overflow: visible;
 }
 body.ink-home .status-online { color: #3c6e49; }
+body.ink-home.theme-night .status-online { color: #8fc79a; }
 body.ink-home .status-offline { color: var(--j-seal); }
 body.ink-home .status-loading { color: var(--j-ink-soft); }
-body.ink-home .server-player-board { margin-top: 20px; }
-body.ink-home .server-player-board .strip-label { display: block; margin-bottom: 10px; font: 500 13px/1 "Noto Sans TC", sans-serif; letter-spacing: .14em; color: var(--j-ink-soft); }
-.online-player-heads { display: flex; flex-wrap: wrap; gap: 8px; }
-.online-player-head { width: 36px; height: 36px; border-radius: 4px; border: 1px solid var(--j-hair); background: var(--j-paper-deep); }
+body.ink-home .server-player-board { margin-top: 20px; padding: 0; background: none; border: 0; box-shadow: none; color: inherit; }
+body.ink-home .server-player-board .strip-label { display: block; margin-bottom: 10px; font: 500 13px/1 var(--tc-sans); letter-spacing: .14em; color: var(--j-ink-soft); }
+body.ink-home .online-player-heads { display: flex; flex-wrap: wrap; gap: 8px; }
+body.ink-home .online-player-head { width: 36px; height: 36px; padding: 0; border-radius: 4px; border: 1px solid var(--j-hair); background: var(--j-paper-deep); box-shadow: none; }
 
-/* ---------- 山居 / 行旅: storytelling lists instead of card walls ---------- */
-.scene-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+/* ---------- 過橋 / 行旅: ruled lists ---------- */
+.scene-list { list-style: none; margin: 0; padding: 0; display: grid; }
 .scene-list > li { padding: 16px 2px; border-top: 1px solid var(--j-hair); }
 .scene-list > li:last-child { border-bottom: 1px solid var(--j-hair); }
-.scene-list h3 {
-  margin: 0 0 6px; font: 700 clamp(19px, 2vw, 23px) / 1.5 "Noto Serif TC", serif;
-  letter-spacing: .06em; color: var(--j-ink);
-}
+.scene-list h3 { margin: 0 0 6px; font: 700 clamp(20px, 1.9vw, 24px) / 1.45 var(--tc-display); letter-spacing: .06em; color: var(--j-ink); }
 .scene-list p { margin: 0; font-size: 15px; line-height: 1.9; color: var(--j-ink-soft); }
-.scene-list code {
+:is(.scene-list, .journey-steps) code {
   font: 600 .92em ui-monospace, Menlo, monospace; color: var(--j-tea);
-  background: rgba(138, 106, 66, .1); padding: 1px 6px; border-radius: 4px;
+  background: color-mix(in srgb, var(--j-tea) 12%, transparent); padding: 1px 6px; border-radius: 4px;
 }
-.scene--wide .scene-list.cols-2 { grid-template-columns: 1fr 1fr; column-gap: clamp(22px, 3vw, 44px); }
+.scene-list.cols-2 { grid-template-columns: 1fr 1fr; column-gap: clamp(20px, 2.6vw, 40px); }
+.scene-list.cols-2 > li:nth-last-child(2) { border-bottom: 1px solid var(--j-hair); }
+.scene-copy > .scene-list.cols-2 { max-width: 44rem; }
 .scene-list-foot { margin-top: 22px; }
 
-/* ---------- 入住: the three steps (a true sequence) ---------- */
-.journey-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(18px, 3svh, 30px); text-align: left; }
+/* ---------- 入住: the three steps ---------- */
+.journey-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(18px, 3svh, 30px); }
 .journey-steps > li { display: grid; grid-template-columns: 52px 1fr; gap: 18px; align-items: start; }
 .journey-steps .j-no {
   display: grid; place-items: center; width: 44px; height: 44px; margin-top: 2px;
   border: 1.5px solid var(--j-ink); border-radius: 6px;
-  font: 700 20px / 1 "Noto Serif TC", serif; color: var(--j-ink);
+  font: 700 22px / 1 var(--tc-display); color: var(--j-ink);
 }
-.journey-steps h3 { margin: 0 0 6px; font: 700 20px / 1.5 "Noto Serif TC", serif; letter-spacing: .05em; }
-.journey-steps p { margin: 0 0 6px; font-size: 15px; line-height: 1.9; color: var(--j-ink-soft); }
-.journey-steps code { font: 600 .92em ui-monospace, Menlo, monospace; color: var(--j-tea); background: rgba(138, 106, 66, .1); padding: 1px 6px; border-radius: 4px; }
+.journey-steps h3 { margin: 0 0 6px; font: 700 21px / 1.5 var(--tc-display); letter-spacing: .05em; color: var(--j-ink); }
+.journey-steps p { margin: 0 0 8px; font-size: 15px; line-height: 1.9; color: var(--j-ink-soft); }
 .j-chip {
-  display: inline-flex; align-items: center; gap: 12px; margin-top: 8px; padding: 9px 14px;
+  display: inline-flex; align-items: center; gap: 12px; margin-top: 6px; min-height: 44px; padding: 0 6px 0 14px;
   border: 1.5px solid var(--j-ink); border-radius: 6px; background: transparent;
   font: 600 15px / 1 ui-monospace, Menlo, monospace; color: var(--j-ink); cursor: pointer;
 }
-.j-chip span { font: 600 12px / 1 "Noto Sans TC", sans-serif; color: var(--j-ink-soft); }
-.j-chip:hover { background: var(--j-ink); color: var(--j-paper); }
-.j-chip:hover span { color: var(--j-paper); }
-.j-chip:focus-visible { outline: 3px solid var(--j-slate); outline-offset: 3px; }
+.j-chip span { padding: 7px 10px; border-radius: 4px; background: var(--j-ink); color: var(--j-paper); font: 600 12px / 1 var(--tc-sans); }
+.j-chip:hover { background: color-mix(in srgb, var(--j-ink) 8%, transparent); }
+.j-chip:focus-visible { outline: 3px solid var(--j-seal); outline-offset: 3px; }
 
 /* ---------- 雲深: closing invitation ---------- */
-body.ink-home .home-page-main .scene--cta .scene-title { font-size: clamp(36px, 5.4vw, 64px); letter-spacing: .12em; }
+body.ink-home .home-page-main #join-cta .scene-title { font-size: clamp(40px, 5.6vw, 76px); letter-spacing: .12em; }
+#join-cta .ink-actions { justify-content: flex-start; }
 .cta-seal {
   display: inline-grid; place-items: center; margin-top: clamp(22px, 4svh, 40px);
-  padding: 10px 7px; border-radius: 7px; background: var(--j-seal);
+  padding: 10px 7px; border-radius: 6px; background: var(--j-seal);
   writing-mode: vertical-rl; letter-spacing: .3em;
-  font: 700 14px / 1.15 "Noto Serif TC", serif; color: #f6efe0;
-  box-shadow: 0 2px 10px rgba(158, 59, 46, .3);
+  font: 700 14px / 1.15 var(--tc-display); color: #f6efe0;
 }
+
+/* Buttons on the night film */
+.theme-night .ink-btn { background: var(--j-ink); color: var(--j-paper); border-color: var(--j-ink); }
+.theme-night .ink-btn.ghost { background: color-mix(in srgb, var(--j-paper) 60%, transparent); color: var(--j-ink); }
+.theme-night .ink-btn.ghost:hover { background: var(--j-ink); color: var(--j-paper); }
 
 /* ---------- Archive: back on solid paper for the living content ---------- */
-.archive { position: relative; z-index: 2; background: var(--j-paper); box-shadow: 0 -40px 60px -30px rgba(43, 49, 56, .18); }
-.archive::before { content: ""; display: block; height: 1px; background: var(--j-hair); margin-inline: var(--h-gutter); }
+.archive { position: relative; z-index: 2; background: var(--j-paper); }
+.archive::before { content: ""; display: block; height: 1px; background: var(--j-hair); margin-inline: var(--tc-gutter); }
 .archive-section { padding: clamp(56px, 9vw, 110px) 0 clamp(26px, 4vw, 54px); }
 .archive-section:last-of-type { padding-bottom: clamp(70px, 10vw, 130px); }
-body.ink-home .archive .section-head h2 {
-  font: 700 clamp(26px, 3vw, 38px) / 1.4 "Noto Serif TC", serif; letter-spacing: .08em; margin: 0 0 6px;
-}
+body.ink-home .archive .section-head h2 { font: 700 clamp(28px, 3.2vw, 42px) / 1.35 var(--tc-display); letter-spacing: .08em; margin: 0 0 6px; color: var(--j-ink); }
 body.ink-home .archive .section-head p { color: var(--j-ink-soft); line-height: 1.9; }
-
-/* news rows on paper */
-body.ink-home .notice-row { grid-template-columns: 110px 1fr auto; border-bottom: 1px solid var(--j-hair); background: transparent; }
-body.ink-home .notice-list, body.ink-home .news-list { border-top: 1px solid var(--j-hair); }
-body.ink-home .notice-row time { font: 500 13px / 1 "Noto Serif TC", serif; color: var(--j-tea); letter-spacing: .06em; }
-body.ink-home .notice-row h3 { font: 700 18px / 1.6 "Noto Serif TC", serif; letter-spacing: .04em; margin: 0 0 4px; }
+body.ink-home .notice-row { grid-template-columns: 120px 1fr auto; border-bottom: 1px solid var(--j-hair); background: transparent; }
+body.ink-home :is(.notice-list, .news-list) { border-top: 1px solid var(--j-hair); }
+body.ink-home .notice-row time { font: 500 13px / 1 var(--tc-sans); color: var(--j-tea); letter-spacing: .06em; }
+body.ink-home .notice-row h3 { font: 700 19px / 1.6 var(--tc-display); letter-spacing: .04em; margin: 0 0 4px; color: var(--j-ink); }
 body.ink-home .notice-row p { color: var(--j-ink-soft); line-height: 1.8; }
-body.ink-home .notice-row .mc-button {
-  border: 1.5px solid var(--j-ink); background: transparent; box-shadow: none; text-shadow: none;
-  color: var(--j-ink); font-weight: 600; font-size: 13px; padding: 8px 14px; border-radius: 6px;
-}
+body.ink-home .notice-row .mc-button { min-height: 40px; background: transparent; color: var(--j-ink); border-color: var(--j-ink); font-size: 14px; }
 body.ink-home .notice-row .mc-button:hover { background: var(--j-ink); color: var(--j-paper); }
-
-/* gallery preview on paper */
 body.ink-home .gallery-preview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-body.ink-home .gal-tile { position: relative; display: block; border-radius: 8px; overflow: hidden; border: 1px solid var(--j-hair); background: var(--j-paper-deep); }
+body.ink-home .gal-tile { position: relative; display: block; border-radius: 6px; overflow: hidden; border: 1px solid var(--j-hair); background: var(--j-paper-deep); }
 body.ink-home .gal-tile img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
 body.ink-home .gal-meta { position: absolute; inset: auto 0 0; padding: 26px 12px 10px; display: grid; background: linear-gradient(transparent, rgba(27, 31, 36, .72)); color: #f4efe3; }
-body.ink-home .gal-meta b { font: 700 14px / 1.5 "Noto Serif TC", serif; }
-body.ink-home .gal-meta i { font: 400 12px / 1.4 "Noto Sans TC", sans-serif; font-style: normal; opacity: .82; }
+body.ink-home .gal-meta b { font: 700 15px / 1.5 var(--tc-display); }
+body.ink-home .gal-meta i { font: 400 12px / 1.4 var(--tc-sans); font-style: normal; opacity: .82; }
 body.ink-home .state-note { color: var(--j-ink-soft); line-height: 1.9; }
-
-/* FAQ on paper */
 body.ink-home .faq-list { border-top: 1px solid var(--j-hair); }
 body.ink-home .faq-item { border-bottom: 1px solid var(--j-hair); }
 body.ink-home .faq-item summary {
   cursor: pointer; list-style: none; position: relative; padding: 18px 40px 18px 2px;
-  font: 700 17px / 1.7 "Noto Serif TC", serif; letter-spacing: .03em; color: var(--j-ink);
+  font: 700 18px / 1.7 var(--tc-display); letter-spacing: .03em; color: var(--j-ink);
 }
 body.ink-home .faq-item summary::-webkit-details-marker { display: none; }
-/* chevron geometry comes from home-sections.css; only recolour it here */
 body.ink-home .faq-item > summary::after { border-color: var(--j-ink-soft); border-width: 1.5px; }
 body.ink-home .faq-item > div { padding: 0 2px 20px; }
 body.ink-home .faq-item p { margin: 0; line-height: 1.95; color: var(--j-ink-soft); }
-body.ink-home .faq-item summary:focus-visible { outline: 3px solid var(--j-slate); outline-offset: 3px; }
-
-/* featured wall section inherits its own css; keep its heading on paper */
+body.ink-home .faq-item summary:focus-visible { outline: 3px solid var(--j-seal); outline-offset: 3px; }
 body.ink-home .home-featured { position: relative; z-index: 2; background: var(--j-paper); padding-top: clamp(56px, 9vw, 110px); }
-/* the hidden attribute always wins, whatever display a theme rule sets */
 body.ink-home [hidden] { display: none !important; }
-
-/* footer on paper */
-body.ink-home .site-footer { background: var(--j-paper-deep); color: var(--j-ink); border-top: 1px solid var(--j-hair); }
+body.ink-home .site-footer { position: relative; z-index: 2; background: var(--j-paper-deep); color: var(--j-ink); border-top: 1px solid var(--j-hair); }
 body.ink-home .site-footer nav a { color: var(--j-ink-soft); }
 body.ink-home .site-footer nav a:hover { color: var(--j-ink); }
 
 /* ---------- Motion & fallbacks ---------- */
-html[data-motion='reduced'] body.ink-home .journey-video,
-body.ink-home.reveal-off .journey-video { display: none; }
+html[data-motion='reduced'] body.ink-home :is(.journey-video, .ink-fluid),
+body.ink-home.reveal-off .ink-fluid { display: none; }
 
+/* Portrait films (narrower than 3:4, same switch as home-journey.js): the blank is the bottom half,
+   so copy spans the width and carries a soft wash where it scrolls over the painting. */
+@media (max-aspect-ratio: 3/4) {
+  .act { padding-block: 52svh 18svh; }
+  .scene-copy, .act--right .scene-copy, .act--left .scene-copy { width: auto; margin: 0; padding: 22px var(--tc-gutter) 26px; }
+  .scene-copy::before {
+    content: ""; position: absolute; inset: -36px 0; z-index: -1;
+    background: linear-gradient(transparent, color-mix(in srgb, var(--j-paper) 88%, transparent) 36px, color-mix(in srgb, var(--j-paper) 88%, transparent) calc(100% - 36px), transparent);
+  }
+  .scene-mark, .act--left .scene-mark { top: 26px; right: 10px; left: auto; font-size: 12px; letter-spacing: .34em; }
+  .scene-copy > * { max-width: none; padding-right: 22px; }
+}
 @media (max-width: 900px) {
-  .scene { min-height: 112svh; padding-block: 10svh; }
-  .scene--wide .scene-list.cols-2 { grid-template-columns: 1fr; }
-  .scene-mark { top: clamp(76px, 11svh, 130px); }
+  .scene-list.cols-2 { grid-template-columns: 1fr; }
+  .scene-list.cols-2 > li:nth-last-child(2) { border-bottom: 0; }
 }
 @media (max-width: 620px) {
-  .scene { padding-inline: 20px; align-items: end; }
-  .scene--hero { align-items: center; }
-  .scene-copy { max-width: none; width: 100%; padding: 26px 4px 30px; }
-  .scene-copy::before { inset: -6% -24px; border-radius: 24px; background: color-mix(in srgb, var(--j-paper) 78%, transparent); }
-  .scene-mark, .scene--right .scene-mark { left: auto; right: 12px; top: 74px; font-size: 12px; letter-spacing: .34em; }
   .gate-row dd { font-size: 16px; }
   .journey-steps > li { grid-template-columns: 42px 1fr; gap: 12px; }
-  .journey-steps .j-no { width: 36px; height: 36px; font-size: 16px; }
+  .journey-steps .j-no { width: 36px; height: 36px; font-size: 17px; }
   body.ink-home .notice-row { grid-template-columns: 1fr; }
-  body.ink-home .notice-row time { display: block; }
   body.ink-home .gallery-preview { grid-template-columns: 1fr 1fr; gap: 10px; }
 }

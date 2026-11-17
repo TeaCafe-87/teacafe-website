@@ -11,7 +11,21 @@ const html = read('index.html'), js = read('assets/js/home-journey.js'), css = r
 // video is muted/playsinline with a real poster image.
 assert.match(html, /class="journey" data-journey/);
 assert.match(html, /<video[^>]*data-journey-video[^>]*muted[^>]*playsinline/);
-assert.match(html, /journey-poster[^>]*src="\/assets\/video\/journey-start\.webp"/);
+assert.match(html, /journey-poster[^>]*src="\/assets\/video\/journey-desktop-start\.jpg"/);
+// Home picks the v2 four-act film (day/night, desktop/portrait) and drives the live overlay + ink fluid.
+assert.match(html, /data-journey data-film-set/);
+assert.match(html, /<canvas class="journey-overlay" data-journey-live>/);
+assert.match(html, /<canvas class="ink-fluid" data-ink-fluid>/);
+for (const act of ['data-p="0.31,0.41"', 'data-p="0.58,0.67"', 'data-p="0.9,1"']) assert.ok(html.includes(act), `act anchor ${act} missing`);
+assert.match(js, /journey-night-/);
+assert.match(js, /Asia\/Taipei/);
+assert.match(js, /teacafe-theme/);
+// Content pages ride the v1 film as a fixed, scroll-scrubbed background.
+for (const page of ['rules', 'news', 'wiki', 'forum', 'gallery', 'supporters', 'careers', 'market']) {
+  const doc = read(`${page}.html`);
+  assert.match(doc, /<main class="page[^"]*" data-journey><div class="page-backdrop" aria-hidden="true">/, `${page}: backdrop`);
+  assert.ok(doc.includes('src="/assets/video/journey.mp4"') && doc.includes('/assets/js/home-journey.js'), `${page}: film + driver`);
+}
 assert.match(html, /class="journey-backdrop" aria-hidden="true"/);
 assert.ok(html.includes('/assets/js/home-journey.js') && html.includes('/assets/css/home-journey.css'));
 // Every journey scene stays inside the journey block so scroll progress maps to film time.
@@ -30,12 +44,12 @@ assert.match(js, /getBoundingClientRect/);
 assert.match(js, /prefers-reduced-motion:\s*reduce/);
 assert.match(js, /dataset\.motion === 'reduced'/);
 assert.match(js, /addEventListener\('error'/);
-assert.match(css, /\.journey-still \.journey-video\s*\{\s*display:\s*none/);
+assert.match(css, /\.journey-still \.journey-video, [^{]*\{\s*display:\s*none/);
 
 // Backdrop: fixed full-viewport cover behind the content, hidden once the
 // archive has scrolled over it.
 assert.match(css, /\.journey-backdrop\s*\{[^}]*position:\s*fixed/);
-assert.match(css, /\.journey-poster, \.journey-video\s*\{[^}]*object-fit:\s*cover/);
+assert.match(css, /\.journey-poster, \.journey-video, \.journey-overlay, \.ink-fluid\s*\{[^}]*object-fit:\s*cover/);
 assert.match(css, /\.journey-done \.journey-backdrop\s*\{[^}]*visibility:\s*hidden/);
 
 // The film itself ships with the page and stays light enough for a background.
