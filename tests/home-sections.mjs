@@ -38,4 +38,5 @@ assert.match(js, /reveal-off/);
 assert.match(css, /@media \(max-width: 620px\)[\s\S]*?\.feature-lead \{ grid-column: auto/);
 // styles.css makes .section-head a flex row; the home page must override it.
 assert.match(css, /\.section-head \{ display: block/);
+
 console.log('Home sections structure, live-data wiring and safe rendering passed.');

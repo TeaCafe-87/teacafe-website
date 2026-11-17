@@ -3,7 +3,8 @@
 (() => {
   'use strict';
   const root = document.documentElement;
-  const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches || root.dataset.motion === 'reduced';
+  const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+  const reduced = () => motionQuery.matches || root.dataset.motion === 'reduced';
 
   /* ---- Reveal on scroll ---- */
   const targets = [...document.querySelectorAll('[data-reveal]')];

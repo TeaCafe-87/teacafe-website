@@ -21,10 +21,6 @@ body.site-intro-pending :is(.home-hero-content > h1, .home-hero-tagline, .page-t
 body.site-intro-pending:not(.site-nav-reveal) .topbar { opacity: 0 !important; transform: translate3d(0, -24px, 0) !important; pointer-events: none; }
 body.site-intro-pending { overflow: hidden; }
 .topbar { transition: transform .72s var(--tea-ease), opacity .78s ease !important; }
-.home-page .topbar { background: rgba(12, 14, 11, .25); border-bottom: 1px solid rgba(250, 240, 220, .72); box-shadow: none; backdrop-filter: blur(5px); }
-.home-page .topbar .mc-nav { background: transparent; border: 0; box-shadow: none; text-shadow: none; }
-.home-page .topbar .mc-nav:is(:hover, :focus-visible, .active) { background: rgba(250, 240, 220, .15); outline: 0; }
-.home-page .topbar .nav-more > div { background: #20251e; }
 
 /* A light outgoing curtain meets the identical incoming opening screen. */
 .page-transition { position: fixed; inset: 0; z-index: 190; display: grid; place-items: center; overflow: hidden; background: var(--intro-paper); color: var(--intro-ink); clip-path: inset(100% 0 0); pointer-events: none; transition: clip-path .55s var(--tea-ease); }

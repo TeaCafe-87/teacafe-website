@@ -113,7 +113,11 @@ try {
 const redirects = readFileSync(new URL('../dist/_redirects', import.meta.url), 'utf8');
 for (const route of ['admin', 'supporters', 'careers', 'market']) assert.ok(!redirects.includes(`/${route} /${route}.html 200`));
 const musicScript = readFileSync(new URL('../dist/assets/js/app.js', import.meta.url), 'utf8');
-assert.ok(musicScript.includes('new Audio("/audio/path_to_lake_land.mp3")'));
-assert.ok(statSync(new URL('../dist/audio/path_to_lake_land.mp3', import.meta.url)).size > 100000);
+// Background music is 山居吟 (Art-Of-Ink's track); one on/off state, no separate mute.
+assert.ok(musicScript.includes('new Audio("/audio/" + encodeURIComponent("山居吟.mp3"))'));
+assert.ok(statSync(new URL('../dist/audio/山居吟.mp3', import.meta.url)).size > 100000);
+assert.ok(!/music-mute|musicMuted/.test(musicScript), 'settings must not offer a mute option');
+assert.match(musicScript, /id="theme-seg"/);
+assert.match(musicScript, /textContent = "26\.3"/);
 assert.ok(!musicScript.includes('musicTracks'));
 console.log('Page routing, sharing, uploads, search, content management, and session checks passed.');

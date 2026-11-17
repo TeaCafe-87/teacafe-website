@@ -19,7 +19,7 @@ if (header) {
     <nav class="topnav">${nav.map(([url, name]) => `<a class="mc-nav ${page === url ? "active" : ""}" href="/${url}">${name}</a>`).join("")}<details class="nav-more"><summary class="mc-nav">更多</summary><div><a href="/supporters.html">感謝支持</a><a href="/careers.html">職業指南</a><a href="/market.html">月映茶行</a><a data-official-link href="/admin" hidden>管理後台</a></div></details></nav>
     <div class="top-tools">
       <a class="discord-invite" href="https://discord.gg/FHCSjfD9Fq" target="_blank" rel="noopener noreferrer" aria-label="加入茶咖暖居 Discord 伺服器" title="加入 Discord 伺服器"><img src="/image/discord.svg" alt=""></a>
-      <button class="topbar-music-toggle" data-music-mute type="button" aria-label="靜音背景音樂" aria-pressed="false" title="背景音樂"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="speaker-body" d="M3 9v6h4l5 4V5L7 9H3Z"/><path class="speaker-on" d="M16 8a6 6 0 0 1 0 8m2-11a10 10 0 0 1 0 14"/><path class="speaker-off" d="m16 9 5 6m0-6-5 6"/></svg></button>
+      <button class="topbar-music-toggle" data-music-toggle type="button" aria-label="關閉背景音樂" aria-pressed="true" title="背景音樂"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="speaker-body" d="M3 9v6h4l5 4V5L7 9H3Z"/><path class="speaker-on" d="M16 8a6 6 0 0 1 0 8m2-11a10 10 0 0 1 0 14"/><path class="speaker-off" d="m16 9 5 6m0-6-5 6"/></svg></button>
       <button class="mc-nav settings-button" data-settings aria-label="設定">⚙</button>
       <button class="mc-nav mobile-menu" data-mobile aria-label="選單">☰</button>
     </div>
@@ -35,8 +35,8 @@ if (footer) {
 }
 
 document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/effects.css?v=20261017">');
-document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/polish.css?v=20261018">');
-document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-refresh.css?v=20261018-2">');
+document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/polish.css?v=20261117">');
+document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-refresh.css?v=20261117">');
 const motionStyle = document.querySelector('link[href^="/assets/css/motion.css"]');
 if (motionStyle) document.head.append(motionStyle);
 else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/motion.css?v=20261018-3">');
@@ -47,7 +47,10 @@ const adminCopyStyle = document.querySelector('link[href^="/assets/css/admin-cop
 if (adminCopyStyle) document.head.append(adminCopyStyle);
 const homeInkStyle = document.querySelector('link[href^="/assets/css/home-ink.css"]');
 if (homeInkStyle) document.head.append(homeInkStyle);
-document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-ui.css?v=20261115">');
+// site-ui.css is linked in each page head so the shared theme paints on first frame; keep it last.
+const siteUiStyle = document.querySelector('link[href^="/assets/css/site-ui.css"]');
+if (siteUiStyle) document.head.append(siteUiStyle);
+else document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-ui.css?v=20261117">');
 document.body.insertAdjacentHTML("beforeend", `
 <div class="toast" id="toast" role="status"></div>
 <dialog id="settings" class="prm" aria-label="網站設定"><form method="dialog" class="prm-sheet">
@@ -55,14 +58,14 @@ document.body.insertAdjacentHTML("beforeend", `
   <div class="prm-body">
   <section class="prm-group" aria-labelledby="prm-audio-h">
     <h3 id="prm-audio-h">音訊</h3>
-    <div class="prm-row"><div class="prm-text"><b>背景音樂</b><small>Path to Lake Land</small></div><button type="button" class="prm-switch" id="music-switch" role="switch" aria-checked="true" aria-label="背景音樂"><span class="prm-knob"></span></button></div>
+    <div class="prm-row"><div class="prm-text"><b>背景音樂</b><small>山居吟 · 龔一</small></div><button type="button" class="prm-switch" id="music-switch" role="switch" aria-checked="true" aria-label="背景音樂"><span class="prm-knob"></span></button></div>
     <div class="prm-row prm-col"><div class="prm-text"><b>音量</b><small><span id="music-value">18</span>%</small></div><div class="prm-volume" data-volume-bars></div></div>
-    <div class="prm-row"><div class="prm-text"><b>靜音</b><small>也可用右上角的喇叭圖示</small></div><button type="button" class="prm-switch" id="music-mute-switch" role="switch" aria-checked="false" aria-label="靜音"><span class="prm-knob"></span></button></div>
   </section>
   <section class="prm-group" aria-labelledby="prm-ui-h">
     <h3 id="prm-ui-h">介面</h3>
     <div class="prm-row"><div class="prm-text"><b>文字大小</b><small>標題與內文按比例調整</small></div><div class="prm-seg" id="text-size-seg" role="group" aria-label="文字大小"></div></div>
     <div class="prm-row"><div class="prm-text"><b>文字樣式</b></div><div class="prm-seg" id="font-style-seg" role="group" aria-label="文字樣式"></div></div>
+    <div class="prm-row"><div class="prm-text"><b>首頁山水</b><small>自動：台灣時間 18:00–06:00 為夜晚</small></div><div class="prm-seg" id="theme-seg" role="group" aria-label="首頁山水日夜"></div></div>
     <div class="prm-row"><div class="prm-text"><b>頁面開場動畫</b><small>新版本首次造訪仍會播放一次</small></div><button type="button" class="prm-switch" id="intro-switch" role="switch" aria-checked="true" aria-label="頁面開場動畫"><span class="prm-knob"></span></button></div>
   </section>
   <section class="prm-group" aria-labelledby="prm-acct-h">
@@ -91,12 +94,12 @@ if (authNotice) {
 }
 
 let resumeMusicTime = Math.max(0, Number(sessionStorage.getItem("teacafe-music-time")) || 0);
-const musicAudio = new Audio("/audio/path_to_lake_land.mp3");
+const musicAudio = new Audio("/audio/" + encodeURIComponent("山居吟.mp3"));
 musicAudio.preload = "none";
 musicAudio.loop = true;
 
 let musicOn = localStorage.getItem("teacafe-music-on") !== "false";
-let musicMuted = localStorage.getItem("teacafe-music-muted") === "true";
+
 let musicVol = Math.max(0, Math.min(100, Number(localStorage.getItem("teacafe-music-vol") ?? 18) || 0));
 let audioUnlocked = false;
 musicAudio.addEventListener("loadedmetadata", () => {
@@ -109,7 +112,6 @@ addEventListener("pagehide", () => {
 
 function startMusic() {
   musicAudio.volume = Math.max(0, Math.min(1, musicVol / 100));
-  musicAudio.muted = musicMuted;
   const promise = musicAudio.play();
   if (promise?.catch) promise.catch(() => {});
 }
@@ -156,8 +158,9 @@ document.addEventListener("keydown", (event) => {
 // Volume bars: a fixed centre indicator with rolling digits over a row of bars
 // that slides beneath it. Bars rise into a gentle peak around the indicator.
 window.TeaVolumeBars = function (host, { min = 0, max = 100, value = 0, step = 5, onInput } = {}) {
-  const BAR_GAP = 7;                       // px between bar centres
-  const BAR_COUNT = 81;                    // odd, so one bar sits exactly under the pin
+  const BAR_GAP = 7;                       // px between bar centres (3px bar + 4px gap in site-ui.css)
+  const BAR_WIDTH = 3;
+  const BAR_COUNT = max - min + 1;         // one bar per value, so the stem always settles on a bar
   const SPAN = (BAR_COUNT - 1) * BAR_GAP;  // px length of the whole scale
   const unitsPerPx = (max - min) / SPAN;
   const clampValue = (v) => Math.min(max, Math.max(min, v));
@@ -224,10 +227,11 @@ window.TeaVolumeBars = function (host, { min = 0, max = 100, value = 0, step = 5
   function paint() {
     raf = 0;
     const centre = host.clientWidth / 2;
-    const offset = centre - ((current - min) / (max - min)) * SPAN;
+    // Bars are positioned by their left edge; shift by half a bar so the bar centre meets the stem centre.
+    const offset = centre - BAR_WIDTH / 2 - ((current - min) / (max - min)) * SPAN;
     track.style.transform = `translateX(${offset.toFixed(2)}px)`;
     for (let i = 0; i < BAR_COUNT; i++) {
-      const dx = offset + i * BAR_GAP - centre;
+      const dx = offset + BAR_WIDTH / 2 + i * BAR_GAP - centre;
       const peak = Math.exp(-(dx * dx) / (2 * 90 * 90));
       bars[i].style.height = (8 + 26 * peak).toFixed(1) + "px";
       bars[i].style.opacity = (0.3 + 0.7 * Math.exp(-(dx * dx) / (2 * 170 * 170))).toFixed(2);
@@ -285,8 +289,8 @@ window.TeaVolumeBars = function (host, { min = 0, max = 100, value = 0, step = 5
     if (!moved) {
       const rect = host.getBoundingClientRect();
       const fromCentre = event.clientX - (rect.left + rect.width / 2);
-      setValue(startVal + fromCentre * unitsPerPx, { animate: true });
-    }
+      setValue(Math.round(startVal + fromCentre * unitsPerPx), { animate: true });
+    } else setValue(Math.round(current), { animate: true }); // settle onto the nearest bar
     scheduleCollapse();
   };
   host.addEventListener("pointerup", endDrag);
@@ -310,33 +314,26 @@ window.TeaVolumeBars = function (host, { min = 0, max = 100, value = 0, step = 5
 };
 
 const musicSwitch = $("#music-switch");
-const muteSwitch = $("#music-mute-switch");
-const topbarMute = $("[data-music-mute]");
+const topbarMusic = $("[data-music-toggle]");
 const setSwitch = (el, on) => el && el.setAttribute("aria-checked", String(Boolean(on)));
-function renderMusicMute() {
-  musicAudio.muted = musicMuted;
-  setSwitch(muteSwitch, musicMuted);
-  if (topbarMute) {
-    topbarMute.classList.toggle("is-muted", musicMuted);
-    topbarMute.setAttribute("aria-label", musicMuted ? "取消靜音背景音樂" : "靜音背景音樂");
-    topbarMute.setAttribute("aria-pressed", String(musicMuted));
+// One on/off state for the settings switch and the topbar speaker (there is no separate mute).
+function renderMusic() {
+  setSwitch(musicSwitch, musicOn);
+  if (topbarMusic) {
+    topbarMusic.classList.toggle("is-muted", !musicOn);
+    topbarMusic.setAttribute("aria-label", musicOn ? "關閉背景音樂" : "開啟背景音樂");
+    topbarMusic.setAttribute("aria-pressed", String(musicOn));
   }
 }
-function toggleMusicMute() {
-  musicMuted = !musicMuted;
-  localStorage.setItem("teacafe-music-muted", String(musicMuted));
-  renderMusicMute();
-}
-renderMusicMute();
-topbarMute?.addEventListener("click", toggleMusicMute);
-muteSwitch?.addEventListener("click", toggleMusicMute);
-setSwitch(musicSwitch, musicOn);
-musicSwitch?.addEventListener("click", () => {
+function toggleMusic() {
   musicOn = !musicOn;
   localStorage.setItem("teacafe-music-on", String(musicOn));
-  setSwitch(musicSwitch, musicOn);
-  if (musicOn && audioUnlocked) startMusic(); else stopMusic();
-});
+  renderMusic();
+  if (musicOn) { audioUnlocked = true; startMusic(); } else stopMusic();
+}
+renderMusic();
+topbarMusic?.addEventListener("click", toggleMusic);
+musicSwitch?.addEventListener("click", toggleMusic);
 const musicValueOut = $("#music-value");
 if (musicValueOut) musicValueOut.textContent = String(musicVol);
 const volumeHost = $("[data-volume-bars]");
@@ -376,6 +373,18 @@ buildSegment($("#font-style-seg"), [["normal", "一般"], ["pixel", "像素"]], 
   pixelText = value === "pixel";
   localStorage.setItem("teacafe-font-style", value);
 });
+// Home film day/night: home-journey.js reads the same key and listens for the event.
+const themeOptions = ["auto", "day", "night"];
+const savedTheme = localStorage.getItem("teacafe-theme");
+let homeTheme = themeOptions.includes(savedTheme) ? savedTheme : "auto";
+const paintTheme = () => $$('#theme-seg [data-value]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === homeTheme)));
+buildSegment($("#theme-seg"), [["auto", "自動"], ["day", "白天"], ["night", "夜晚"]], (value) => {
+  homeTheme = value;
+  localStorage.setItem("teacafe-theme", value);
+  dispatchEvent(new Event("teacafe-theme"));
+});
+$("#theme-seg")?.addEventListener("click", paintTheme);
+paintTheme();
 applyInterfaceSettings();
 
 $$('[data-copy]').forEach((button) => button.addEventListener("click", async () => {
@@ -420,7 +429,7 @@ async function loadServerStatus() {
       status.textContent = "● 離線";
       status.classList.add("status-offline");
       $("[data-server-players]").textContent = "0 / 0";
-      $("[data-server-version]").textContent = "26.2";
+      $("[data-server-version]").textContent = "26.3";
       $("[data-online-player-heads]")?.replaceChildren();
       if ($("[data-online-player-panel]")) $("[data-online-player-panel]").hidden = true;
     }
