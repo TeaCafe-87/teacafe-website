@@ -2,6 +2,8 @@
 
 相關檔案：`dist/index.html`、`dist/assets/js/hero-ink.js`、`dist/assets/css/home-ink.css`、`dist/assets/js/home-sections.js`、`dist/assets/css/home-sections.css`、`tests/hero-ink.mjs`、`tests/home-sections.mjs`。
 
+2026-11 起 Hero 浮在捲動驅動的水墨山水影片上（見 `docs/home-journey.md`）：Hero 背景改為透明、墨水改用山水的墨色（深墨藍→山嵐藍→茶金），並且在開始捲動後隨旅程淡出（`applyScrollFade`，半個視窗高內降到 0）。墨水效果與影片各自獨立運作。
+
 ## 一、Hero 的墨水效果
 
 ### 運作方式
@@ -38,4 +40,4 @@
 
 ## 三、已取代的舊首頁元件
 
-舊的首頁影片場景（`home-scene.js`、`home-motion.css`、`dist/assets/video/*.mp4`、`dist/image/index.png`）與對應測試、工具已於 2026-11 移除，部署體積縮小約 24 MB。
+舊的首頁影片場景（`home-scene.js`、`home-motion.css`、舊的 `dist/assets/video/*.mp4`、`dist/image/index.png`）與對應測試、工具已於 2026-11 移除，部署體積縮小約 24 MB。同月稍後加入的新背景是程式自產的 5 MB 水墨旅程影片（`docs/home-journey.md`），與舊場景無關。
