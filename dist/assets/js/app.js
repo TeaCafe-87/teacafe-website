@@ -15,7 +15,7 @@ const nav = [
 const header = $("[data-header]");
 if (header) {
   header.innerHTML = `<header class="topbar topbar-hidden">
-    <a class="brand" href="/"><img class="brand-icon" src="/image/server_icon.png" alt=""><span><b>茶咖暖居</b><small>TEACAFE</small></span></a>
+    <a class="brand" href="/"><img class="brand-icon" src="/image/brand/teacafe-icon-192.png" alt=""><span><b>茶咖暖居</b><small>TEACAFE</small></span></a>
     <nav class="topnav">${nav.map(([url, name]) => `<a class="mc-nav ${page === url ? "active" : ""}" href="/${url}">${name}</a>`).join("")}<details class="nav-more"><summary class="mc-nav">更多</summary><div><a href="/supporters.html">感謝支持</a><a href="/careers.html">職業指南</a><a href="/market.html">月映茶行</a><a data-official-link href="/admin" hidden>管理後台</a></div></details></nav>
     <div class="top-tools">
       <a class="discord-invite" href="https://discord.gg/FHCSjfD9Fq" target="_blank" rel="noopener noreferrer" aria-label="加入茶咖暖居 Discord 伺服器" title="加入 Discord 伺服器"><img src="/image/discord.svg" alt=""></a>
@@ -29,13 +29,13 @@ if (header) {
 const footer = $("[data-footer]");
 if (footer) {
   footer.innerHTML = `<footer class="site-footer">
-    <a class="brand" href="/"><img class="brand-icon" src="/image/server_icon.png" alt=""><span><b>茶咖暖居</b><small>TEACAFE</small></span></a>
+    <a class="brand" href="/"><img class="brand-icon" src="/image/brand/teacafe-icon-192.png" alt=""><span><b>茶咖暖居</b><small>TEACAFE</small></span></a>
     <nav><a href="/">主頁</a><a href="/rules.html">規則</a><a href="/news.html">公告</a><a href="/wiki.html">Wiki</a><a href="/forum.html">論壇</a><a href="/gallery.html">玩家相冊</a><a href="/supporters.html">感謝支持</a><a href="/careers.html">職業指南</a><a href="/market.html">月映茶行</a><a data-official-link href="/admin" hidden>管理後台</a></nav>
   </footer>`;
 }
 
 document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/effects.css?v=20261017">');
-document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/polish.css?v=20261117">');
+document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/polish.css?v=20261118-icon">');
 document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/assets/css/site-refresh.css?v=20261117">');
 const motionStyle = document.querySelector('link[href^="/assets/css/motion.css"]');
 if (motionStyle) document.head.append(motionStyle);

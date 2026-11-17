@@ -8,14 +8,14 @@
     status.textContent = rows.length ? `感謝 ${rows.length} 位支持暖居的玩家` : '名單正在整理中，感謝每一位支持我們的玩家。';
     if (!rows.length) {
       const empty = document.createElement('div'); empty.className = 'supporters-empty';
-      const image = document.createElement('img'); image.src = '/image/server_icon.png'; image.alt = '';
+      const image = document.createElement('img'); image.src = '/image/brand/teacafe-icon-192.png'; image.alt = '';
       const text = document.createElement('p'); text.textContent = '第一份公開的支持紀錄，會從這裡開始。';
       empty.append(image, text); list.append(empty);
       return;
     }
     for (const row of rows) {
       const card = document.createElement('article'); card.className = 'supporter-card';
-      const icon = document.createElement('img'); icon.className = 'supporter-icon'; icon.src = '/image/server_icon.png'; icon.alt = '';
+      const icon = document.createElement('img'); icon.className = 'supporter-icon'; icon.src = '/image/brand/teacafe-icon-192.png'; icon.alt = '';
       const content = document.createElement('div');
       const name = document.createElement('h3'); name.textContent = row.player_name;
       const date = document.createElement('time'); date.dateTime = row.supported_at; date.textContent = row.supported_at;

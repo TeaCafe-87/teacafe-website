@@ -1,7 +1,7 @@
 @font-face{font-family:"Z Labs Pixel";src:url('/assets/fonts/zlabs-pixel-hc.woff2') format('woff2');font-display:swap}
 :root{--type-category-title:18px;--type-category-link:15px}
 html[data-text-size="large"]{--type-category-title:20px;--type-category-link:17px}
-.brand-icon{width:38px;height:38px;object-fit:cover;image-rendering:pixelated;border-radius:8px;background:#f7dfc3;flex:0 0 auto}
+.brand-icon{width:38px;height:38px;object-fit:cover;image-rendering:auto;border-radius:9px;flex:0 0 auto}
 .sidebar h3,.community-topics h2{font-family:inherit;font-size:var(--type-category-title);line-height:1.35;font-weight:900}
 .sidebar h3{padding:7px 10px 13px}
 .sidebar a,.community-topics nav button{font-size:var(--type-category-link);font-weight:800;line-height:1.45}
