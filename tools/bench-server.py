@@ -6,7 +6,7 @@ once per case.
   python tools/bench-server.py [desktop|mobile] [case ...]
 Results print as JSON lines and are appended to bench-results.jsonl next to this script's parent.
 Numbers come from THIS machine's browser; they are not real phone measurements."""
-import json, os, subprocess, sys, tempfile, threading
+import json, os, subprocess, sys, tempfile, threading, time
 from functools import partial
 from http.server import ThreadingHTTPServer
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -25,8 +25,23 @@ OUT = os.path.join(HERE, '..', 'bench-results.jsonl')
 CHROME = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
 done = threading.Event()
 
+def chrome_mb(profile_dir):
+    ps = ("$t=0; Get-CimInstance Win32_Process -Filter \"Name='chrome.exe'\" | "
+          f"Where-Object {{ $_.CommandLine -like '*{os.path.basename(profile_dir)}*' }} | "
+          "ForEach-Object { $t += (Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue).PrivateMemorySize64 }; [math]::Round($t/1MB)")
+    try:
+        return float(subprocess.run(['powershell', '-NoProfile', '-Command', ps], capture_output=True, text=True, timeout=20).stdout.strip() or 0)
+    except Exception:
+        return 0
+
 class BenchHandler(RangeHandler):
     def do_GET(self):
+        # OLD_ENGINE=<path>: serve another scroll-scene.js (e.g. a previous commit) for A/B runs.
+        if os.environ.get('OLD_ENGINE') and self.path.startswith('/assets/js/scroll-scene.js'):
+            body = open(os.environ['OLD_ENGINE'], 'rb').read()
+            self.send_response(200); self.send_header('Content-Type', 'text/javascript')
+            self.send_header('Content-Length', str(len(body))); self.end_headers(); self.wfile.write(body)
+            return
         if '?bench=' in self.path and self.path.split('?')[0].endswith('.html'):
             html = open(os.path.join(DIST, self.path.split('?')[0].lstrip('/')), encoding='utf-8').read()
             body = html.replace('</body>', f'<script>{BENCH_JS}</script></body>').encode('utf-8')
@@ -43,7 +58,7 @@ class BenchHandler(RangeHandler):
 
 if __name__ == '__main__':
     profile = sys.argv[1] if len(sys.argv) > 1 else 'desktop'
-    cases = sys.argv[2:] or ['frames', 'video-g1', 'video-g8', 'video-g30']
+    cases = sys.argv[2:] or (['frames'] if profile == 'desktop' else ['video-g8'])
     port = 4199
     server = ThreadingHTTPServer(('127.0.0.1', port), partial(BenchHandler, directory=DIST))
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -59,10 +74,18 @@ if __name__ == '__main__':
         server.shutdown(); sys.exit(0)
     for case in cases:
         done.clear()
+        started = time.time()
         with tempfile.TemporaryDirectory() as prof:
             p = subprocess.Popen([CHROME, '--headless=new', f'--user-data-dir={prof}', '--no-first-run', '--ignore-gpu-blocklist',
                                   '--disable-background-timer-throttling', '--disable-renderer-backgrounding', *size, *os.environ.get('BENCH_FLAGS', '').split(),
                                   f'http://127.0.0.1:{port}/wiki.html?bench={case}'])
-            if not done.wait(180): print(json.dumps({'case': case, 'error': 'timeout'}), flush=True)
+            # Peak private memory of this run's Chrome processes (all renderer/GPU/browser processes).
+            peak = 0
+            while not done.wait(1.0):
+                peak = max(peak, chrome_mb(prof))
+                if peak and time.time() - started > 240: break
+            peak = max(peak, chrome_mb(prof))
+            print(json.dumps({'case': case, 'chromePeakPrivateMB': round(peak)}), flush=True)
+            if not done.is_set(): print(json.dumps({'case': case, 'error': 'timeout'}), flush=True)
             p.kill(); p.wait()
     server.shutdown()

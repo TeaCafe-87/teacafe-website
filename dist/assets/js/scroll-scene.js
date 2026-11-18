@@ -25,7 +25,9 @@
   const clamp = (v, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
   const smooth = v => { const t = clamp(v); return t * t * (3 - 2 * t); };
   const reduced = () => reducedQuery.matches || root.dataset.motion === 'reduced';
-  const lowData = () => Boolean(navigator.connection?.saveData) || /(^|-)2g$/.test(navigator.connection?.effectiveType || '');
+  // Save-Data, 2G, or <=1 GB devices get the poster instead of a moving scene.
+  const lowData = () => Boolean(navigator.connection?.saveData) || /(^|-)2g$/.test(navigator.connection?.effectiveType || '')
+    || (navigator.deviceMemory || 8) <= 1;
   const override = new URLSearchParams(location.search).get('renderer');
 
   // Beat envelope: 0 -> 1 over the first `edge` of its range, holds, 1 -> 0 over the last `edge`.
@@ -55,7 +57,8 @@
   }
 
   function stats() {
-    return { renderer: '', draws: 0, seeks: 0, seekMs: [], staleFrames: [], loaded: 0, total: 0, firstFrameMs: 0 };
+    return { renderer: '', draws: 0, seeks: 0, seekMs: [], staleFrames: [], loaded: 0, total: 0, firstFrameMs: 0,
+      allLoadedMs: 0, decodeMs: [] };
   }
 
   class VideoRenderer {
@@ -118,6 +121,11 @@
     }
   }
 
+  // Frame sequence on <canvas>. Each frame is an <img> decoded once; the browser's own image
+  // decode cache decides how many decoded frames stay resident (Chrome evicts on its own).
+  // Measured on the real 300-frame wiki-01 set (Radeon 780M, Chrome 157): peak +~220 MB over a
+  // no-scene baseline and 0 lagging frames. Manual caches were worse: a 16-frame ImageBitmap
+  // window peaked at +320..790 MB (decode/close churn), an <img> window at +370..500 MB.
   class FrameRenderer {
     constructor(host, source, scene) {
       this.scene = scene;
@@ -140,26 +148,25 @@
       this.resize();
       this.pump();
     }
-    url(i) {
+    url(i) {   // index 0 -> file 0001 (1-based frame numbering)
       return this.source.frames.replace(/\{(0+)\}/, (_, pad) => String(i + 1).padStart(pad.length, '0'));
     }
     pump() {
-      const limit = 6;
-      while (this.alive && this.inflight < limit && this.cursor < this.queueOrder.length) {
+      while (this.alive && this.inflight < 6 && this.cursor < this.queueOrder.length) {
         const i = this.queueOrder[this.cursor++];
         const img = new Image();
         img.decoding = 'async';
         img.src = this.url(i);
         this.inflight++;
+        const t0 = performance.now();
         img.decode().then(() => {
           if (!this.alive) return;
           this.images[i] = img;
           this.ready[i] = 1;
-          this.scene.stats.loaded++;
-          if (i === 0) {
-            this.scene.stats.firstFrameMs = performance.now() - this.scene.startedAt;
-            this.host.classList.add('is-ready');
-          }
+          const st = this.scene.stats;
+          st.loaded++;
+          st.decodeMs.push(performance.now() - t0);        // fetch + decode, per frame
+          if (st.loaded === this.count) st.allLoadedMs = performance.now() - this.scene.startedAt;
           this.scene.queue();
         }).catch(() => { if (i === 0) this.scene.fail(); }).finally(() => { this.inflight--; this.pump(); });
       }
@@ -179,8 +186,13 @@
       if (have !== this.drawn) {
         const img = this.images[have];
         const { width: cw, height: ch } = this.canvas;
-        const [x, y, w, h] = coverRect(img.naturalWidth, img.naturalHeight, cw, ch, this.source.focus);
+        const [W, H] = this.source.size || [img.naturalWidth, img.naturalHeight];
+        const [x, y, w, h] = coverRect(W, H, cw, ch, this.source.focus);
         this.ctx.drawImage(img, x, y, w, h);
+        if (this.drawn < 0 && !this.host.classList.contains('is-ready')) {
+          this.scene.stats.firstFrameMs = performance.now() - this.scene.startedAt;
+          this.host.classList.add('is-ready');
+        }
         this.drawn = have;
         this.scene.stats.draws++;
         if (have !== want) this.scene.stats.staleFrames.push(Math.abs(have - want));
@@ -188,15 +200,19 @@
       return have !== want;                               // keep polling until the exact frame lands
     }
     resize() {
-      const dpr = Math.min(devicePixelRatio || 1, 1.5);   // frames are 1280w; more pixels buy nothing
+      const dpr = Math.min(devicePixelRatio || 1, 2);
       const r = this.host.getBoundingClientRect();
-      this.canvas.width = Math.max(1, Math.round(r.width * dpr));
-      this.canvas.height = Math.max(1, Math.round(r.height * dpr));
+      const cw = Math.max(1, Math.round(r.width * dpr)), ch = Math.max(1, Math.round(r.height * dpr));
+      const [W, H] = this.source.size || [1600, 900];
+      const scale = Math.max(1, Math.max(cw / W, ch / H));   // never allocate more pixels than the source has
+      this.canvas.width = Math.round(cw / scale);
+      this.canvas.height = Math.round(ch / scale);
       this.drawn = -1;
     }
     unlockOnGesture() {}
     destroy() {
       this.alive = false;
+      for (const img of this.images) if (img) img.src = '';   // let the decoded data go with the elements
       this.images = [];
       this.canvas.width = this.canvas.height = 0;        // frees the backing store immediately
       this.canvas.remove();
@@ -234,7 +250,6 @@
       const m = this.manifest;
       this.frameCount = m.frames ?? Math.round(m.duration * m.fps);
       this.section.dataset.sceneId = m.id;
-      if (m.placeholder) this.section.dataset.scenePlaceholder = '';
       // Grade hook: day (default) | dusk | night. A future site theme can set data-scene-time directly.
       const time = new URLSearchParams(location.search).get('time');
       if (/^(day|dusk|night)$/.test(time || '')) this.section.dataset.sceneTime = time;
@@ -255,10 +270,13 @@
     }
     // (Re)choose renderer + source for the current device state.
     mount() {
-      const still = reduced() || lowData() || this.failed;
-      this.section.classList.toggle('is-static', still);
+      let still = reduced() || lowData() || this.failed;
       const variant = portraitQuery.matches ? 'mobile' : 'desktop';
-      const kind = override || this.manifest.renderer?.[variant] || 'video';
+      const src = this.manifest.sources[variant] || {};
+      let kind = override || this.manifest.renderer?.[variant] || 'video';
+      if (!src[kind]) kind = src.frames ? 'frames' : src.video ? 'video' : '';   // use whatever the scene ships
+      if (!kind) still = true;
+      this.section.classList.toggle('is-static', still);
       const key = still ? 'static' : `${variant}:${kind}`;
       if (key === this.mountedKey) return this.queue();
       this.mountedKey = key;
@@ -267,7 +285,6 @@
       this.mediaHost.classList.remove('is-ready');
       this.shown = null;
       if (!still) {
-        const src = this.manifest.sources[variant];
         const source = { ...src, focus: src.focus || [0.5, 0.5] };
         this.stats = stats();
         this.stats.renderer = `${variant}:${kind}`;

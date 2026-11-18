@@ -1,56 +1,37 @@
 {
   "id": "wiki-01",
   "chapter": "wiki",
-  "title": "山谷與洞窟",
-  "placeholder": true,
-  "note": "PLACEHOLDER clip and timings. Replace sources, fps/frames and beats with values from Cowork's scene-metadata.json when wiki-01 renders arrive.",
+  "title": "山谷飛行",
+  "version": "v1-2026-11-19",
+  "note": "Values from Cowork's docs/scenes/wiki-01/scene-metadata.json. Frame files are 1-based: index i (0..299) = file i+1 = Blender frame i+1; progress p -> frame 1 + round(p * 299).",
   "fps": 30,
-  "frames": 180,
-  "renderer": {
-    "desktop": "frames",
-    "mobile": "video"
-  },
+  "frames": 300,
+  "renderer": { "desktop": "frames", "mobile": "video" },
   "sources": {
     "desktop": {
-      "video": "/assets/scenes/wiki-01/desktop-g8.mp4",
       "frames": "/assets/scenes/wiki-01/frames-desktop/{0000}.webp",
       "poster": "/assets/scenes/wiki-01/poster-desktop.webp",
-      "focus": [
-        0.5,
-        0.45
-      ]
+      "size": [1600, 900],
+      "focus": [0.5, 0.45]
     },
     "mobile": {
       "video": "/assets/scenes/wiki-01/mobile-g8.mp4",
-      "frames": "/assets/scenes/wiki-01/frames-mobile/{0000}.webp",
       "poster": "/assets/scenes/wiki-01/poster-mobile.webp",
-      "focus": [
-        0.5,
-        0.5
-      ]
+      "size": [720, 1280],
+      "focus": [0.5, 0.45]
     }
   },
+  "events": [
+    { "id": "koi", "frames": [1, 23] },
+    { "id": "tilt_up", "frames": [24, 60] },
+    { "id": "waterfall_first_visible", "frame_desktop": 33, "frame_mobile": 60 },
+    { "id": "cruise", "frames": [60, 255] },
+    { "id": "approach", "frames": [255, 300] }
+  ],
   "beats": [
-    {
-      "id": "title",
-      "from": 0,
-      "to": 0.3
-    },
-    {
-      "id": "intro",
-      "from": 0.28,
-      "to": 0.62
-    },
-    {
-      "id": "note",
-      "from": 0.58,
-      "to": 0.92
-    },
-    {
-      "id": "cue",
-      "from": 0,
-      "to": 0.14,
-      "edge": 0.5
-    }
+    { "id": "title", "from": 0, "to": 0.13, "frames": [1, 40] },
+    { "id": "cue", "from": 0, "to": 0.13, "edge": 0.5, "frames": [1, 40] },
+    { "id": "intro", "from": 0.231, "to": 0.565, "frames": [70, 170] },
+    { "id": "note", "from": 0.599, "to": 0.849, "frames": [180, 255] }
   ]
 }

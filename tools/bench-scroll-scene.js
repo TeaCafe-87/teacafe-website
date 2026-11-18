@@ -1,7 +1,8 @@
 /* Scroll-scene benchmark. Served by tools/bench-server.py, which injects it into pages
- * opened with ?bench=<case>. Cases: frames | video-g1 | video-g8 | video-g30.
+ * opened with ?bench=<case>. Cases: frames | video-g8 | revealcheck | staticcheck | inkprobe | shot-<p>.
  * It can also be pasted into DevTools and run with `await teaBench.all()`.
  * Drives window scroll programmatically and reports frame pacing plus scene stats. */
+performance.setResourceTimingBufferSize(2000);          // 300 frames exceed the default 250 entries
 window.teaBench = (() => {
   const pct = (a, p) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(p * s.length))]; };
   const r1 = v => Math.round(v * 10) / 10;
@@ -88,7 +89,9 @@ window.teaBench = (() => {
     const lcp = performance.getEntriesByType('largest-contentful-paint').at(-1);
     const media = performance.getEntriesByType('resource').filter(e => /\/scenes\//.test(e.name));
     return { renderer: s.renderer, gpu, viewport: `${innerWidth}x${innerHeight}@${devicePixelRatio}`, firstFrameMs: Math.round(s.firstFrameMs),
-      loaded: `${s.loaded}/${s.total}`, heapMB: performance.memory ? r1(performance.memory.usedJSHeapSize / 1048576) : 'n/a',
+      loaded: `${s.loaded}/${s.total}`, allFramesLoadedMs: Math.round(s.allLoadedMs || 0),
+      fetchDecodeAvgMs: r1((s.decodeMs || []).reduce((a, b) => a + b, 0) / ((s.decodeMs || []).length || 1)), fetchDecodeP95Ms: r1(pct(s.decodeMs || [], .95)), decodes: (s.decodeMs || []).length,
+      heapMB: performance.memory ? r1(performance.memory.usedJSHeapSize / 1048576) : 'n/a',
       domContentLoadedMs: Math.round(nav?.domContentLoadedEventEnd || 0), lcpMs: Math.round(lcp?.startTime || 0),
       sceneBytesKB: Math.round(media.reduce((a, e) => a + (e.encodedBodySize || e.transferSize || 0), 0) / 1024), sceneRequests: media.length };
   }
@@ -99,10 +102,12 @@ window.teaBench = (() => {
     while (!window.TeaScrollScene?.scenes[0]?.manifest) await wait(50);
     let result;
     if (kind.startsWith('shot-')) {                           // position the page for a headless --screenshot
+      // Headless --screenshot ignores scroll on sticky layouts, so fake the scene progress at scrollY 0.
       const p = Number(kind.slice(5)), sc = scene();
-      await wait(3500);
-      if (p > 1) scrollTo({ top: sc.section.offsetTop + sc.section.offsetHeight + (p - 1) * innerHeight, behavior: 'instant' });
-      else scrollTo({ top: sc.section.offsetTop + p * (sc.section.offsetHeight - innerHeight), behavior: 'instant' });
+      await wait(2500);
+      sc.progress = () => p;
+      sc.shown = null;
+      sc.queue();
       return;
     }
     if (kind === 'revealcheck') {                           // functional: reveal values vs expected, both directions
@@ -118,9 +123,9 @@ window.teaBench = (() => {
       }
       // Scene beats at fixed progress points, down then up.
       const sc = scene(), beats = [];
-      for (const p of [0, .15, .29, .45, .75, .95, .75, .45, .29, .15, 0]) {
+      for (const p of [0, .05, .2, .4, .7, .95, 1, .95, .7, .4, .2, .05, 0]) {
         scrollTo({ top: sc.section.offsetTop + p * (sc.section.offsetHeight - innerHeight), behavior: 'instant' }); await wait(700);
-        beats.push({ p, frame: sc.renderer?.drawn ?? (sc.renderer?.video ? Math.round(sc.renderer.video.currentTime * 30) : null), want: Math.round(p * 179),
+        beats.push({ p, frame: sc.renderer?.drawn ?? (sc.renderer?.video ? Math.round(sc.renderer.video.currentTime * sc.manifest.fps) : null), want: Math.round(p * (sc.frameCount - 1)),
           active: [...sc.section.querySelectorAll('[data-beat-active]')].map(e => e.dataset.beat + (e.tagName === 'SPAN' ? '-' + e.className : '')).join(',') });
       }
       await fetch('/__bench', { method: 'POST', body: JSON.stringify({ case: kind, allOk: rows.every(r => r.ok), rows, beats }) });

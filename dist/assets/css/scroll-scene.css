@@ -16,7 +16,7 @@
 .scroll-scene-ink { z-index: 2; pointer-events: none; mix-blend-mode: multiply; opacity: .62; }
 /* Paper vignette keeps copy legible over any frame of the flight. */
 .scroll-scene-stage::before { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
-  background: radial-gradient(120% 80% at 18% 78%, rgba(236, 230, 214, .78), transparent 58%), linear-gradient(180deg, rgba(236, 230, 214, .35), transparent 22%); }
+  background: linear-gradient(0deg, rgba(236, 230, 214, .62) 0, rgba(236, 230, 214, .38) 22%, transparent 40%); }
 
 /* Day / dusk / night grading. The flight has baked lighting, so this is a grade, not a relight:
    a true night needs its own render (see docs/scroll-scenes.md). */
@@ -25,30 +25,32 @@
 .scroll-scene[data-scene-time="night"] .scroll-scene-stage::after { opacity: 1; mix-blend-mode: multiply; background: linear-gradient(180deg, rgba(40, 52, 96, .78), rgba(14, 18, 40, .82)); }
 .scroll-scene[data-scene-time="night"] .scroll-scene-media { filter: saturate(.6); }
 .scroll-scene[data-scene-time="night"] { --ink-paper: #1b1f2b; }
-.scroll-scene[data-scene-time="night"] .scroll-scene-stage::before { background: radial-gradient(120% 80% at 18% 78%, rgba(14, 18, 32, .72), transparent 58%); }
+.scroll-scene[data-scene-time="night"] .scroll-scene-stage::before { background: linear-gradient(0deg, rgba(14, 18, 32, .7) 0, rgba(14, 18, 32, .4) 22%, transparent 40%); }
 .scroll-scene[data-scene-time="night"] .scroll-scene-copy { color: #eee6d2; }
 
-.scroll-scene-tag { position: absolute; z-index: 6; top: 92px; right: 16px; padding: 4px 8px; border: 1px solid currentColor; color: var(--ink-seal); font: 600 11px/1.2 system-ui, sans-serif; letter-spacing: .08em; background: rgba(236, 230, 214, .8); }
 
 /* ---------- Copy + beats ---------- */
 /* .page-title-inner is kept so the admin copy editor (site-copy-core.js) still finds h1/p. */
 .scroll-scene .scroll-scene-copy { position: absolute; z-index: 4; inset: 0 0 auto; height: 100svh; max-width: none; margin: 0;
-  padding: 120px clamp(20px, 6vw, 96px) clamp(48px, 10svh, 120px); display: grid; grid-template: "side" 1fr "crumb" auto "main" auto / 1fr; color: var(--ink-black); }
+  padding: 120px clamp(20px, 6vw, 96px) clamp(36px, 7svh, 84px); display: grid; grid-template: "side" 1fr "crumb" auto "main" auto / 1fr; color: var(--ink-black); }
 /* Beats share one cell and replace each other in time rather than stacking in space. */
 .scroll-scene .scroll-scene-copy > * { grid-area: main; align-self: end; max-width: min(760px, 100%); margin: 0; }
 .scroll-scene .scroll-scene-copy > .crumb { grid-area: crumb; }
-.scroll-scene .scroll-scene-copy > .scene-note { grid-area: side / side / main / main; }
-.scroll-scene-tag { display: none; }
-.scroll-scene[data-scene-placeholder] .scroll-scene-tag { display: block; }
+.scroll-scene .scroll-scene-copy > .scene-note { grid-area: main; }
+
 .scroll-scene .scroll-scene-copy > :is(h1, p) { animation: none !important; clip-path: none !important; }
-.scroll-scene .scroll-scene-copy h1 { font: 500 clamp(56px, 11vw, 168px)/.96 "Noto Serif TC", "Songti TC", serif !important; letter-spacing: -.06em; color: inherit; text-shadow: 0 0 28px rgba(236, 230, 214, .9); }
+/* One line, lower quarter: koi swim through the upper-left half during the title beat (frames 1-23). */
+.scroll-scene .scroll-scene-copy h1 { max-width: none; white-space: nowrap; font: 500 clamp(48px, 8.4vw, 132px)/1 "Noto Serif TC", "Songti TC", serif !important; letter-spacing: -.05em; color: inherit; text-shadow: 0 0 28px rgba(236, 230, 214, .9); }
 .scroll-scene .scroll-scene-copy .crumb { display: block; margin-bottom: 18px; font: 600 12px/1 system-ui, sans-serif; letter-spacing: .3em; color: var(--ink-seal); }
 .scroll-scene .scroll-scene-copy p { font-size: clamp(17px, 1.6vw, 22px); line-height: 1.9; color: var(--ink-grey); max-width: 34em; text-shadow: 0 0 18px rgba(236, 230, 214, .95); }
 .scroll-scene[data-scene-time="night"] .scroll-scene-copy :is(h1, p) { color: #eee6d2; text-shadow: 0 0 24px rgba(10, 12, 24, .9); }
-.scroll-scene .scroll-scene-copy .scene-note { justify-self: end; align-self: center; max-width: 22em; padding: 22px 26px; font-size: clamp(15px, 1.3vw, 18px); line-height: 1.85; color: var(--ink-black);
+/* Note: lower-left, max 35% wide -- the waterfall sits at x 0.45-0.6 from frame 170 on. */
+.scroll-scene .scroll-scene-copy .scene-note { justify-self: start; align-self: end; max-width: min(35vw, 24em); padding: 20px 24px; font-size: clamp(15px, 1.3vw, 18px); line-height: 1.85; color: var(--ink-black);
   background: rgba(236, 230, 214, .78); box-shadow: 0 0 40px 24px rgba(236, 230, 214, .78); }   /* soft paper patch, edges dissolve into the picture */
 .scroll-scene[data-scene-time="night"] .scroll-scene-copy .scene-note { color: #eee6d2; background: rgba(14, 18, 32, .7); box-shadow: 0 0 40px 24px rgba(14, 18, 32, .7); }
-.scroll-scene .scroll-scene-copy .scene-cue { grid-area: side; justify-self: end; align-self: end; writing-mode: vertical-rl; font: 600 12px/1 system-ui, sans-serif; letter-spacing: .3em; color: var(--ink-grey); }
+/* grid-area:auto -> containing block is the copy's padding box (an area-placed abspos item would
+   use the title row instead and sit on top of the title). Bottom centre, below the title. */
+.scroll-scene .scroll-scene-copy .scene-cue { grid-area: auto; position: absolute; left: 50%; bottom: 14px; translate: -50% 0; max-width: none; font: 600 12px/1 system-ui, sans-serif; letter-spacing: .3em; color: var(--ink-grey); }
 
 .scroll-scene [data-beat] { --beat-in: 1; --beat-out: 0; opacity: calc(var(--beat-in) * (1 - var(--beat-out))); }
 .scroll-scene [data-beat]:not([data-beat-active]) { visibility: hidden; }          /* hidden beats are skipped by AT and hit-testing */
@@ -72,7 +74,8 @@
 
 @media (max-width: 760px) {
   .scroll-scene .scroll-scene-copy { padding: 96px 20px clamp(40px, 9svh, 80px); }
-  .scroll-scene .scroll-scene-copy .scene-note { justify-self: start; align-self: end; }
+  .scroll-scene .scroll-scene-copy .scene-note { max-width: none; }
+  .scroll-scene .scroll-scene-copy h1 { white-space: normal; font-size: clamp(44px, 14vw, 72px) !important; }
 }
 
 /* ---------- Shared reveal language (scroll-motion.js) ---------- */

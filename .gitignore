@@ -5,7 +5,7 @@
 .dev.vars.*
 node_modules/
 
-# Generated placeholder scene media (tools/render-placeholder-scene.py)
-dist/assets/scenes/wiki-01/
+# Local benchmark output (tools/bench-server.py)
 bench-results.jsonl
 bench-shots/
+__pycache__/
