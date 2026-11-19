@@ -1,6 +1,6 @@
 :root {
-  --tea-nav-paper: rgba(248, 240, 223, .82);
-  --tea-nav-backdrop: rgba(12, 17, 13, .96);
+  --tea-nav-paper: var(--tc-line);
+  --tea-nav-backdrop: var(--tc-paper);
   --tea-cinematic-ease: cubic-bezier(.22, 1, .36, 1);
   --tea-intro-outer-line: 3px;
   --tea-intro-center-line: 1.5px;
@@ -23,9 +23,7 @@ body .topbar {
   background: var(--tea-nav-backdrop) !important;
   border: 0 !important;
   box-shadow: none !important;
-  color: #fff;
-  -webkit-backdrop-filter: blur(9px);
-  backdrop-filter: blur(9px);
+  color: var(--tc-ink);
   transform: translate3d(0, 0, 0) !important;
   opacity: 1;
   transition: transform .54s var(--tea-cinematic-ease), opacity .54s ease !important;
@@ -52,14 +50,9 @@ body .topbar .nav-more > summary.mc-nav {
   text-shadow: none !important;
   color: inherit;
 }
-body .topbar .mc-nav:is(:hover, :focus-visible, .active),
-body .topbar .nav-more > summary.mc-nav:is(:hover, :focus-visible) {
-  background: rgba(250, 240, 220, .14) !important;
-  color: #fff;
-}
 body .topbar .nav-more > div,
 body .topbar .topnav.mobile-open {
-  background: rgba(20, 29, 22, .97) !important;
+  background: var(--tc-paper) !important;
 }
 body .topbar .nav-more:not([open]) > div { display: none; }
 body .topbar .nav-more[open] { z-index: 90; }
@@ -68,11 +61,11 @@ html:has(.moderation-page) { scroll-behavior: auto; }
 body.moderation-page .page-title-inner > :is(h1,p) { animation: none !important; opacity: 1 !important; transform: none !important; clip-path: none !important; }
 .topbar-music-toggle {
   display: inline-grid; place-items: center; flex: 0 0 42px; width: 42px; height: 42px;
-  color: #f2e8d0; background: transparent; border: 1px solid rgba(242,232,208,.34);
-  border-radius: 50%; cursor: pointer; transition: background .22s ease, border-color .22s ease;
+  color: var(--tc-ink); background: transparent; border: 1px solid var(--tc-line);
+  border-radius: 50%; cursor: pointer; transition: background .22s ease, border-color .22s ease, color .22s ease;
 }
-.topbar-music-toggle:hover, .topbar-music-toggle:focus-visible { background: rgba(248,240,223,.15); border-color: currentColor; }
-.topbar-music-toggle:focus-visible { outline: 2px solid #e7c789; outline-offset: 3px; }
+.topbar-music-toggle:hover, .topbar-music-toggle:focus-visible { background: var(--tc-ink); border-color: var(--tc-ink); color: var(--tc-paper); }
+.topbar-music-toggle:focus-visible { outline: 2px solid var(--tc-accent); outline-offset: 3px; }
 .topbar-music-toggle svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .topbar-music-toggle .speaker-off, .topbar-music-toggle.is-muted .speaker-on { display: none; }
 .topbar-music-toggle.is-muted .speaker-off { display: block; }
@@ -196,9 +189,21 @@ body:not(.site-intro-pending):not(.site-nav-reveal) .topbar::after { transform: 
 html[data-font-style="pixel"] .site-intro-seal-text {
   font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif !important;
 }
-/* The ring and glyph begin fading with the split center line, and finish with every line. */
-.site-intro-seal { animation: tea-intro-seal-complete 1s ease-in-out .80s forwards !important; }
+/* The glyph fades with the split centre line. The ring is a progress stroke: on the home loader it
+   fills as the film loads (--intro-progress, intro-gate.js), then it erases over exactly the side
+   lines' window (1.5s linear from .30s), so the ring runs out the moment the lines reach the end. */
+.site-intro-seal-text { animation: tea-intro-seal-complete 1s ease-in-out .80s forwards; }
+.site-intro-seal { animation: tea-intro-seal-complete .12s linear 1.78s forwards !important; }
 @keyframes tea-intro-seal-complete { to { opacity: 0; } }
+.site-intro-seal-ring circle { stroke-dasharray: 100 !important; stroke-dashoffset: calc(100 - var(--intro-progress, 1) * 100) !important; stroke-width: .5; transition: stroke-dashoffset .45s ease; }
+.intro-play .site-intro-seal-ring circle { animation: tea-intro-ring-erase 1.5s linear .30s both; }
+@keyframes tea-intro-ring-erase { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -100; } }
+
+/* Gate: nothing animates until intro-gate.js says play; skipped intros never paint. */
+body:not(.intro-play) .site-intro, body:not(.intro-play) .site-intro * { animation: none !important; }
+.intro-skip .site-intro { display: none !important; }
+/* Home loader paints in the visitor's theme, so the night film never follows a flash of day. */
+body.ink-home.theme-night { --intro-paper: #0c1423; --intro-ink: #d9d3c4; }
 
 /* Avoid layout/size animation on the outgoing page curtain as well. */
 .page-transition {
@@ -234,29 +239,24 @@ body.is-page-leaving .page-transition { transform: translate3d(0,0,0); }
 .page-transition-seal-text { font: 400 clamp(31px, 3.4vw, 46px)/1 "Noto Serif TC", "Songti TC", "PMingLiU", serif; }
 html[data-font-style="pixel"] .page-transition-seal-text { font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif !important; }
 
-/* Temporary full-screen hero screenshot (index.png). Keep the existing shade
- * and copy/image layers; only the home hero's backdrop is replaced. */
-.home-page .home-hero-fallback {
-  background: linear-gradient(90deg, rgba(5, 10, 9, .43), rgba(5, 10, 9, .18)),
-              url('/image/index.png') center center / cover no-repeat !important;
-  background-position: center center !important;
-  animation: none !important;
-}
 .home-page .home-hero-shade {
   background: linear-gradient(180deg, rgba(0,0,0,.11), rgba(0,0,0,.04) 50%, rgba(0,0,0,.51)) !important;
 }
 
 @media (max-width: 760px) {
-  body .topbar { background: rgba(12, 17, 13, .90) !important; }
   .home-page .home-hero-fallback { background-position: 56% center !important; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .site-intro, .page-transition { display: none !important; }
+  .page-transition { display: none !important; }
+  /* the home loader still covers loading, then simply lifts */
+  .intro-play .site-intro { animation: tea-intro-finish .01s linear .2s forwards !important; }
+  .intro-play .site-intro * { animation: none !important; }
   body .topbar { animation: none !important; opacity: 1 !important; pointer-events: auto !important; }
   body .topbar::after { animation: none !important; transform: scaleX(1) !important; }
 }
-html[data-motion="reduced"] .site-intro,
 html[data-motion="reduced"] .page-transition { display: none !important; }
+html[data-motion="reduced"] .intro-play .site-intro { animation: tea-intro-finish .01s linear .2s forwards !important; }
+html[data-motion="reduced"] .intro-play .site-intro * { animation: none !important; }
 html[data-motion="reduced"] body .topbar { animation: none !important; opacity: 1 !important; pointer-events: auto !important; }
 html[data-motion="reduced"] body .topbar::after { animation: none !important; transform: scaleX(1) !important; }
 

@@ -1,0 +1,231 @@
+/* TeaCafe home: the four-act journey through the Art-Of-Ink landscape (v2 films).
+ * A fixed, scroll-scrubbed film (journey-[night-]desktop|portrait.mp4, driven by home-journey.js)
+ * is the background, with the live overlay (waterfall, boat, birds: journey-live.js) and the
+ * ink-fluid cursor layer on top. Acts two to four leave half of the frame blank (right / left /
+ * right on wide screens, the bottom half in portrait); each act's copy sits in that half.
+ * After the journey the featured wall and footer sit on solid paper. */
+
+body.ink-home {
+  --j-paper: #ede7d7;          /* the films' blank wash */
+  --j-paper-deep: #e4dac6;
+  --j-ink: #2b3138;
+  --j-ink-soft: #4f5862;
+  --j-slate: #3c566d;
+  --j-tea: #8a6a42;
+  --j-seal: #9e3b2e;
+  --j-hair: rgba(43, 49, 56, .2);
+  --j-glow: rgba(237, 231, 215, .9);
+  background: var(--j-paper);
+  color: var(--j-ink);
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+/* Night films: moonlit navy wash, light ink. */
+body.ink-home.theme-night {
+  --j-paper: #0c1423;
+  --j-paper-deep: #111b2e;
+  --j-ink: #ebe5d6;
+  --j-ink-soft: #b6bdc8;
+  --j-slate: #a9bfd4;
+  --j-tea: #d6b47c;
+  --j-seal: #b0483a;
+  --j-hair: rgba(235, 229, 214, .2);
+  --j-glow: rgba(12, 20, 35, .85);
+  --tc-ink: #ebe5d6;
+  --tc-body: #cfd4dc;
+  --tc-muted: #a7afba;
+  --tc-line: rgba(235, 229, 214, .18);
+  --tc-paper: #0c1423;
+  --tc-surface: #16213a;
+  --tc-accent: #d6b47c;
+  --tea-nav-backdrop: rgba(12, 20, 35, .9);
+  color-scheme: dark;
+}
+body.ink-home .topbar { border-bottom: 1px solid var(--j-hair) !important; }
+body.ink-home.theme-night .topbar .discord-invite { background: #2b3a55; }
+
+/* ---------- Film stage ---------- */
+.journey { position: relative; z-index: 1; }
+.journey-backdrop { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: var(--j-paper); }
+.journey-poster, .journey-video, .journey-overlay, .ink-fluid {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 50%;
+}
+.journey-video { opacity: 0; transition: opacity .6s ease; }
+.journey-live .journey-video { opacity: 1; }
+.journey-still .journey-video, .journey-still .journey-overlay, .journey-still .ink-fluid { display: none; }
+.ink-fluid { opacity: 0; }
+.ink-fluid.is-stirred { opacity: 1; }
+.journey-grain { position: absolute; inset: 0; background: url(/assets/video/journey-grain.png); mix-blend-mode: overlay; opacity: .55; }
+.theme-night .journey-grain { opacity: .3; }
+.journey-done .journey-backdrop { visibility: hidden; }
+
+/* ---------- Acts: copy in the blank half ---------- */
+.journey-gap--1 { height: 240vh; height: 240svh; }   /* opening pan to the waterfall */
+.journey-gap--2 { height: 205vh; height: 205svh; }   /* downstream to the bridge */
+.journey-gap--3 { height: 260vh; height: 260svh; }   /* through the arch, up through the clouds */
+.act { position: relative; padding-block: 14svh 20svh; }
+.act--last { padding-bottom: 26svh; }
+.act > .scene + .scene { margin-top: 34svh; }
+
+.scene { position: relative; }
+.scene-copy { position: relative; box-sizing: border-box; width: 50%; padding: 0 clamp(32px, 5.5vw, 112px); container-type: inline-size; }
+.act--right .scene-copy { margin-left: 50%; }
+.act--left .scene-copy { margin-right: 50%; }
+.scene-copy > * { max-width: 36rem; }
+
+.scene-mark {
+  position: absolute; top: .4em; right: clamp(14px, 2.4vw, 40px);
+  writing-mode: vertical-rl; letter-spacing: .42em;
+  font: 500 clamp(12px, 1.1vw, 14px) / 1 var(--tc-display);
+  color: var(--j-ink-soft);
+  padding-block: 2px 14px; border-inline-start: 1px solid var(--j-hair);
+}
+.act--left .scene-mark { right: auto; left: clamp(14px, 2.4vw, 40px); }
+
+.scene-title {
+  margin: 0 0 .55em;
+  /* Brush titles: phrases never split (keep-all); sized so the longest phrase fits the blank half. */
+  font: 400 clamp(30px, 3.6vw, 60px) / 1.3 var(--tc-brush);
+  font-size: calc(clamp(22px, 8.2cqi, 60px) * var(--text-scale, 1)); /* the longest phrase is 10 brush glyphs (~1.1em each) */
+  letter-spacing: .06em; color: var(--j-ink); text-wrap: balance; word-break: keep-all;
+}
+.scene-title em { font-style: normal; color: var(--j-slate); white-space: nowrap; }
+.scene-lead { margin: 0 0 1.6em; font-size: clamp(15px, 1.4vw, 17px); line-height: 2; color: var(--j-ink-soft); }
+.scene-copy .text-link { font-weight: 600; color: var(--j-ink); text-decoration-color: var(--j-seal); }
+
+/* ---------- 山門: live server inscription ---------- */
+.gate-stats { margin: 0; display: grid; }
+.gate-row { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; padding: 15px 2px; border-top: 1px solid var(--j-hair); }
+.gate-row:last-child { border-bottom: 1px solid var(--j-hair); }
+.gate-row dt { font: 500 13px / 1.4 var(--tc-sans); letter-spacing: .14em; color: var(--j-ink-soft); }
+.gate-row dd { margin: 0; font: 600 clamp(17px, 1.7vw, 21px) / 1.4 var(--tc-sans); color: var(--j-ink); text-align: right; }
+.gate-row dd.gate-strong { font: 700 clamp(19px, 2vw, 25px) / 1.4 var(--tc-display); }
+body.ink-home .gate-row dd.server-uptime {
+  font: 600 clamp(15px, 1.5vw, 20px) / 1.6 var(--tc-sans) !important;
+  letter-spacing: .02em; white-space: normal !important; overflow: visible;
+}
+body.ink-home .status-online { color: #3c6e49; }
+body.ink-home.theme-night .status-online { color: #8fc79a; }
+body.ink-home .status-offline { color: var(--j-seal); }
+body.ink-home .status-loading { color: var(--j-ink-soft); }
+body.ink-home .server-player-board { margin-top: 20px; padding: 0; background: none; border: 0; box-shadow: none; color: inherit; }
+body.ink-home .server-player-board .strip-label { display: block; margin-bottom: 10px; font: 500 13px/1 var(--tc-sans); letter-spacing: .14em; color: var(--j-ink-soft); }
+body.ink-home .online-player-heads { display: flex; flex-wrap: wrap; gap: 8px; }
+body.ink-home .online-player-head { width: 36px; height: 36px; padding: 0; border-radius: 4px; border: 1px solid var(--j-hair); background: var(--j-paper-deep); box-shadow: none; }
+
+/* Player scroll: a hand scroll whose paper unrolls from the left rod toward the right one. */
+.player-scroll { margin-top: 22px; }
+.player-scroll-label { display: block; margin-bottom: 10px; font: 500 13px/1 var(--tc-sans); letter-spacing: .14em; color: var(--j-ink-soft); }
+.player-scroll-body {
+  display: grid; grid-template-columns: 12px 0fr 12px; align-items: stretch;
+  transition: grid-template-columns 1.6s cubic-bezier(.45, .05, .2, 1);
+}
+.player-scroll.is-open .player-scroll-body { grid-template-columns: 12px 1fr 12px; }
+.scroll-rod {
+  position: relative; min-height: 78px; border-radius: 6px;
+  background: linear-gradient(90deg, #4a3320, #8a6a42 45%, #4a3320);
+}
+.scroll-rod::before, .scroll-rod::after {
+  content: ""; position: absolute; left: 50%; width: 18px; height: 7px; translate: -50% 0; border-radius: 4px; background: #3a2818;
+}
+.scroll-rod::before { top: -5px; }
+.scroll-rod::after { bottom: -5px; }
+.scroll-paper {
+  min-width: 0; overflow: hidden;
+  background: color-mix(in srgb, var(--j-paper-deep) 88%, var(--j-tea) 12%);
+  border-block: 1px solid color-mix(in srgb, var(--j-tea) 35%, transparent);
+}
+body.ink-home .scroll-paper .online-player-heads {
+  display: flex; flex-wrap: nowrap; gap: 12px; width: max-content; max-width: 100%; overflow-x: auto;
+  padding: 12px 16px; scrollbar-width: thin;
+}
+body.ink-home .scroll-paper .online-player-heads:empty { display: none; }
+.player-head { display: grid; justify-items: center; gap: 4px; margin: 0; }
+body.ink-home .player-head .online-player-head { width: 40px; height: 40px; border-radius: 3px; image-rendering: pixelated; border: 0; }
+.player-head figcaption { max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 11px/1.2 var(--tc-sans); color: var(--j-ink-soft); }
+.scroll-empty { display: none; margin: 0; padding: 26px 18px; white-space: nowrap; font: 400 calc(17px * var(--text-scale, 1)) / 1 var(--tc-display); letter-spacing: .12em; color: var(--j-ink-soft); }
+.online-player-heads:empty + .scroll-empty { display: block; }
+@media (prefers-reduced-motion: reduce) { .player-scroll-body { transition: none; } }
+
+/* ---------- 過橋 / 行旅: ruled lists ---------- */
+.scene-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.scene-list > li { padding: 16px 2px; border-top: 1px solid var(--j-hair); }
+.scene-list > li:last-child { border-bottom: 1px solid var(--j-hair); }
+.scene-list h3 { margin: 0 0 6px; font: 700 clamp(20px, 1.9vw, 24px) / 1.45 var(--tc-display); letter-spacing: .06em; color: var(--j-ink); }
+.scene-list p { margin: 0; font-size: 15px; line-height: 1.9; color: var(--j-ink-soft); }
+:is(.scene-list, .journey-steps) code {
+  font: 600 .92em ui-monospace, Menlo, monospace; color: var(--j-tea);
+  background: color-mix(in srgb, var(--j-tea) 12%, transparent); padding: 1px 6px; border-radius: 4px;
+}
+.scene-list.cols-2 { grid-template-columns: 1fr 1fr; column-gap: clamp(20px, 2.6vw, 40px); }
+.scene-list.cols-2 > li:nth-last-child(2) { border-bottom: 1px solid var(--j-hair); }
+.scene-copy > .scene-list.cols-2 { max-width: 44rem; }
+.scene-list-foot { margin-top: 22px; }
+
+/* ---------- 入住: the three steps ---------- */
+.journey-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(18px, 3svh, 30px); }
+.journey-steps > li { display: grid; grid-template-columns: 52px 1fr; gap: 18px; align-items: start; }
+.journey-steps .j-no {
+  display: grid; place-items: center; width: 44px; height: 44px; margin-top: 2px;
+  border: 1.5px solid var(--j-ink); border-radius: 6px;
+  font: 400 calc(24px * var(--text-scale, 1)) / 1 var(--tc-brush); color: var(--j-ink);
+}
+.journey-steps h3 { margin: 0 0 6px; font: 700 21px / 1.5 var(--tc-display); letter-spacing: .05em; color: var(--j-ink); }
+.journey-steps p { margin: 0 0 8px; font-size: 15px; line-height: 1.9; color: var(--j-ink-soft); }
+.j-chip {
+  display: inline-flex; align-items: center; gap: 12px; margin-top: 6px; min-height: 44px; padding: 0 6px 0 14px;
+  border: 1.5px solid var(--j-ink); border-radius: 6px; background: transparent;
+  font: 600 15px / 1 ui-monospace, Menlo, monospace; color: var(--j-ink); cursor: pointer;
+}
+.j-chip span { padding: 7px 10px; border-radius: 4px; background: var(--j-ink); color: var(--j-paper); font: 600 12px / 1 var(--tc-sans); }
+.j-chip:hover { background: color-mix(in srgb, var(--j-ink) 8%, transparent); }
+.j-chip:focus-visible { outline: 3px solid var(--j-seal); outline-offset: 3px; }
+
+/* ---------- 雲深: closing invitation ---------- */
+body.ink-home .home-page-main #join-cta .scene-title { font-size: calc(clamp(26px, 9.6cqi, 70px) * var(--text-scale, 1)); letter-spacing: .08em; }
+#join-cta .ink-actions { justify-content: flex-start; }
+.cta-seal {
+  display: inline-grid; place-items: center; margin-top: clamp(22px, 4svh, 40px);
+  padding: 10px 7px; border-radius: 6px; background: var(--j-seal);
+  writing-mode: vertical-rl; letter-spacing: .3em;
+  font: 400 calc(15px * var(--text-scale, 1)) / 1.15 var(--tc-brush); color: #f6efe0;
+}
+
+/* Buttons on the night film */
+.theme-night .ink-btn { background: var(--j-ink); color: var(--j-paper); border-color: var(--j-ink); }
+.theme-night .ink-btn.ghost { background: color-mix(in srgb, var(--j-paper) 60%, transparent); color: var(--j-ink); }
+.theme-night .ink-btn.ghost:hover { background: var(--j-ink); color: var(--j-paper); }
+
+/* ---------- After the journey: featured wall and footer on solid paper ---------- */
+body.ink-home .home-featured { position: relative; z-index: 2; background: var(--j-paper); padding-top: clamp(56px, 9vw, 110px); }
+body.ink-home [hidden] { display: none !important; }
+body.ink-home .site-footer { position: relative; z-index: 2; background: var(--j-paper-deep); color: var(--j-ink); border-top: 1px solid var(--j-hair); }
+body.ink-home .site-footer nav a { color: var(--j-ink-soft); }
+body.ink-home .site-footer nav a:hover { color: var(--j-ink); }
+
+/* ---------- Motion & fallbacks ---------- */
+html[data-motion='reduced'] body.ink-home :is(.journey-video, .ink-fluid),
+body.ink-home.reveal-off .ink-fluid { display: none; }
+
+/* Portrait films (narrower than 3:4, same switch as home-journey.js): the blank is the bottom half,
+   so copy spans the width and carries a soft wash where it scrolls over the painting. */
+@media (max-aspect-ratio: 3/4) {
+  .act { padding-block: 52svh 18svh; }
+  .scene-copy, .act--right .scene-copy, .act--left .scene-copy { width: auto; margin: 0; padding: 22px var(--tc-gutter) 26px; }
+  .scene-copy::before {
+    content: ""; position: absolute; inset: -36px 0; z-index: -1;
+    background: linear-gradient(transparent, color-mix(in srgb, var(--j-paper) 88%, transparent) 36px, color-mix(in srgb, var(--j-paper) 88%, transparent) calc(100% - 36px), transparent);
+  }
+  .scene-mark, .act--left .scene-mark { top: 26px; right: 10px; left: auto; font-size: 12px; letter-spacing: .34em; }
+  .scene-copy > * { max-width: none; padding-right: 22px; }
+}
+@media (max-width: 900px) {
+  .scene-list.cols-2 { grid-template-columns: 1fr; }
+  .scene-list.cols-2 > li:nth-last-child(2) { border-bottom: 0; }
+}
+@media (max-width: 620px) {
+  .gate-row dd { font-size: 16px; }
+  .journey-steps > li { grid-template-columns: 42px 1fr; gap: 12px; }
+  .journey-steps .j-no { width: 36px; height: 36px; font-size: 17px; }
+}

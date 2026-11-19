@@ -18,7 +18,7 @@ TeaCafe Minecraft Server 的官方網站專案。
 
 相冊與論壇使用相同的貼文格式，每篇最多可附 30 個圖片或影片，合計上限 20 MiB，並支援按讚、留言及分享。資料寫入需要 Pages 綁定 `DB`（D1）與 `GALLERY_MEDIA`（R2），以及 Discord OAuth 環境變數；在綁定之前畫面會顯示清楚的空狀態。
 
-背景音樂使用 `dist/audio/` 中的七首 MP3，於網站設定中可開關、調整音量及切換曲目。瀏覽器需要先收到一次點擊或按鍵，才會開始播放音樂。首頁使用 8 秒循環背景影片，播放進度隨整頁滾動同步，提供桌面與手機直式素材。素材重建與預覽方式見 [首頁影片說明](docs/home-scene.md)。推送或提出 PR 時，`.github/workflows/check.yml` 會執行 JavaScript 語法與整合測試。
+背景音樂為 `dist/audio/山居吟.mp3`（龔一，取自 [Art-Of-Ink](https://github.com/clouder118/Art-Of-Ink)），可在網站設定中開關與調整音量；瀏覽器需要先收到一次點擊或按鍵才會開始播放。首頁是捲動驅動的四幕水墨山水旅程（白天／夜晚、橫式／直式影片，依台灣時間自動切換，設定可改），游標會像 Art-Of-Ink 的 project_5 一樣推動畫中的墨水；規則、公告、Wiki、論壇、相冊、感謝支持、職業指南與月映茶行以舊版山水影片為固定背景。說明見 [首頁旅程](docs/home-journey.md) 與 [背景影片 v2](docs/journey-video-v2.md)。推送或提出 PR 時，`.github/workflows/check.yml` 會執行 JavaScript 語法與整合測試。
 
 <br>
 

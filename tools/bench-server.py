@@ -36,14 +36,19 @@ def chrome_mb(profile_dir):
 
 class BenchHandler(RangeHandler):
     def do_GET(self):
-        # OLD_ENGINE=<path>: serve another scroll-scene.js (e.g. a previous commit) for A/B runs.
-        if os.environ.get('OLD_ENGINE') and self.path.startswith('/assets/js/scroll-scene.js'):
-            body = open(os.environ['OLD_ENGINE'], 'rb').read()
+        # A/B runs: OLD_ENGINE=<path> serves another scroll-scene.js; OVERRIDE="/assets/js/x.js=<path>;..."
+        # serves any file from elsewhere.
+        swaps = dict(kv.split('=', 1) for kv in os.environ.get('OVERRIDE', '').split(';') if '=' in kv)
+        if os.environ.get('OLD_ENGINE'): swaps['/assets/js/scroll-scene.js'] = os.environ['OLD_ENGINE']
+        hit = next((v for k, v in swaps.items() if self.path.split('?')[0] == k), None)
+        if hit and '?bench=' not in self.path:
+            body = open(hit, 'rb').read()
             self.send_response(200); self.send_header('Content-Type', 'text/javascript')
             self.send_header('Content-Length', str(len(body))); self.end_headers(); self.wfile.write(body)
             return
         if '?bench=' in self.path and self.path.split('?')[0].endswith('.html'):
-            html = open(os.path.join(DIST, self.path.split('?')[0].lstrip('/')), encoding='utf-8').read()
+            page = self.path.split('?')[0]
+            html = open(swaps.get(page) or os.path.join(DIST, page.lstrip('/')), encoding='utf-8').read()
             body = html.replace('</body>', f'<script>{BENCH_JS}</script></body>').encode('utf-8')
             self.send_response(200); self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.send_header('Content-Length', str(len(body))); self.end_headers(); self.wfile.write(body)
@@ -51,6 +56,13 @@ class BenchHandler(RangeHandler):
         super().do_GET()
     def do_POST(self):
         data = self.rfile.read(int(self.headers.get('Content-Length', 0))).decode('utf-8')
+        if '"shots"' in data:                       # livecapture: save the frames, keep the log small
+            import base64
+            d = json.loads(data)
+            outdir = os.path.join(HERE, '..', 'bench-shots', d['case']); os.makedirs(outdir, exist_ok=True)
+            for i, uri in enumerate(d.pop('shots')):
+                open(os.path.join(outdir, f'{i:03d}.jpg'), 'wb').write(base64.b64decode(uri.split(',', 1)[1]))
+            data = json.dumps(d)
         with open(OUT, 'a', encoding='utf-8') as f: f.write(data + '\n')
         print(data, flush=True)
         self.send_response(204); self.end_headers()
@@ -69,7 +81,7 @@ if __name__ == '__main__':
         for case in cases:
             with tempfile.TemporaryDirectory() as prof:
                 subprocess.run([CHROME, '--headless=new', f'--user-data-dir={prof}', '--no-first-run', '--hide-scrollbars', *size,
-                                '--virtual-time-budget=9000', f'--screenshot={os.path.join(outdir, profile + "-" + case + ".png")}',
+                                '--virtual-time-budget=20000', f'--screenshot={os.path.join(outdir, profile + "-" + case + ".png")}',
                                 f'http://127.0.0.1:{port}/wiki.html?bench={case}'], timeout=120, capture_output=True)
         server.shutdown(); sys.exit(0)
     for case in cases:

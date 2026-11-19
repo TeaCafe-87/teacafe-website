@@ -2,7 +2,10 @@
  * opened with ?bench=<case>. Cases: frames | video-g8 | revealcheck | staticcheck | inkprobe | shot-<p>.
  * It can also be pasted into DevTools and run with `await teaBench.all()`.
  * Drives window scroll programmatically and reports frame pacing plus scene stats. */
-performance.setResourceTimingBufferSize(2000);          // 300 frames exceed the default 250 entries
+performance.setResourceTimingBufferSize(2000);
+window.__errs = [];
+addEventListener('error', (e) => window.__errs.push(String(e.message)));
+addEventListener('unhandledrejection', (e) => window.__errs.push(String(e.reason)));          // 300 frames exceed the default 250 entries
 window.teaBench = (() => {
   const pct = (a, p) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(p * s.length))]; };
   const r1 = v => Math.round(v * 10) / 10;
@@ -105,6 +108,7 @@ window.teaBench = (() => {
       // Headless --screenshot ignores scroll on sticky layouts, so fake the scene progress at scrollY 0.
       const p = Number(kind.slice(5)), sc = scene();
       await wait(2500);
+      while (sc.renderer?.images && sc.stats.loaded < sc.stats.total) await wait(200);   // all frames in
       sc.progress = () => p;
       sc.shown = null;
       sc.queue();
@@ -139,8 +143,41 @@ window.teaBench = (() => {
         revealReady: 'revealReady' in document.documentElement.dataset,
         beatsOpacity: [...sec.querySelectorAll('[data-beat]')].map(e => e.dataset.beat + ':' + getComputedStyle(e).opacity + ':' + getComputedStyle(e).visibility),
         sceneRequests: performance.getEntriesByType('resource').filter(e => /scenes\/wiki-01\/(frames|.*\.mp4)/.test(e.name)).length,
-        inkCanvasPx: document.querySelector('[data-ink-canvas]').width };
+        liveLayer: !!sc.live, fluidLayer: !!sc.fluid, liveDisplay: getComputedStyle(document.querySelector('[data-scene-world]')).display };
       await fetch('/__bench', { method: 'POST', body: JSON.stringify(res) });
+      return;
+    }
+    if (kind === 'livecheck' || kind.startsWith('livecapture-')) {
+      // Scroll stops at a fixed progress; world time keeps the koi and water moving.
+      const p = kind === 'livecheck' ? 0.03 : Number(kind.split('-')[1]);
+      const sc = scene();
+      await wait(3500);
+      scrollTo({ top: sc.section.offsetTop + p * (sc.section.offsetHeight - innerHeight), behavior: 'instant' });
+      await wait(1500);
+      const live = document.querySelector('[data-scene-world]');
+      if (kind === 'livecheck') {
+        const a = sc.live?.koi(), f0 = sc.liveSource()?.frame;
+        await wait(2000);
+        const b = sc.live?.koi(), f1 = sc.liveSource()?.frame;
+        const moved = a && b ? a.map((k, i) => Math.hypot(k.x - b[i].x, k.y - b[i].y)) : [];
+        await fetch('/__bench', { method: 'POST', body: JSON.stringify({ case: kind, attached: !!sc.live, fluid: !!sc.fluid,
+          frameHeld: f0 === f1, frame: f1, koiMovedM: moved.map((m) => Math.round(m * 100) / 100), liveCanvas: [live.width, live.height],
+          errors: window.__errs || [] }) });
+        return;
+      }
+      // Composite picture + live layer a few times per second and send PNGs back.
+      const shots = [];
+      const media = sc.mediaHost.querySelector('canvas,video');
+      const out = document.createElement('canvas');
+      out.width = live.width; out.height = live.height;
+      const g = out.getContext('2d');
+      for (let i = 0; i < 24; i++) {
+        g.drawImage(media, 0, 0, out.width, out.height);
+        g.drawImage(live, 0, 0);
+        shots.push(out.toDataURL('image/jpeg', 0.82));
+        await wait(125);
+      }
+      await fetch('/__bench', { method: 'POST', body: JSON.stringify({ case: kind, frame: sc.liveSource()?.frame, shots }) });
       return;
     }
     if (kind === 'inkprobe') {                               // first ink interaction cost only

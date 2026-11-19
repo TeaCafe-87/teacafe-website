@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>TeaCafe｜背景旅程預覽</title>
+<style>
+  :root { --paper: #f1eadb; --ink: #2b3138; --soft: #5a636d; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "Noto Serif TC", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", serif; }
+  /* the journey: a tall scroll track, the film pinned behind it */
+  .track { position: relative; height: 900vh; }
+  .stage { position: fixed; inset: 0; overflow: hidden; }
+  .stage video, .stage canvas, .stage img { position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; object-position: 50% 50%; }
+  .stage canvas { pointer-events: none; }
+  /* paper grain: a static texture over film + live layer, like the painting's paper */
+  .stage .grain { position: absolute; inset: 0; background: url(/assets/video/journey-grain.png); mix-blend-mode: overlay; opacity: .55; }
+  .stage video { opacity: 0; transition: opacity .5s; }
+  .ready .stage video { opacity: 1; }
+  /* example content sitting in each act's blank half */
+  .act { position: fixed; z-index: 2; width: min(34rem, 40vw); opacity: 0; pointer-events: none;
+    transition: opacity .2s linear; }
+  .act h2 { margin: 0 0 .5em; font-size: clamp(28px, 3.6vw, 48px); letter-spacing: .08em; line-height: 1.3; }
+  .act p { margin: 0; font-family: "Noto Sans TC", sans-serif; font-size: clamp(15px, 1.3vw, 17px); line-height: 2; color: var(--soft); }
+  .act.right { right: 7vw; top: 50%; transform: translateY(-50%); }
+  .act.left { left: 7vw; top: 50%; transform: translateY(-50%); }
+  .hero { left: 50%; top: 14vh; transform: translateX(-50%); width: auto; text-align: center; }
+  .hero h1 { margin: 0; font-size: clamp(48px, 9vw, 120px); letter-spacing: .12em; }
+  @media (max-aspect-ratio: 3/4) {
+    .act, .act.left, .act.right { left: 8vw; right: 8vw; width: auto; top: auto; bottom: 9vh; transform: none; }
+    .hero { top: auto; bottom: 18vh; }
+  }
+  .meter { position: fixed; z-index: 3; left: 12px; bottom: 10px; font: 12px/1 ui-monospace, monospace; color: var(--soft); }
+  .theme { position: fixed; z-index: 4; right: 14px; top: 14px; display: flex; border: 1px solid currentColor; border-radius: 999px; overflow: hidden; color: var(--ink); }
+  .theme button { appearance: none; border: 0; background: transparent; color: inherit; font: 600 14px/1 "Noto Sans TC", sans-serif; padding: 9px 16px; cursor: pointer; }
+  .theme button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  body.night { --paper: #0f1525; --ink: #e9edf7; --soft: #aab4c8; }
+  body.night .stage .grain { opacity: .35; }
+  body.capture .act, body.capture .meter, body.capture .theme { display: none; }
+</style>
+</head>
+<body>
+<div class="track" id="track">
+  <div class="stage" aria-hidden="true">
+    <img id="poster" alt="">
+    <video id="film" muted playsinline preload="auto"></video>
+    <canvas id="live"></canvas>
+    <div class="grain"></div>
+  </div>
+</div>
+
+<section class="act hero" data-at="-1,-0.5,0.03,0.07"><h1>茶咖暖居</h1></section>
+<section class="act right" data-at="0.27,0.31,0.41,0.45" data-portrait="bottom">
+  <h2>第二幕・穿山見瀑</h2><p>留白的一半是放內容的位置。往下捲繼續前進，往上捲會倒回，瀑布始終往下流。</p>
+</section>
+<section class="act left" data-at="0.53,0.58,0.67,0.71" data-portrait="bottom">
+  <h2>第三幕・順流過橋</h2><p>拱橋在畫面一側，另一半留白放文字。</p>
+</section>
+<section class="act right" data-at="0.86,0.90,1.01,1.02" data-portrait="bottom">
+  <h2>第四幕・登頂雲海</h2><p>穿過拱橋、升上雲海，遠峰浮在雲上；留白處放結尾的行動按鈕。</p>
+</section>
+<div class="meter" id="meter"></div>
+<div class="theme" role="group" aria-label="日夜切換"><button type="button" data-theme="day">白天</button><button type="button" data-theme="night">夜晚</button></div>
+
+<script src="/assets/js/journey-live.js"></script>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search);
+  const portrait = q.has('portrait') || (!q.has('desktop') && innerWidth / innerHeight < 0.75);
+  const fmt = portrait ? 'portrait' : 'desktop';
+  let theme = q.has('night') ? 'night' : 'day';
+  const V = '/assets/video/';
+  const base = () => (theme === 'night' ? 'journey-night-' : 'journey-') + fmt;
+  const film = document.getElementById('film');
+  const poster = document.getElementById('poster');
+  if (q.has('capture')) document.body.classList.add('capture');
+  function applyTheme() {
+    document.body.classList.toggle('night', theme === 'night');
+    document.querySelectorAll('.theme button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.theme === theme)));
+    poster.src = V + base() + '-start.jpg';
+    const t = film.currentTime || 0;
+    film.src = V + base() + '.mp4';
+    film.addEventListener('loadedmetadata', () => { film.currentTime = t; }, { once: true });
+  }
+  applyTheme();
+  const live = TeaJourneyLive.attach(film, document.getElementById('live'), {
+    camera: V + base() + '.camera.json', live: V + 'journey-live.json',
+    sprites: V + 'journey-sprites.png', spritesNight: V + 'journey-sprites-night.png',
+  });
+  window.__journey = { film, live };
+  document.querySelectorAll('.theme button').forEach((b) => b.addEventListener('click', () => {
+    if (b.dataset.theme === theme) return;
+    theme = b.dataset.theme;
+    applyTheme();
+    live.setCamera(V + base() + '.camera.json');
+  }));
+
+  const track = document.getElementById('track');
+  const acts = [...document.querySelectorAll('.act')].map((el) => ({ el, at: el.dataset.at.split(',').map(Number) }));
+  const smooth = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+  let duration = 0, target = 0, current = 0, raf = 0;
+
+  const progress = () => {
+    const span = track.offsetHeight - innerHeight;
+    return span > 0 ? Math.max(0, Math.min(1, scrollY / span)) : 0;
+  };
+  function step() {
+    raf = 0;
+    const d = target - current;
+    if (Math.abs(d) < 0.01) { if (!film.seeking) { current = target; film.currentTime = current; } return; }
+    if (!film.seeking) { current += d * 0.25; film.currentTime = current; }
+    raf = requestAnimationFrame(step);
+  }
+  function onScroll() {
+    const p = progress();
+    for (const a of acts) {
+      const [a0, a1, b0, b1] = a.at;
+      a.el.style.opacity = (smooth((p - a0) / Math.max(a1 - a0, 1e-3)) * (1 - smooth((p - b0) / Math.max(b1 - b0, 1e-3)))).toFixed(3);
+    }
+    if (duration) { target = p * duration; if (!raf) raf = requestAnimationFrame(step); }
+    document.getElementById('meter').textContent = 'p ' + p.toFixed(3);
+  }
+  film.addEventListener('loadedmetadata', () => {
+    if (q.has('capture')) return;
+    duration = film.duration - 0.04;
+    film.pause();
+    document.body.classList.add('ready');
+    onScroll();
+  });
+  addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+</body>
+</html>

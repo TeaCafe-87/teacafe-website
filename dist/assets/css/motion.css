@@ -2,14 +2,14 @@
 :root { --tea-ease: cubic-bezier(.22, 1, .36, 1); --intro-paper: #faf0dc; --intro-ink: #29251e; }
 
 /* Three uninterrupted vertical lines, a centered seal, then two outward doors. */
-.site-intro { position: fixed; inset: 0; z-index: 200; overflow: hidden; isolation: isolate; pointer-events: auto; animation: tea-intro-finish .01s linear 2.42s forwards; }
-.site-intro-panel { position: absolute; top: 0; bottom: 0; width: 50%; background: var(--intro-paper); will-change: transform; animation: tea-intro-door 1.18s cubic-bezier(.76, 0, .18, 1) 1.15s both; }
+.site-intro { position: fixed; inset: 0; z-index: 200; overflow: hidden; isolation: isolate; pointer-events: auto; }
+.site-intro-panel { position: absolute; top: 0; bottom: 0; width: 50%; background: var(--intro-paper); will-change: transform; }
 .site-intro-left { left: 0; --door-direction: -101%; border-right: 1px solid var(--intro-ink); }
 .site-intro-right { right: 0; --door-direction: 101%; }
 .site-intro-panel::before { content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: var(--intro-ink); }
 .site-intro-left::before { left: 14.4%; }
 .site-intro-right::before { right: 14.4%; }
-.site-intro-seal { position: absolute; z-index: 1; top: 50%; left: 50%; display: grid; place-items: center; width: clamp(76px, 7vw, 100px); aspect-ratio: 1; border: 1px solid var(--intro-ink); border-radius: 50%; background: var(--intro-paper); color: var(--intro-ink); font: 400 clamp(31px, 3.4vw, 46px)/1 "Noto Serif TC", "Songti TC", "PMingLiU", serif !important; transform: translate(-50%, -50%); animation: tea-intro-seal .42s ease .91s forwards; }
+.site-intro-seal { position: absolute; z-index: 1; top: 50%; left: 50%; display: grid; place-items: center; width: clamp(76px, 7vw, 100px); aspect-ratio: 1; border: 1px solid var(--intro-ink); border-radius: 50%; background: var(--intro-paper); color: var(--intro-ink); font: 400 clamp(31px, 3.4vw, 46px)/1 "Noto Serif TC", "Songti TC", "PMingLiU", serif !important; transform: translate(-50%, -50%); }
 html[data-font-style="pixel"] .site-intro-seal,
 html[data-font-style="pixel"] .page-transition-seal { font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif !important; }
 @keyframes tea-intro-door { to { transform: translate3d(var(--door-direction), 0, 0); } }
@@ -21,10 +21,6 @@ body.site-intro-pending :is(.home-hero-content > h1, .home-hero-tagline, .page-t
 body.site-intro-pending:not(.site-nav-reveal) .topbar { opacity: 0 !important; transform: translate3d(0, -24px, 0) !important; pointer-events: none; }
 body.site-intro-pending { overflow: hidden; }
 .topbar { transition: transform .72s var(--tea-ease), opacity .78s ease !important; }
-.home-page .topbar { background: rgba(12, 14, 11, .25); border-bottom: 1px solid rgba(250, 240, 220, .72); box-shadow: none; backdrop-filter: blur(5px); }
-.home-page .topbar .mc-nav { background: transparent; border: 0; box-shadow: none; text-shadow: none; }
-.home-page .topbar .mc-nav:is(:hover, :focus-visible, .active) { background: rgba(250, 240, 220, .15); outline: 0; }
-.home-page .topbar .nav-more > div { background: #20251e; }
 
 /* A light outgoing curtain meets the identical incoming opening screen. */
 .page-transition { position: fixed; inset: 0; z-index: 190; display: grid; place-items: center; overflow: hidden; background: var(--intro-paper); color: var(--intro-ink); clip-path: inset(100% 0 0); pointer-events: none; transition: clip-path .55s var(--tea-ease); }
@@ -55,9 +51,9 @@ html[data-text-size] .home-video-hero .home-hero-content > h1 { font-size: min(c
   .kinetic-mask.kinetic-ready:not(.kinetic-visible) .kinetic-inner { transform: translate3d(36px, 0, 0); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .site-intro, .page-transition { display: none !important; }
+  .page-transition { display: none !important; }
   .kinetic-inner { transform: none !important; clip-path: none !important; opacity: 1 !important; transition: none !important; }
   .home-hero-content > h1, .home-hero-tagline { animation: none !important; opacity: 1 !important; clip-path: none !important; transform: none !important; }
 }
-html[data-motion="reduced"] .site-intro, html[data-motion="reduced"] .page-transition { display: none !important; }
+html[data-motion="reduced"] .page-transition { display: none !important; }
 html[data-motion="reduced"] .kinetic-inner { transform: none !important; clip-path: none !important; opacity: 1 !important; transition: none !important; }

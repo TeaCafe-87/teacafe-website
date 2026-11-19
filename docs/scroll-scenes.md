@@ -1,6 +1,6 @@
 # 捲動場景與共用動態系統
 
-相關檔案：`dist/assets/js/scroll-scene.js`、`dist/assets/js/scroll-motion.js`、`dist/assets/css/scroll-scene.css`、`dist/assets/js/hero-ink.js`、`dist/data/scenes/*.json`、`dist/assets/scenes/<id>/`（素材）、`docs/scenes/<id>/`（Cowork 交接文件，不部署）、`tools/preview-static.py`、`tools/bench-server.py`。
+相關檔案：`dist/assets/js/scroll-scene.js`、`dist/assets/js/scroll-motion.js`、`dist/assets/css/scroll-scene.css`、`dist/assets/js/scene-live.js`、`dist/assets/js/ink-fluid.js`、`dist/data/scenes/*.json`、`dist/assets/scenes/<id>/`（素材）、`docs/scenes/<id>/`（Cowork 交接文件，不部署）、`tools/preview-static.py`、`tools/bench-server.py`。
 
 ## 一、場景（scroll-scene.js）
 
@@ -8,10 +8,11 @@
 
 ```html
 <section class="scroll-scene" data-scroll-scene="/data/scenes/wiki-01.json" style="--scene-length:560svh">
-  <div class="scroll-scene-stage" data-ink-hero data-ink-palette="sumi" data-ink-idle="off">
+  <div class="scroll-scene-stage">
     <picture>…poster…</picture>
     <div class="scroll-scene-media"></div>
-    <canvas class="scroll-scene-ink" data-ink-canvas></canvas>
+    <canvas class="scroll-scene-live" data-scene-world></canvas>
+    <canvas class="scroll-scene-fluid" data-scene-fluid></canvas>
     <div class="page-title-inner scroll-scene-copy">
       <h1 data-beat="title" data-beat-role="title">…</h1>
       <p data-beat="intro" data-beat-role="body" style="--beat-in:0">…</p>
@@ -28,7 +29,7 @@
 - **影格快取**：影格以 `<img>` 解碼一次，常駐多少張解碼後影像交給瀏覽器的影像快取決定（實測見第五節）。
 - **退回靜態**：`prefers-reduced-motion`、`html[data-motion="reduced"]`、Save-Data／2G、`navigator.deviceMemory ≤ 1`、素材錯誤 → `.is-static`：海報 + 依序排列的文字，區塊高度回到自然高度。無 JS 由 `<noscript>` 樣式處理。
 - **懶載入與清理**：場景接近視窗（1 個視窗高）才抓 JSON 與素材；離開畫面不繪製；`pagehide`（非 bfcache）時釋放解碼器、影格與事件。
-- **日夜**：`data-scene-time="day|dusk|night"`（預覽用 `?time=night`）。這是色彩分級疊層，不是重新打光；真正的夜景需要 Cowork 另外算一版。
+- **只有白天**：日夜輪替只屬於首頁影片（home-journey.js 讀 `teacafe-theme`）。場景頁永遠是白天素材，不套假夜色濾鏡，也不改寫使用者的日夜偏好。
 - **量測**：`TeaScrollScene.scenes[0].stats` 提供 seek 次數／延遲、與目標影格的落差、首格時間、已載入影格數。
 
 ### 新增一個場景
@@ -39,66 +40,70 @@
 ## 二、共用標題／內文動態（scroll-motion.js）
 
 - 在區域加上 `data-reveal-scope`：其中 `h2` 視為標題，`h3`、`p`、卡片格、FAQ、提示框視為內文；也可直接對單一元素標記 `data-reveal="title|body"`。
-- 標題：從視窗底部開始、72% 高度處就位；由 Z 軸後方升起；底線像筆觸一樣展開；離開上緣時往上、往前淡出。
+- 標題：沿用 motion.css 的 kinetic 語言（由左往右的筆刷 clip 揭示＋64px 平移，`--tc-ease`），但由捲動位置驅動，往上捲會精確倒放；底線同步展開；離開上緣時輕微上移淡出。
 - 內文：較晚開始（94% → 70%），位移較小、不做逐字動畫。
 - 數值全由元素位置決定，可正反向；只量測接近視窗的元素（IntersectionObserver），每幀先讀後寫。
 - 被 `data-reveal-scope` 涵蓋的元素，`motion.js` 舊的 kinetic／一次性進場會自動略過，避免重複動畫。
 
-## 三、水墨游標（hero-ink.js）
+## 三、即時世界層（scene-live.js）
 
-沿用首頁 v2 的液態墨水實作，新增屬性：
-- `data-ink-palette="sumi"`：淡墨灰色調（預設仍是原本彩色漸層）。
-- `data-ink-idle="off"`：觸控裝置不跑首次觸碰前的漂移迴圈（省電）。
-- 觸控或 ≤4 核心裝置粒子上限 460 → 180。
-- 標題改為選用；指標座標改為即時量測，sticky 舞台上不會漂移。
+和首頁 journey-live.js 同一個原則：預算圖只負責「鏡頭」，會自己動的東西畫在即時層。
+- **兩種時間**：Scroll Time（畫面上的影格 → Blender 攝影機）決定投影；World Time（`performance.now()`）推動魚、水、霧。停止捲動只有鏡頭停；往上捲水不會倒流、魚不會倒游。
+- **投影**：`/data/scenes/<id>.camera.json`（Cowork camera_path.json 精簡版：每格位置＋XYZ euler、28mm／36mm、河道與瀑布幾何），與 Blender 相同的投影，再套與影格相同的 cover／focus 裁切。已用 camera_analysis.json 的瀑布量測值驗證（底緣誤差 < 0.005）。
+- **錦鯉**：12 條，世界座標中的 3D 外形（身體、尾、胸鰭）逐點投影；各自漫遊、慢轉向、保持距離、留在池內；鏡頭抬起後自然離開畫面（第 70 格後隱藏）。
+- **瀑布**：水絲沿 build_scene.py 的瀑布幕面由上往下流；底部水霧與泡沫光暈。只畫在「這張影格裡是瀑布白」的像素上（以影格本身做遮罩），前方的山與霧自然擋住。鏡頭移動中由烘焙瀑布負責動態，停下約 150 ms 後即時水絲淡入（遮罩以 createImageBitmap 非同步產生）。
+- **水面與霧**：河面細碎反光、低空霧帶緩慢漂移，皆在世界座標中。
+- **圖層**：桌機直接畫進影格 canvas（影格→世界）；手機畫在 video 上方的獨立 canvas。原因見第六節。
+- **魚的重影**：Cowork 的影格 1–23 烘焙了錦鯉。現在用 `patches` 把第 1–60 格換成**測試用**無魚重算（`tools/scenes/render_wiki01_nokoi.py`，只隱藏 Koi_*，其餘設定同 deliver.py），手機用 `mobile-g8-nokoi.mp4`，海報也換成無魚版。正式版請 Cowork 交付（見第七節）。
 
-## 四、本機預覽
+## 四、水墨流體游標（ink-fluid.js）
+
+首頁同一份 WebGL2 流體（stable fluids：平流、渦度、壓力投影，把畫面當墨水再注入）。
+- 擴充：`video` 參數也可以是已經是完整畫面的 `<canvas>`（影格序列），以 1:1 取樣；首頁的 `<video>` 路徑不變（tests/ink-fluid.mjs 通過）。
+- `destroy()` 會呼叫 `WEBGL_lose_context` 立即釋放 GPU 資源；重新掛載時換新的 canvas。
+- 只在 `(hover: hover) and (pointer: fine)` 啟用；觸控捲動會一直攪動，手機改用靜態（降級）。
+- canvas `pointer-events: none`，不擋任何點擊；離開場景（舞台捲出）就停止接受攪動。
+
+## 五、本機預覽
 
 ```
-python tools/preview-static.py                     # http://127.0.0.1:4173/wiki.html（?time=night、?renderer=video）
+python tools/preview-static.py                     # http://127.0.0.1:4173/wiki.html（/api/* 不可用）
 python tools/bench-server.py desktop frames        # 效能（桌機 1440×900）
 python tools/bench-server.py mobile video-g8       # 效能（手機直式）
 python tools/bench-server.py desktop revealcheck   # 功能：影格與文字正反向
+python tools/bench-server.py desktop livecheck     # 即時層：停止捲動時魚持續移動
+python tools/bench-server.py desktop livecapture-0.97   # 存下 24 張合成畫面（bench-shots/）
 ```
 
+## 六、實測結果（2026-11-19，正式 wiki-01 + 即時層 + 流體）
 
-## 五、實測結果：正式 wiki-01 素材（2026-11-19）
+環境：Ryzen 7 260 + Radeon 780M、Chrome 157 **headless**（本機伺服器，無網路延遲）。**全部是模擬，沒有實機手機**；「手機」是 488×748@3 的直式視窗，仍是桌機 GPU，也沒有觸控。
 
-環境：Ryzen 7 260 + Radeon 780M（Chrome 使用內顯）、Chrome 157 **headless**、本機伺服器（無網路延遲）。
-**全部是模擬測試，沒有實機手機數據。**「手機」是直式視窗（headless 最窄 488×748，DPR 3），仍是桌機 CPU/GPU。
-
-素材：桌機 300 張 WebP 1600×900，共 12.6 MB（16–58 KB／張）；手機 `mobile-g8.mp4` 3.6 MB；海報 16–18 KB。
-
-桌機 1422×804，`frames`（三次執行）：
-
-| 項目 | 結果 |
-|---|---|
-| 第一格出現 | 38–93 ms（JSON 載入後） |
-| 300 張全部載入＋解碼 | 3.5–4.4 s（本機；正式網路會更久，粗到細載入讓任意位置都有鄰近影格） |
-| 每張 fetch＋decode | 平均 69–85 ms、p95 85–103 ms（6 個並行） |
-| 慢速／反向 6 s 掃描 | 0 格落後；p95 影格間隔 6–12 ms；0 個 >34 ms |
-| 快速 0.8 s 掃過全片 | 0 格落後；停止後 270–370 ms 對準（含 80 ms 緩動） |
-| 滾輪段落式 | 0 格落後 |
-
-手機直式，`video`（mobile-g8.mp4）：seek 平均 4–7 ms、p95 10–14 ms；慢速時落後 1 格，快速掃過平均 3 格、最多 9 格；停止後 190–320 ms 對準；0 個 >34 ms。
-
-記憶體（整個 Chrome 各程序的 private memory 尖峰）：沒有場景的基準 480–620 MB；有場景時 700–1270 MB，**同一份程式重跑就會相差數百 MB**，所以只能說場景在這台機器上大約增加 0.2–0.7 GB。300 張全部解碼常駐約需 1.7 GB，實測遠低於此，代表 Chrome 會自行釋放解碼後的影格。
-
-影格快取方案比較（桌機、正式素材）：
-
-| 方案 | 解碼 | 快速掃描落後 | 記憶體 |
+| 情境 | 影格間隔 平均 / p95 | 落後影格 | 其他 |
 |---|---|---|---|
-| `<img>` 全部保留、交給瀏覽器快取（**採用**） | 不重複解碼 | 0 格 | 雜訊範圍內最低或相同 |
-| ImageBitmap 16 格視窗＋`close()` | 300 格掃一次要解碼約 1,300 次 | 5–10 格 | 803–1,274 MB，波動大 |
-| ImageBitmap 加 `resizeWidth` | 48 ms／張（不縮放為 11–22 ms），慢速掃描出現 25 個 >34 ms 影格 | 17–19 格 | 未改善 |
-| `<img>` 視窗（超出即釋放） | 30–34 ms／張 | 14–16 格 | 854–986 MB |
+| 桌機慢速 6 s 下／上 | 14.1 / 14.3 ms | 0 | 300 張 2.6 s 載完，首格 35 ms |
+| 桌機快速 0.8 s 下／上 | 14.1 / 14.3 ms | 0 | 停止後 380 ms 內對準 |
+| 桌機滑鼠攪動流體＋捲動 | 14.1 / 14.4 ms | 0 | 流體第一次互動最長 14.8 ms（舊 hero-ink 有 60–180 ms 長影格） |
+| 手機 MP4 慢速／快速 | 14.0–14.2 / 14.2 ms | 1–4 | seek 平均 5 ms、p95 8 ms |
 
-功能驗證（桌機與手機皆通過）：p = 0／0.05／0.2／0.4／0.7／0.95／1 往下再往上，每點都顯示正確影格（p=1 → 索引 299 → `0300.webp`），文字只在 metadata 建議範圍出現；標題／內文 reveal 誤差 < 0.01。Reduced motion：靜態海報、0 個場景素材請求、全部文字可見、墨水停用。
+（這台 headless Chrome 以約 71 Hz 刷新，14.1 ms 即每格都準時。）
+- 停止捲動 2 秒，12 條錦鯉各移動 0.3–0.8 m，影格保持不變（livecheck）。
+- 往上捲時瀑布水絲依 World Time 繼續向下（livecapture 證明時間單向）。
+- Reduced motion：靜態海報、0 個場景素材請求、即時層與流體都不啟動。
 
-## 六、已知限制
+**修掉的效能問題**（合併後才出現）：最初每次捲動到新影格都同步重建瀑布遮罩（把整張影格畫進可讀 canvas 再 getImageData，約 10 ms），桌機掃描時 1/3 影格超過 20 ms。以 A/B（舊版 worktree 逐一換檔）定位後，改為：非同步遮罩、鏡頭移動中不建遮罩、每幀只重繪一次、即時層直接畫進影格 canvas。結果回到合併前的水準。
 
-- 沒有實體 iPhone／Android 測試；Safari（macOS／iOS）完全未測。iOS 需要 `muted`＋`playsinline`（已設定）並可能在第一次觸碰後才解碼第一格（已有 `unlockOnGesture`）。
-- 記憶體只有整個瀏覽器的粗略數字；memory-infra 追蹤檔沒有成功寫出，無法單獨量出解碼影像快取。
-- 第一次滑鼠移動時墨水仍有一個約 100 ms 的長影格（腳本約 10 ms，其餘未歸因）。
-- 正式網路下 13 MB 影格需要時間載入；載入中顯示最接近的已載入影格，低速網路會看到較跳的畫面，Save-Data／2G 直接用海報。
-- 日夜為色彩分級，非重新打光；Cowork 只交付白天版本。
+## 七、需要 Cowork 補充的素材（正式品質）
+
+1. **無錦鯉的背景影格**（桌機 1–60 WebP、手機 1–60 PNG／重新編碼 MP4），取代目前的測試重算。
+2. **瀑布貼圖改為與影格無關的靜態紋理**（或另出一版「瀑布無流動」影格）：目前 Waterfall 材質由 `frame/45` 驅動，往上捲時烘焙的水紋會往上跑；即時水絲已能提供停止時的流動。
+3. **瀑布遮罩／深度**（選用）：每格的瀑布 alpha 或深度圖可取代「以亮度判斷」的遮罩，霧特別濃時更準。
+4. **水面遮罩**（選用）：讓水面反光只落在水上（目前以河道中線±72% 半寬近似）。
+5. 錦鯉若要更精緻：可交付透明背景的錦鯉動畫精靈或正交俯視的錦鯉材質，網站端換掉目前的程序化外形即可。
+
+## 八、已知限制
+
+- 沒有實體 iPhone／Android、沒有 Safari 測試。
+- 錦鯉是程序化的簡化外形（比照 Blender 的低面數錦鯉），不是高品質手繪；水面折射只用輕微晃動近似。
+- 瀑布遮罩以亮度＋低彩度判斷，濃霧處可能有少量水絲出現在霧上。
+- `/api/*`（登入、Discord、伺服器狀態）在純靜態伺服器不可用；需要 Cloudflare Pages 本機環境（wrangler）才能驗證。

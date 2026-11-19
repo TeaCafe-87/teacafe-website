@@ -22,6 +22,7 @@
   const root = document.documentElement;
   const reducedQuery = matchMedia('(prefers-reduced-motion: reduce)');
   const portraitQuery = matchMedia('(max-aspect-ratio: 3/4)');
+  const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
   const clamp = (v, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
   const smooth = v => { const t = clamp(v); return t * t * (3 - 2 * t); };
   const reduced = () => reducedQuery.matches || root.dataset.motion === 'reduced';
@@ -148,8 +149,10 @@
       this.resize();
       this.pump();
     }
-    url(i) {   // index 0 -> file 0001 (1-based frame numbering)
-      return this.source.frames.replace(/\{(0+)\}/, (_, pad) => String(i + 1).padStart(pad.length, '0'));
+    url(i) {   // index 0 -> file 0001 (1-based frame numbering); `patches` override frame ranges
+      const n = i + 1;
+      const patch = (this.source.patches || []).find((q) => n >= q.from && n <= q.to);
+      return (patch ? patch.frames : this.source.frames).replace(/\{(0+)\}/, (_, pad) => String(n).padStart(pad.length, '0'));
     }
     pump() {
       while (this.alive && this.inflight < 6 && this.cursor < this.queueOrder.length) {
@@ -184,20 +187,28 @@
       const have = this.nearest(want);
       if (have < 0) return true;
       if (have !== this.drawn) {
-        const img = this.images[have];
-        const { width: cw, height: ch } = this.canvas;
-        const [W, H] = this.source.size || [img.naturalWidth, img.naturalHeight];
-        const [x, y, w, h] = coverRect(W, H, cw, ch, this.source.focus);
-        this.ctx.drawImage(img, x, y, w, h);
-        if (this.drawn < 0 && !this.host.classList.contains('is-ready')) {
+        const first = this.drawn < 0;
+        this.drawn = have;
+        this.paintCurrent();
+        if (first && !this.host.classList.contains('is-ready')) {
           this.scene.stats.firstFrameMs = performance.now() - this.scene.startedAt;
           this.host.classList.add('is-ready');
         }
-        this.drawn = have;
         this.scene.stats.draws++;
         if (have !== want) this.scene.stats.staleFrames.push(Math.abs(have - want));
       }
       return have !== want;                               // keep polling until the exact frame lands
+    }
+    // Paint the frame on screen, then whatever lives over it (scene-live.js sets `overlay`).
+    paintCurrent() {
+      const img = this.images[this.drawn];
+      if (!img) return;
+      const { width: cw, height: ch } = this.canvas;
+      const [W, H] = this.source.size || [img.naturalWidth, img.naturalHeight];
+      const [x, y, w, h] = coverRect(W, H, cw, ch, this.source.focus);
+      this.ctx.drawImage(img, x, y, w, h);
+      this.paintedAt = this.scene.lastTick;               // lets the live layer skip a second paint this frame
+      if (this.overlay) this.overlay(this.ctx);
     }
     resize() {
       const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -250,9 +261,6 @@
       const m = this.manifest;
       this.frameCount = m.frames ?? Math.round(m.duration * m.fps);
       this.section.dataset.sceneId = m.id;
-      // Grade hook: day (default) | dusk | night. A future site theme can set data-scene-time directly.
-      const time = new URLSearchParams(location.search).get('time');
-      if (/^(day|dusk|night)$/.test(time || '')) this.section.dataset.sceneTime = time;
       this.beatData = this.beats.map(el => ({ el, beat: m.beats.find(b => b.id === el.dataset.beat), last: '' }))
         .filter(b => b.beat);
       addEventListener('scroll', this.queue, { passive: true });
@@ -266,7 +274,45 @@
       this.motionObserver.observe(root, { attributes: true, attributeFilter: ['data-motion'] });
       this.io = new IntersectionObserver(([e]) => { this.visible = e.isIntersecting; if (this.visible) this.queue(); });
       this.io.observe(this.section);
+      if (m.camera) {
+        try { this.camera = await (await fetch(m.camera, { credentials: 'same-origin' })).json(); } catch { this.camera = null; }
+      }
       this.mount();
+    }
+    // What the live layer needs: the picture on screen, its frame index and its crop.
+    liveSource() {
+      const r = this.renderer, src = r?.source;
+      if (!r || !src) return null;
+      if (r.video) {
+        const v = r.video;
+        return { image: v.readyState >= 2 ? v : null, frame: Math.round(v.currentTime * this.manifest.fps), size: src.size || [v.videoWidth, v.videoHeight], focus: src.focus, fit: src.fit };
+      }
+      return { image: r.images[r.drawn] || null, frame: r.drawn, size: src.size, focus: src.focus, fit: src.fit };
+    }
+    attachLayers() {
+      this.live?.destroy(); this.live = null;
+      this.fluid?.destroy(); this.fluid = null;
+      const liveCanvas = this.stage.querySelector('[data-scene-world]');
+      const fluidCanvas = this.stage.querySelector('[data-scene-fluid]');
+      if (!this.renderer) return;
+      if (liveCanvas && this.camera && window.TeaSceneLive) {
+        liveCanvas.hidden = false;
+        this.live = window.TeaSceneLive.attach(this, liveCanvas, { camera: this.camera, live: this.manifest.live });
+      }
+      // The ink-fluid cursor needs a mouse; touch scrolling would stir it constantly on phones.
+      if (fluidCanvas && window.TeaInkFluid && finePointer.matches) {
+        const picture = this.renderer.video || this.renderer.canvas;
+        // A fresh <canvas> per attach: a WebGL context cannot be re-created on a lost canvas.
+        const fresh = fluidCanvas.cloneNode(false);
+        fluidCanvas.replaceWith(fresh);
+        // Over frames the live world is already inside the picture canvas; over video it is its own layer.
+        const overlay = this.renderer.video ? liveCanvas : null;
+        this.fluid = window.TeaInkFluid.attach(fresh, { video: picture, overlay, active: () => this.fluidActive() });
+      }
+    }
+    fluidActive() {
+      const r = this.stage.getBoundingClientRect();
+      return this.visible && r.top > -8 && r.bottom > innerHeight * 0.9;
     }
     // (Re)choose renderer + source for the current device state.
     mount() {
@@ -290,7 +336,9 @@
         this.stats.renderer = `${variant}:${kind}`;
         this.startedAt = performance.now();
         this.renderer = kind === 'frames' ? new FrameRenderer(this.mediaHost, source, this) : new VideoRenderer(this.mediaHost, source, this);
+        this.renderer.source = source;
       }
+      this.attachLayers();
       this.queue();
     }
     progress() {
@@ -338,6 +386,8 @@
     }
     destroy() {
       this.cancel();
+      this.live?.destroy(); this.live = null;
+      this.fluid?.destroy(); this.fluid = null;
       this.renderer?.destroy();
       this.renderer = null;
       removeEventListener('scroll', this.queue);

@@ -1,5 +1,6 @@
 import { MAX_TOTAL_BYTES, MAX_MEDIA_FILES, MEDIA_TYPES, hasValidSignature, json, userOrError, sameOrigin, publicPost, authorFields, isOfficialUser } from '../../_lib/community.js';
 import { verifyTurnstile } from '../../_lib/turnstile.js';
+import { featureEnabled } from '../site-features.js';
 
 const select = `SELECT p.*, (SELECT COUNT(*) FROM community_likes l WHERE l.post_id=p.id) like_count,
   (SELECT COUNT(*) FROM community_comments c WHERE c.post_id=p.id) comment_count,
@@ -63,6 +64,9 @@ export async function onRequestPost({ request, env }) {
   try { form = await request.formData(); } catch { return json({ error: 'invalid_form' }, 400); }
   if (!await verifyTurnstile(request, env, form.get('cf-turnstile-response'))) return json({ error: 'human_verification_required' }, 403);
   const kind = String(form.get('kind') || '');
+  if (['forum', 'gallery'].includes(kind) && !isOfficialUser(user, env) && !await featureEnabled(env, kind)) {
+    return json({ error: 'feature_paused' }, 503);
+  }
   if (!['gallery', 'forum'].includes(kind)) return json({ error: 'invalid_kind' }, 400);
   const title = String(form.get('title') || '').trim();
   const body = String(form.get('body') || '').trim();
