@@ -1,20 +1,27 @@
 /* TeaCafe scroll scenes: live world layer over a pre-rendered Blender flight.
  *
  * Same idea as journey-live.js on the home page, for real 3D scenes: the rendered frames hold
- * the camera move, and everything that should keep living lives here, drawn on a canvas laid
- * over the picture. Two clocks:
+ * the camera move (their water, waterfall and mist textures are static), and everything that
+ * should keep living lives here. Two clocks:
  *   scroll time  -> which rendered frame is on screen -> the Blender camera used for projection
- *   world time   -> performance.now(): koi swim, water falls, mist drifts, never backwards
+ *   world time   -> performance.now(): koi swim, water falls, mist drifts, lanterns flicker,
+ *                   never backwards
  * so stopping the scroll freezes only the camera, and scrolling up never runs water uphill.
  *
  * Alignment: the scene exports its per-frame Blender camera (location + XYZ euler, lens/sensor);
  * world points are projected exactly as Blender does, then through the same cover/focus crop as
- * the frames. The waterfall is masked by the frame's own pixels (only where the picture is
- * waterfall-white), so cliffs and mist in front of it hide the live threads without depth data.
+ * the frames. Occlusion comes from Cowork's per-frame masks (half the frame size, same camera):
+ * R = visible lake/river, G = visible waterfall curtain; rock, trees and bridges in front are
+ * black. Masks load on demand for the frame on screen (one at a time, ~9/s while scrolling) and
+ * are reduced off the main thread with createImageBitmap; only tiny bitmaps are read back.
+ * Lanterns use Cowork's per-frame visibility list (camera_analysis.json -> lanterns_visible).
  *
  * Layering: over a <video> it draws on its own overlay canvas. Over the frame-sequence canvas it
  * paints INTO that canvas (frame, then world) instead: a second full-screen canvas over a
  * changing one cost ~6 ms per frame on a Radeon 780M (p95 14 -> 28 ms while scrolling).
+ *
+ * Features are switched on per scene by the manifest's `live` block:
+ *   koi {..}, water, waterfall, mist {frames}, lanterns {glowM, dark}
  *
  *   const live = TeaSceneLive.attach(scene, canvas, { camera, live });   // from scroll-scene.js
  *   live.destroy();
@@ -38,6 +45,7 @@
     let raf = 0, alive = true, visible = true, last = 0, prevT = 0;
     let box = { w: 1, h: 1, k: 1, ox: 0, oy: 0, dpr: 1, W: 1600, H: 900 };
     const r = rng(20261121);
+    const has = { water: !!(cfg.water && cam.river), fall: !!(cfg.waterfall && cam.waterfall), mist: !!(cfg.mist && cam.river), lanterns: !!(cfg.lanterns && cam.lanterns) };
 
     // ---------------------------------------------------------------- camera
     const mats = new Map();
@@ -53,15 +61,20 @@
       return m;
     }
     let C = null, fpx = 1;
-    // [screenX, screenY, depth(m), px per metre at that depth] in CSS px, or null behind the camera
-    function P(wx, wy, wz) {
-      const dx = wx - C.L[0], dy = wy - C.L[1], dz = wz - C.L[2], R = C.R;
+    // [x, y] in source-frame px (before the cover crop), depth (m), px per metre; null behind the camera
+    function S(M, wx, wy, wz) {
+      const dx = wx - M.L[0], dy = wy - M.L[1], dz = wz - M.L[2], R = M.R;
       const x = R[0][0] * dx + R[1][0] * dy + R[2][0] * dz;
       const y = R[0][1] * dx + R[1][1] * dy + R[2][1] * dz;
       const d = -(R[0][2] * dx + R[1][2] * dy + R[2][2] * dz);
       if (d < 0.2) return null;
       const s = fpx / d;
-      return [box.ox + (box.W / 2 + x * s) * box.k, box.oy + (box.H / 2 - y * s) * box.k, d, s * box.k];
+      return [box.W / 2 + x * s, box.H / 2 - y * s, d, s];
+    }
+    // [screenX, screenY, depth(m), px per metre at that depth] in CSS px, or null behind the camera
+    function P(wx, wy, wz) {
+      const q = S(C, wx, wy, wz);
+      return q && [box.ox + q[0] * box.k, box.oy + q[1] * box.k, q[2], q[3] * box.k];
     }
 
     function layout() {
@@ -76,7 +89,10 @@
         canvas.width = Math.max(1, Math.round(rect.width * dpr));
         canvas.height = Math.max(1, Math.round(rect.height * dpr));
       }
-      mask.stale = true;
+      const ws = coarse ? 0.5 : 0.6;                      // water effects are soft: a smaller layer is enough
+      wl.width = Math.max(1, Math.round(rect.width * dpr * ws));
+      wl.height = Math.max(1, Math.round(rect.height * dpr * ws));
+      wl.scale = dpr * ws;
     }
 
     // ---------------------------------------------------------------- river helpers
@@ -86,92 +102,146 @@
       return [mix(a[1], b[1], k), mix(a[2], b[2], k)];
     };
 
-    // ---------------------------------------------------------------- waterfall
+    // ---------------------------------------------------------------- masks
+    const cover = cam.cover || null;                     // per-frame permille: skip frames with nothing visible
+    const covered = (variant, kind, f) => !cover || !cover[variant] || (cover[variant][kind][f] || 0) > 0;
+    const masks = { imgs: new Map(), loading: -1, busy: false, lastReq: 0, d: null };
+    // Read-back canvases are CPU-backed (willReadFrequently); each result is copied once into a
+    // plain (GPU) canvas so the per-frame draws never upload from the CPU.
+    const scratchW = document.createElement('canvas'), wctx = scratchW.getContext('2d', { willReadFrequently: true });
+    const scratchF = document.createElement('canvas'), fctx = scratchF.getContext('2d', { willReadFrequently: true });
+    const waterC = document.createElement('canvas'), waterG = waterC.getContext('2d');
+    const fallC = document.createElement('canvas'), fallG = fallC.getContext('2d');
+    const wl = document.createElement('canvas'), wlctx = wl.getContext('2d');     // water layer: shimmer + koi
+    const layer = document.createElement('canvas'), lctx = layer.getContext('2d'); // falling threads
+    const maskUrl = (src, f) => src.masks.replace(/\{(0+)\}/, (_, pad) => String(f + 1).padStart(pad.length, '0'));
+
+    // Waterfall curtain bounds for frame f in source px, clipped to the frame.
     const wf = cam.waterfall;
     const curtain = (u, v) => [wf.x0 + (u - 0.5) * wf.width * (1 + wf.widen * v), wf.y0 - wf.lean * v * v * 4 - wf.bow * Math.sin(u * Math.PI), wf.top * (1 - v)];
-    const threads = Array.from({ length: coarse ? 34 : 56 }, () => ({ u: 0.04 + r() * 0.92, ph: r(), sp: 0.22 + r() * 0.2, len: 0.05 + r() * 0.09, a: 0.28 + r() * 0.42, w: 0.6 + r() * 0.9 }));
+    function fallBox(f) {
+      const M = camAt(f);
+      const pts = [[0, 0], [1, 0], [0, 1], [1, 1], [0.5, 0], [0.5, 1]].map(([u, v]) => S(M, ...curtain(u, v)));
+      if (pts.some((p) => !p)) return null;
+      const x0 = Math.max(0, Math.min(...pts.map((p) => p[0])) - 6), x1 = Math.min(box.W, Math.max(...pts.map((p) => p[0])) + 6);
+      const y0 = Math.max(0, Math.min(...pts.map((p) => p[1])) - 4), y1 = Math.min(box.H, Math.max(...pts.map((p) => p[1])) + 4);
+      return x1 - x0 > 4 && y1 - y0 > 7 ? [x0, y0, x1 - x0, y1 - y0] : null;
+    }
+
+    function wantMask(src, f, now) {
+      if (!src.masks || !(has.water || has.fall)) return;
+      if (masks.loading >= 0 || masks.busy || (masks.d && masks.d.f === f && (masks.d.lum || !masks.d.fall || still < 0.5))) return;
+      if (!covered(src.variant, 'water', f) && !covered(src.variant, 'fall', f)) { masks.d = null; return; }
+      if (now - masks.lastReq < (still > 0.5 ? 0 : 110)) return;   // while scrolling: at most ~9 masks/s
+      masks.lastReq = now;
+      const cached = masks.imgs.get(f);
+      if (cached) { derive(src, f, cached); return; }
+      masks.loading = f;
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = maskUrl(src, f);
+      img.decode().then(() => {
+        masks.loading = -1;
+        if (!alive) return;
+        masks.imgs.set(f, img);
+        if (masks.imgs.size > 8) masks.imgs.delete(masks.imgs.keys().next().value);
+        derive(scene.liveSource() || src, f, img);
+      }, () => { masks.loading = -1; });
+    }
+
+    // Reduce one mask (and the waterfall crop of the frame on screen) to small alpha canvases:
+    //   waterC alpha = R (visible water); fallC alpha = G x frame brightness, because G covers the
+    //   curtain's full extent incl. its faded edges and the live threads belong on the white streaks.
+    function derive(src, f, img) {
+      if (!src || !src.image) return;
+      const [W, H] = src.size, [MW, MH] = src.maskSize, ms = MW / W;
+      const fi = src.image, fw = fi.naturalWidth || fi.videoWidth, fs = fw / W;
+      const ww = Math.round(MW / 4), wh = Math.round(MH / 4);
+      const wantWater = has.water && covered(src.variant, 'water', f);
+      const fb = has.fall && covered(src.variant, 'fall', f) ? fallBox(f) : null;
+      // Frame brightness only once the camera rests: reading back the frame while scrolling is the
+      // expensive part; meanwhile G alone (slightly wider than the white streaks) is fine.
+      const withLum = fb && still > 0.5;
+      const mw = fb ? clamp(Math.round(fb[2] / 3), 6, 160) : 0, mh = fb ? clamp(Math.round(fb[3] / 3), 6, 320) : 0;
+      const opt = (w, h) => ({ resizeWidth: w, resizeHeight: h, resizeQuality: 'low' });
+      masks.busy = true;
+      Promise.all([
+        wantWater ? createImageBitmap(img, opt(ww, wh)) : null,
+        fb ? createImageBitmap(img, fb[0] * ms, fb[1] * ms, fb[2] * ms, fb[3] * ms, opt(mw, mh)) : null,
+        withLum && fw ? createImageBitmap(fi, fb[0] * fs, fb[1] * fs, fb[2] * fs, fb[3] * fs, opt(mw, mh)) : null,
+      ]).then(([wb, mb, pb]) => {
+        masks.busy = false;
+        if (!alive) { [wb, mb, pb].forEach((b) => b && b.close()); return; }
+        const d = { f, water: false, fall: null, bottom: 0, lum: !!pb };
+        if (wb) {
+          scratchW.width = ww; scratchW.height = wh;
+          wctx.drawImage(wb, 0, 0); wb.close();
+          const id = wctx.getImageData(0, 0, ww, wh), p = id.data;
+          for (let i = 0; i < p.length; i += 4) { p[i + 3] = p[i]; p[i] = p[i + 1] = p[i + 2] = 255; }
+          wctx.putImageData(id, 0, 0);
+          waterC.width = ww; waterC.height = wh; waterG.drawImage(scratchW, 0, 0);
+          d.water = true;
+        }
+        if (mb) {
+          scratchF.width = mw; scratchF.height = mh;
+          let lum = null;
+          if (pb) { fctx.drawImage(pb, 0, 0); pb.close(); lum = fctx.getImageData(0, 0, mw, mh).data; }
+          fctx.clearRect(0, 0, mw, mh);
+          fctx.drawImage(mb, 0, 0); mb.close();
+          const id = fctx.getImageData(0, 0, mw, mh), p = id.data;
+          let bottom = 0, bn = 0;
+          const foot = mw * (mh - Math.max(2, mh >> 3));
+          for (let i = 0; i < p.length; i += 4) {
+            const l = lum ? 0.299 * lum[i] + 0.587 * lum[i + 1] + 0.114 * lum[i + 2] : 255;
+            const a = (p[i + 1] / 255) * smooth((l - 150) / 70);
+            p[i] = p[i + 1] = p[i + 2] = 255; p[i + 3] = a * 255;
+            if (i / 4 >= foot) { bottom += a; bn++; }
+          }
+          fctx.putImageData(id, 0, 0);
+          fallC.width = mw; fallC.height = mh; fallG.drawImage(scratchF, 0, 0);
+          d.fall = fb; d.bottom = bn ? bottom / bn : 0;
+        }
+        masks.d = d;
+      }, () => { masks.busy = false; });
+    }
+
+    // ---------------------------------------------------------------- waterfall
+    // The baked curtain is static and already white: light threads alone barely change it, so
+    // about 40% are blue-grey gaps travelling down with them, which is what reads as falling water.
+    const threads = Array.from({ length: coarse ? 40 : 68 }, () => ({ u: 0.04 + r() * 0.92, ph: r(), sp: 0.22 + r() * 0.2, len: 0.05 + r() * 0.09, a: 0.28 + r() * 0.42, w: 0.6 + r() * 0.9, dark: r() < 0.4 }));
     const spray = Array.from({ length: coarse ? 10 : 18 }, () => ({ u: r(), ph: r(), sp: 0.05 + r() * 0.05, R: 2 + r() * 4, a: 0.12 + r() * 0.12, dx: r() * 2 - 1 }));
-    const mask = { c: document.createElement('canvas'), stale: true, frame: -1, bottom: 0, busy: false, ready: false };
-    const mctx = mask.c.getContext('2d', { willReadFrequently: true });
-    const layer = document.createElement('canvas');
-    const lctx = layer.getContext('2d');
 
-    // Alpha = "this pixel of the rendered frame is waterfall": bright and nearly colourless.
-    // Built asynchronously: createImageBitmap crops + scales the waterfall region off the main
-    // thread (a synchronous draw + readback of the full frame cost ~10 ms per scroll frame), then
-    // only that tiny bitmap is read back. One job at a time; draws reuse the latest mask meanwhile.
-    function buildMask(src, f, bx, by, bw, bh) {
-      const img = src.image;
-      const nw = img.naturalWidth || img.videoWidth, nh = img.naturalHeight || img.videoHeight;
-      if (!nw || mask.busy) return;
-      const sx = nw / box.W, sy = nh / box.H;
-      const mw = clamp(Math.round(bw / 3), 6, 160), mh = clamp(Math.round(bh / 3), 6, 320);
-      const cx = clamp(bx * sx, 0, nw - 1), cy = clamp(by * sy, 0, nh - 1);
-      const cw = Math.max(1, Math.min(nw - cx, bw * sx)), ch = Math.max(1, Math.min(nh - cy, bh * sy));
-      mask.busy = true;
-      createImageBitmap(img, cx, cy, cw, ch, { resizeWidth: mw, resizeHeight: mh, resizeQuality: 'low' }).then((bmp) => {
-        mask.busy = false;
-        if (!alive) { bmp.close(); return; }
-        // the crop was clamped to the frame: place it where it belongs inside the requested box
-        mask.c.width = mw; mask.c.height = mh;
-        mctx.clearRect(0, 0, mw, mh);
-        mctx.drawImage(bmp, (cx - bx * sx) / (bw * sx) * mw, (cy - by * sy) / (bh * sy) * mh, cw / (bw * sx) * mw, ch / (bh * sy) * mh);
-        bmp.close();
-        finishMask(mw, mh);
-        mask.frame = f; mask.stale = false; mask.ready = true;
-      }, () => { mask.busy = false; });
-    }
-    function finishMask(mw, mh) {
-      const id = mctx.getImageData(0, 0, mw, mh), d = id.data;
-      let bottom = 0, bn = 0;
-      for (let i = 0; i < d.length; i += 4) {
-        const R = d[i], G = d[i + 1], B = d[i + 2], mx = Math.max(R, G, B), mn = Math.min(R, G, B);
-        const luma = 0.299 * R + 0.587 * G + 0.114 * B, sat = mx ? (mx - mn) / mx : 0;
-        const a = smooth((luma - 196) / 34) * (1 - smooth((sat - 0.1) / 0.1));
-        d[i] = d[i + 1] = d[i + 2] = 255; d[i + 3] = a * 255;
-        if (i / 4 >= mw * (mh - Math.max(2, mh >> 3))) { bottom += a; bn++; }
-      }
-      mctx.putImageData(id, 0, 0);
-      mask.bottom = bn ? bottom / bn : 0;
-    }
-
-    function drawWaterfall(src, f, t) {
-      if (f < 30) return;
-      const c00 = P(...curtain(0, 0)), c10 = P(...curtain(1, 0)), c01 = P(...curtain(0, 1)), c11 = P(...curtain(1, 1));
-      if (!c00 || !c10 || !c01 || !c11) return;
-      const x0 = Math.min(c00[0], c01[0]) - 6, x1 = Math.max(c10[0], c11[0]) + 6;
-      const y0 = Math.min(c00[1], c10[1]) - 4, y1 = Math.max(c01[1], c11[1]) + 4;
-      const sh = y1 - y0;
-      if (x1 < 0 || x0 > box.w || y1 < 0 || y0 > box.h || sh < 14) return;
-      // While the camera moves, the baked waterfall animates by itself; the live threads (which
-      // need a mask that matches the frame) fade in once the camera has rested for ~150 ms.
-      const A = smooth((sh - 14) / 90) * still;
-      if (still > 0.99 && (mask.stale || mask.frame !== f)) buildMask(src, f, (x0 - box.ox) / box.k, (y0 - box.oy) / box.k, (x1 - x0) / box.k, sh / box.k);
-      if (!mask.ready || mask.frame !== f || A < 0.01) return;
-      const lw = Math.max(1, Math.round((x1 - x0) * box.dpr)), lh = Math.max(1, Math.round(sh * box.dpr));
+    function drawWaterfall(d, t, A0) {
+      const fb = d.fall;
+      const x0 = box.ox + fb[0] * box.k, y0 = box.oy + fb[1] * box.k, bw = fb[2] * box.k, sh = fb[3] * box.k;
+      if (x0 + bw < 0 || x0 > box.w || y0 + sh < 0 || y0 > box.h || sh < 14) return;
+      const A = smooth((sh - 14) / 90) * A0;
+      if (A < 0.01) return;
+      const lw = Math.max(1, Math.round(bw * box.dpr)), lh = Math.max(1, Math.round(sh * box.dpr));
       if (layer.width !== lw || layer.height !== lh) { layer.width = lw; layer.height = lh; } else lctx.clearRect(0, 0, lw, lh);
       lctx.setTransform(box.dpr, 0, 0, box.dpr, -x0 * box.dpr, -y0 * box.dpr);
       lctx.globalCompositeOperation = 'source-over';
       lctx.lineCap = 'round';
-      const ppm = (c00[3] + c11[3]) / 2;               // px per metre at the curtain
+      const c00 = P(...curtain(0, 0)), c11 = P(...curtain(1, 1));
+      const ppm = c00 && c11 ? (c00[3] + c11[3]) / 2 : 1;   // px per metre at the curtain
       for (const th of threads) {
         const s0 = (th.ph + t * th.sp) % 1, s1 = Math.min(1, s0 + th.len);
         const a = P(...curtain(th.u, s0)), b = P(...curtain(th.u, s1));
         if (!a || !b) continue;
-        const fade = Math.sin(Math.PI * Math.min(1, s0 / 0.06, (1 - s0) / 0.06));
-        lctx.strokeStyle = `rgba(255,255,252,${(th.a * fade).toFixed(3)})`;
-        lctx.lineWidth = Math.max(0.7, 0.07 * th.w * ppm);
+        const fade = Math.sin(Math.PI / 2 * Math.min(1, s0 / 0.06, (1 - s0) / 0.06));   // 0 at the lip and the pool, 1 between
+        lctx.strokeStyle = th.dark ? `rgba(112,134,140,${(th.a * 0.6 * fade).toFixed(3)})` : `rgba(255,255,252,${(th.a * fade).toFixed(3)})`;
+        lctx.lineWidth = Math.max(0.7, (th.dark ? 0.1 : 0.07) * th.w * ppm);
         lctx.beginPath(); lctx.moveTo(a[0], a[1]); lctx.lineTo(b[0], b[1]); lctx.stroke();
       }
-      // keep threads only where the frame shows the falling water
+      // keep threads only on the visible, bright part of the curtain
       lctx.setTransform(1, 0, 0, 1, 0, 0);
       lctx.globalCompositeOperation = 'destination-in';
-      lctx.drawImage(mask.c, 0, 0, lw, lh);
+      lctx.drawImage(fallC, 0, 0, lw, lh);
       ctx.globalAlpha = A;
-      ctx.drawImage(layer, x0, y0, x1 - x0, sh);
+      ctx.drawImage(layer, x0, y0, bw, sh);
       ctx.globalAlpha = 1;
       // Plunge: rising spray and a breathing foam glow, only if the foot of the fall is visible.
-      const foot = mask.bottom * A;
+      const foot = d.bottom * A;
       if (foot < 0.05) return;
       for (const p of spray) {
         const k = (p.ph + t * p.sp) % 1;
@@ -283,11 +353,12 @@
       ctx.globalAlpha = 1;
     }
 
+
     // ---------------------------------------------------------------- water shimmer & mist
-    const shimmer = Array.from({ length: coarse ? 140 : 260 }, () => {
+    const shimmer = has.water ? Array.from({ length: coarse ? 140 : 260 }, () => {
       const y = -14 + r() * 262, [rx0, hw] = riverAt(y);
       return { x: rx0 + (r() * 2 - 1) * hw * 0.72, y, len: 0.8 + r() * 2.6, ph: r() * TAU, f: 0.5 + r() * 1.1 };
-    });
+    }) : [];
     function drawShimmer(t) {
       ctx.lineCap = 'round';
       for (const s of shimmer) {
@@ -301,11 +372,15 @@
         ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
       }
     }
-    const mist = Array.from({ length: coarse ? 9 : 16 }, () => {
+    const mist = has.mist ? Array.from({ length: coarse ? 9 : 16 }, () => {
       const y = -6 + r() * 250, [rx0, hw] = riverAt(y);
       return { x: rx0 + (r() * 2 - 1) * hw * 0.6, y, z: 1.5 + r() * 5, w: 18 + r() * 26, h: 2.5 + r() * 4, sp: (0.35 + r() * 0.7) * (r() < 0.5 ? -1 : 1), span: 70, a: 0.1 + r() * 0.12, ph: r() * TAU };
-    });
-    function drawMist(t) {
+    }) : [];
+    const mistFrames = (cfg.mist && cfg.mist.frames) || [1, 1e9];
+    function drawMist(f, t) {
+      const n = f + 1;                                    // manifest frames are 1-based
+      const gate = smooth((n - mistFrames[0] + 1) / 8) * (1 - smooth((n - mistFrames[1] + 8) / 8));
+      if (gate <= 0.01) return;
       for (const m of mist) {
         const off = ((m.sp * t + m.ph * 10) % m.span + m.span) % m.span - m.span / 2;
         const edge = smooth((m.span / 2 - Math.abs(off)) / (m.span * 0.18));
@@ -313,7 +388,7 @@
         if (!q || q[2] < 8 || q[2] > 220) continue;
         const rx = m.w * q[3] / 2, ry = m.h * q[3] / 2;
         if (q[0] + rx < 0 || q[0] - rx > box.w || q[1] + ry < 0 || q[1] - ry > box.h) continue;
-        const A = m.a * edge * smooth((q[2] - 8) / 14) * (1 - smooth((q[2] - 150) / 70)) * (0.8 + 0.2 * Math.sin(t * 0.31 + m.ph));
+        const A = gate * m.a * edge * smooth((q[2] - 8) / 14) * (1 - smooth((q[2] - 150) / 70)) * (0.8 + 0.2 * Math.sin(t * 0.31 + m.ph));
         if (A < 0.01) continue;
         ctx.save(); ctx.translate(q[0], q[1]); ctx.scale(1, ry / rx);
         const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
@@ -322,20 +397,92 @@
       }
     }
 
+    // ---------------------------------------------------------------- lanterns (wiki-03)
+    // Glow breathes and flickers on world time; dust drifts up through each lantern's light.
+    const lan = cam.lanterns, lc = cfg.lanterns || {};
+    const flame = has.lanterns ? lan.world.map(() => ({ p1: r() * TAU, p2: r() * TAU, p3: r() * TAU, f1: 5 + r() * 4, f2: 11 + r() * 6 })) : [];
+    const dust = has.lanterns ? Array.from({ length: coarse ? 90 : 170 }, (_, i) => {
+      const a = r() * TAU, rad = 0.25 + Math.sqrt(r()) * 1.5;
+      return { li: i % lan.world.length, ox: Math.cos(a) * rad, oy: Math.sin(a) * rad, h: 2.6 + r() * 1.4, ph: r(), sp: 0.035 + r() * 0.06, sw: r() * TAU, sz: 0.008 + r() * 0.014 };
+    }) : [];
+    function drawLanterns(src, f, t) {
+      const vis = lan.visible[src.variant] && lan.visible[src.variant][f];
+      if (!vis || !vis.length) return;
+      const dk = lc.dark || [130, 170];
+      const dark = smooth((f + 1 - dk[0]) / (dk[1] - dk[0]));
+      const glowM = lc.glowM || 0.55;
+      const lit = new Map();
+      ctx.globalCompositeOperation = 'lighter';
+      for (const i of vis) {
+        const q = P(...lan.world[i]);
+        if (!q || q[0] < -200 || q[0] > box.w + 200 || q[1] < -200 || q[1] > box.h + 200) continue;
+        const fl = flame[i];
+        // slow breath + quick flicker + an occasional dip, never fully out
+        const k = 0.84 + 0.07 * Math.sin(t * 1.1 + fl.p3) + 0.05 * Math.sin(t * fl.f1 + fl.p1) + 0.03 * Math.sin(t * fl.f2 + fl.p2)
+          - 0.14 * Math.pow(Math.max(0, Math.sin(t * 0.37 + fl.p2 * 3)), 16);
+        lit.set(i, k);
+        const R = glowM * q[3] * 2.4 * (0.94 + 0.08 * k);
+        const halo = ctx.createRadialGradient(q[0], q[1], 0, q[0], q[1], R);
+        halo.addColorStop(0, `rgba(255,190,110,${(0.2 * k * (0.35 + 0.65 * dark)).toFixed(3)})`);
+        halo.addColorStop(0.35, `rgba(255,160,80,${(0.07 * k * (0.35 + 0.65 * dark)).toFixed(3)})`);
+        halo.addColorStop(1, 'rgba(255,150,70,0)');
+        ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(q[0], q[1], R, 0, TAU); ctx.fill();
+        const Rc = Math.max(2, glowM * q[3] * 0.5);
+        const core = ctx.createRadialGradient(q[0], q[1], 0, q[0], q[1], Rc);
+        core.addColorStop(0, `rgba(255,232,180,${(0.28 * k).toFixed(3)})`); core.addColorStop(1, 'rgba(255,220,160,0)');
+        ctx.fillStyle = core; ctx.beginPath(); ctx.arc(q[0], q[1], Rc, 0, TAU); ctx.fill();
+      }
+      if (dark > 0.05) {
+        for (const p of dust) {
+          const k = lit.get(p.li);
+          if (k === undefined) continue;
+          const L = lan.world[p.li], u = (p.ph + t * p.sp) % 1;
+          const wx = L[0] + p.ox + 0.12 * Math.sin(t * 0.6 + p.sw), wy = L[1] + p.oy + 0.12 * Math.cos(t * 0.5 + p.sw);
+          const q = P(wx, wy, L[2] - 1.2 + u * p.h);
+          if (!q || q[0] < 0 || q[0] > box.w || q[1] < 0 || q[1] > box.h) continue;
+          const dist = Math.hypot(p.ox, p.oy, -1.2 + u * p.h);
+          const A = dark * k * 0.5 * Math.sin(Math.PI * u) * (1 - smooth((dist - 0.4) / 1.4));
+          if (A < 0.02) continue;
+          ctx.fillStyle = `rgba(255,214,150,${A.toFixed(3)})`;
+          const s = Math.max(0.8, p.sz * q[3]);
+          ctx.fillRect(q[0] - s / 2, q[1] - s / 2, s, s);
+        }
+      }
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
     // ---------------------------------------------------------------- loop
     let lastLayoutKey = '', worldT = 0, worldSrc = null, lastFrame = -1, frameChangedAt = 0, still = 0;
     // Draw the world for the current camera into ctx (CSS px space scaled by box.dpr).
     function paintWorld(target) {
       const src = worldSrc;
       if (!src || src.frame < 0 || !src.image) return;
+      const f = src.frame, t = worldT;
       ctx = target;
-      C = camAt(src.frame);
+      C = camAt(f);
       ctx.save();
       ctx.setTransform(box.dpr, 0, 0, box.dpr, 0, 0);
-      drawShimmer(worldT);
-      drawKoi(src.frame, worldT);
-      drawMist(worldT);
-      drawWaterfall(src, src.frame, worldT);
+      // a mask a few frames old (still loading while scrolling) is close enough; older ones fade out
+      const d = masks.d, near = d ? 1 - smooth((Math.abs(d.f - f) - 2) / 5) : 0;
+      if (d && d.water && near > 0.01 && (shimmer.length || koi.length)) {
+        const main = ctx;
+        ctx = wlctx;
+        wlctx.setTransform(1, 0, 0, 1, 0, 0);
+        wlctx.globalCompositeOperation = 'source-over';
+        wlctx.clearRect(0, 0, wl.width, wl.height);
+        wlctx.setTransform(wl.scale, 0, 0, wl.scale, 0, 0);
+        drawShimmer(t);
+        drawKoi(f, t);
+        wlctx.globalCompositeOperation = 'destination-in';   // only where water is visible
+        wlctx.drawImage(waterC, box.ox, box.oy, box.W * box.k, box.H * box.k);
+        ctx = main;
+        ctx.globalAlpha = near;
+        ctx.drawImage(wl, 0, 0, box.w, box.h);
+        ctx.globalAlpha = 1;
+      }
+      if (has.mist) drawMist(f, t);
+      if (d && d.fall && near > 0.01) drawWaterfall(d, t, near);
+      if (has.lanterns) drawLanterns(src, f, t);
       ctx.restore();
     }
     function draw(now) {
@@ -344,13 +491,14 @@
       if (!host) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); }
       if (!src || src.frame < 0 || !src.image) return;
       const key = `${src.size}|${src.fit}|${surface.clientWidth}x${surface.clientHeight}|${surface.width}`;
-      if (key !== lastLayoutKey) { lastLayoutKey = key; layout(); }
+      if (key !== lastLayoutKey) { lastLayoutKey = key; layout(); masks.d = null; }
       const t = now / 1000;
       const dt = prevT ? Math.min(0.1, t - prevT) : 1 / 60;
       prevT = t;
       worldT = t;
       if (src.frame !== lastFrame) { lastFrame = src.frame; frameChangedAt = now; }
-      still = smooth((now - frameChangedAt - 150) / 250);
+      still = smooth((now - frameChangedAt - 80) / 120);
+      wantMask(src, src.frame, now);
       stepKoi(t, dt);                                    // world time keeps going even off-gate
       if (host) { if (host.paintedAt !== now) host.paintCurrent(); }   // frame + world, once per frame
       else paintWorld(ctx);
@@ -375,6 +523,8 @@
       /* testing / capture: render one frame at a given world time */
       renderAt(t) { draw(t * 1000); },
       koi: () => koi.map((k) => ({ x: k.x, y: k.y, h: k.h, s: k.s })),
+      debug: () => ({ fall: fallC.toDataURL(), layer: layer.toDataURL(), water: waterC.toDataURL(), box, fb: masks.d && masks.d.fall }),
+      mask: () => (masks.d ? { f: masks.d.f, water: masks.d.water, fall: !!masks.d.fall, bottom: masks.d.bottom } : null),
       destroy() {
         alive = false;
         if (host && host.overlay) { host.overlay = null; host.paintCurrent(); }
@@ -384,8 +534,8 @@
         document.removeEventListener('visibilitychange', onVis);
         removeEventListener('resize', onResize);
         if (!host) canvas.width = canvas.height = 0;
-        layer.width = layer.height = 0;
-        mask.c.width = mask.c.height = 0;
+        for (const c of [layer, wl, waterC, fallC, scratchW, scratchF]) c.width = c.height = 0;
+        masks.imgs.clear();
       },
     };
   }

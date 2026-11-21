@@ -16,6 +16,12 @@
  *   frames - an image sequence drawn to <canvas>; loads coarse-to-fine so fast
  *            scrolling always has a nearby frame.
  * Scroll is never intercepted; progress comes from the section's position.
+ *
+ * Several scenes on one page chain seamlessly when the next one's first frame is the previous
+ * one's last (wiki-01 -> 02 -> 03): CSS overlaps the sections by one stage height and the engine
+ * flags the pinned stage (data-scene-pinned) so it paints on top. A scene more than ~1.5 screens
+ * away sleeps: its renderer, frames, decoder and live layers are released, and it remounts
+ * before it comes back into view, so a long page never holds every scene's media at once.
  */
 (() => {
   'use strict';
@@ -124,6 +130,10 @@
 
   // Frame sequence on <canvas>. Each frame is an <img> decoded once; the browser's own image
   // decode cache decides how many decoded frames stay resident (Chrome evicts on its own).
+  // Only the active (pinned) scene of a page holds its full set. An inactive neighbour keeps a
+  // coarse set (first, last, every 32nd: ~11 frames, incl. the frame it shares with the next
+  // scene): two full sets overflowed Chrome's decode cache and the visible scene re-decoded its
+  // frames on draw (desktop p95 10 -> 20 ms while the neighbour loaded).
   // Measured on the real 300-frame wiki-01 set (Radeon 780M, Chrome 157): peak +~220 MB over a
   // no-scene baseline and 0 lagging frames. Manual caches were worse: a 16-frame ImageBitmap
   // window peaked at +320..790 MB (decode/close churn), an <img> window at +370..500 MB.
@@ -141,6 +151,10 @@
       this.images = new Array(this.count);
       this.ready = new Uint8Array(this.count);
       this.queueOrder = loadOrder(this.count);
+      this.coarse = new Uint8Array(this.count);
+      for (let i = 0; i < this.count; i += 32) this.coarse[i] = 1;
+      this.coarse[this.count - 1] = 1;
+      this.full = false;
       this.cursor = 0;
       this.inflight = 0;
       this.drawn = -1;
@@ -155,15 +169,19 @@
       return (patch ? patch.frames : this.source.frames).replace(/\{(0+)\}/, (_, pad) => String(n).padStart(pad.length, '0'));
     }
     pump() {
-      while (this.alive && this.inflight < 6 && this.cursor < this.queueOrder.length) {
-        const i = this.queueOrder[this.cursor++];
+      while (this.alive && this.inflight < (this.full ? 6 : 2) && this.cursor < this.queueOrder.length) {
+        const i = this.queueOrder[this.cursor];
+        if (this.ready[i]) { this.cursor++; continue; }
+        if (!this.full && !this.coarse[i]) break;          // inactive: coarse set only
+        this.cursor++;
         const img = new Image();
         img.decoding = 'async';
         img.src = this.url(i);
         this.inflight++;
         const t0 = performance.now();
         img.decode().then(() => {
-          if (!this.alive) return;
+          if (!this.alive || this.ready[i]) return;
+          if (!this.full && !this.coarse[i]) { img.src = ''; return; }   // went inactive meanwhile
           this.images[i] = img;
           this.ready[i] = 1;
           const st = this.scene.stats;
@@ -173,6 +191,24 @@
           this.scene.queue();
         }).catch(() => { if (i === 0) this.scene.fail(); }).finally(() => { this.inflight--; this.pump(); });
       }
+    }
+    // Active: load everything, nearest to the current frame first (every 4th, then the rest).
+    // Inactive: release all but the coarse set so a page holds one full scene at a time.
+    setActive(active, want) {
+      if (active === this.full) return;
+      this.full = active;
+      const todo = [];
+      for (let i = 0; i < this.count; i++) {
+        if (!active && !this.coarse[i] && this.images[i]) {
+          if (i === this.drawn) continue;                   // keep what is on screen
+          this.images[i].src = ''; this.images[i] = undefined; this.ready[i] = 0; this.scene.stats.loaded--;
+        }
+        if (!this.ready[i]) todo.push(i);
+      }
+      const key = i => (this.coarse[i] ? 0 : i % 4 ? 2e6 : 1e6) + Math.abs(i - want);
+      this.queueOrder = todo.sort((a, b) => key(a) - key(b));
+      this.cursor = 0;
+      if (active) this.pump();
     }
     nearest(i) {
       if (this.ready[i]) return i;
@@ -242,6 +278,8 @@
       this.shown = null;          // smoothed progress actually displayed
       this.lastTick = 0;
       this.visible = true;
+      this.awake = true;
+      this.pinned = false;
       this.failed = false;
       this.stats = stats();
       this.startedAt = performance.now();
@@ -274,6 +312,13 @@
       this.motionObserver.observe(root, { attributes: true, attributeFilter: ['data-motion'] });
       this.io = new IntersectionObserver(([e]) => { this.visible = e.isIntersecting; if (this.visible) this.queue(); });
       this.io.observe(this.section);
+      // Sleep beyond 1.5 screens; scenes start at 1 screen (boot), so the band has hysteresis.
+      this.awakeIo = new IntersectionObserver(([e]) => {
+        if (e.isIntersecting === this.awake) return;
+        this.awake = e.isIntersecting;
+        if (this.manifest && this.mountedKey !== undefined) this.mount();
+      }, { rootMargin: '150% 0px' });
+      this.awakeIo.observe(this.section);
       if (m.camera) {
         try { this.camera = await (await fetch(m.camera, { credentials: 'same-origin' })).json(); } catch { this.camera = null; }
       }
@@ -285,9 +330,9 @@
       if (!r || !src) return null;
       if (r.video) {
         const v = r.video;
-        return { image: v.readyState >= 2 ? v : null, frame: Math.round(v.currentTime * this.manifest.fps), size: src.size || [v.videoWidth, v.videoHeight], focus: src.focus, fit: src.fit };
+        return { image: v.readyState >= 2 ? v : null, frame: Math.round(v.currentTime * this.manifest.fps), size: src.size || [v.videoWidth, v.videoHeight], focus: src.focus, fit: src.fit, masks: src.masks, maskSize: src.maskSize, variant: this.variant };
       }
-      return { image: r.images[r.drawn] || null, frame: r.drawn, size: src.size, focus: src.focus, fit: src.fit };
+      return { image: r.images[r.drawn] || null, frame: r.drawn, size: src.size, focus: src.focus, fit: src.fit, masks: src.masks, maskSize: src.maskSize, variant: this.variant };
     }
     attachLayers() {
       this.live?.destroy(); this.live = null;
@@ -316,8 +361,18 @@
     }
     // (Re)choose renderer + source for the current device state.
     mount() {
+      if (!this.awake) {                                  // far away: release media, keep the poster
+        if (this.mountedKey === 'sleep') return;
+        this.mountedKey = 'sleep';
+        this.live?.destroy(); this.live = null;
+        this.fluid?.destroy(); this.fluid = null;
+        this.renderer?.destroy(); this.renderer = null;
+        this.mediaHost.classList.remove('is-ready');
+        return;
+      }
       let still = reduced() || lowData() || this.failed;
       const variant = portraitQuery.matches ? 'mobile' : 'desktop';
+      this.variant = variant;
       const src = this.manifest.sources[variant] || {};
       let kind = override || this.manifest.renderer?.[variant] || 'video';
       if (!src[kind]) kind = src.frames ? 'frames' : src.video ? 'video' : '';   // use whatever the scene ships
@@ -358,7 +413,17 @@
       if (!this.manifest) return;
       const dt = Math.min(64, now - (this.lastTick || now - 16));
       this.lastTick = now;
-      const target = this.progress();
+      const r = this.section.getBoundingClientRect();
+      const target = clamp(-r.top / Math.max(1, r.height - innerHeight));
+      // Pinned = the sticky stage fills the viewport; the pinned stage of a chain paints on top.
+      const pinned = r.top <= 0.5 && r.bottom >= this.stage.offsetHeight - 0.5;
+      if (pinned !== this.pinned) { this.pinned = pinned; this.section.toggleAttribute('data-scene-pinned', pinned); }
+      // Active (full frame set) = pinned. Dropping back to the coarse set waits 1.5 s, so stopping
+      // right at a hand-over does not reload a scene's frames over and over.
+      if (this.renderer?.setActive) {
+        if (pinned) { clearTimeout(this.trimTimer); this.trimTimer = 0; this.renderer.setActive(true, Math.round(target * (this.frameCount - 1))); }
+        else if (this.renderer.full && !this.trimTimer) this.trimTimer = setTimeout(() => { this.trimTimer = 0; if (!this.pinned) this.renderer?.setActive(false, 0); }, 1500);
+      }
       const still = this.section.classList.contains('is-static');
       // Critically damped follow (~80 ms) hides wheel steps without feeling detached.
       if (this.shown === null || still) this.shown = target;
@@ -386,6 +451,7 @@
     }
     destroy() {
       this.cancel();
+      clearTimeout(this.trimTimer);
       this.live?.destroy(); this.live = null;
       this.fluid?.destroy(); this.fluid = null;
       this.renderer?.destroy();
@@ -399,6 +465,7 @@
       portraitQuery.removeEventListener('change', this.sync);
       this.motionObserver?.disconnect();
       this.io?.disconnect();
+      this.awakeIo?.disconnect();
     }
   }
 
@@ -407,6 +474,8 @@
     for (const section of document.querySelectorAll('[data-scroll-scene]')) {
       if (section.dataset.sceneBooted) continue;
       section.dataset.sceneBooted = '';
+      // Scenes start lazily; without motion, collapse the later ones now so the page never jumps.
+      if (reduced() || lowData()) section.classList.add('is-static');
       const scene = new Scene(section);
       scenes.push(scene);
       // Start fetching only when the scene is within one viewport (future multi-scene pages).

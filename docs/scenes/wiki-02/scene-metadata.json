@@ -1,0 +1,169 @@
+{
+ "id": "wiki-02",
+ "title": "Wiki — 雲上石塔（第二幕）",
+ "version": "v2-2026-11-19",
+ "source": {
+  "blend": "\\sessions\\rcw-012ysbmnmc9yrs7hz1av9jet\\mnt\\teacafe-3d\\wiki-01\\wiki_full.blend",
+  "blender": "5.3.0",
+  "engine": "BLENDER_EEVEE",
+  "samples": 32,
+  "view_transform": "Standard",
+  "rebuild": "blender -b --factory-startup -P build_wiki_ext.py (runs build_scene.py first)",
+  "render": "deliver_wiki.py",
+  "postprocess": "postprocess_wiki.py",
+  "batch": "render_wiki.bat"
+ },
+ "fps": 30,
+ "frames": 300,
+ "blender_frames": [
+  301,
+  600
+ ],
+ "duration_seconds": 10.0,
+ "frame_numbering": "1-based per scene. File 0001 = Blender frame 301, file 0300 = Blender frame 600. progress p (0..1) -> file 1 + round(p * 299).",
+ "continuity": {
+  "previous": "last frame of the previous scene (Blender 300) and file 0001 of this scene share camera position, rotation and lens; only static scenery, no pop-in",
+  "next": "file 0300 matches file 0001 of the next scene"
+ },
+ "deterministic": "Camera keyed on every frame (linear). Water, waterfall and mist textures are static (no frame drivers); live motion is the frontend layer. The only frame-driven values are the cloud-sea fade-in (frames 300-345) and the cave fog switch when the camera enters the cave. Any frame renders identically in any order.",
+ "outputs": {
+  "desktop": {
+   "type": "webp-sequence",
+   "pattern": "frames-desktop/{0000}.webp",
+   "count": 300,
+   "resolution": [
+    1600,
+    900
+   ],
+   "webp_quality": 82,
+   "camera": "FlightCam",
+   "lens_mm": 28,
+   "sensor": "36 mm horizontal fit",
+   "hfov_deg": 65.5,
+   "vfov_deg": 39.6,
+   "suggested_focus": [
+    0.5,
+    0.45
+   ],
+   "total_bytes": 17576058,
+   "frame_bytes_range": [
+    7292,
+    101664
+   ]
+  },
+  "mobile": {
+   "type": "mp4",
+   "file": "mobile-g8.mp4",
+   "resolution": [
+    720,
+    1280
+   ],
+   "codec": "H.264 High, yuv420p, +faststart",
+   "keyframe_interval_frames": 8,
+   "b_frames": 0,
+   "audio": false,
+   "camera": "FlightCamPortrait (shares FlightCam's animation; 28 mm, vertical sensor fit; rendered separately, not cropped)",
+   "encoder": "ffmpeg libx264 -preset slow -crf 21 -g 8 -keyint_min 8 -sc_threshold 0 -bf 0 -an, from lossless PNG",
+   "size_bytes": 3496033,
+   "suggested_focus": [
+    0.5,
+    0.45
+   ]
+  },
+  "posters": {
+   "desktop": "poster-desktop.webp (file 0001)",
+   "desktop_end": "poster-desktop-end.webp (file 0300)",
+   "mobile": "poster-mobile.webp (file 0001)",
+   "mobile_end": "poster-mobile-end.webp (file 0300)"
+  },
+  "masks": {
+   "desktop": {
+    "pattern": "masks-desktop/{0000}.webp",
+    "count": 300,
+    "size": [
+     800,
+     450
+    ],
+    "channels": "R = lake / river surface visible, G = waterfall curtain visible (rock, trees, bridge in front are black). Mist and clouds ignored."
+   },
+   "mobile": {
+    "pattern": "masks-mobile/{0000}.webp",
+    "count": 300,
+    "size": [
+     360,
+     640
+    ],
+    "channels": "R = lake / river surface visible, G = waterfall curtain visible (rock, trees, bridge in front are black). Mist and clouds ignored."
+   }
+  }
+ },
+ "camera": {
+  "path": "camera_path.json (every frame: location + XYZ euler, metres, Z up)",
+  "analysis": "camera_analysis.json (pitch/yaw + screen positions of waterfall, bridge, cave mouth and lanterns, desktop and mobile, with occlusion)"
+ },
+ "slow_windows": {
+  "note": "file-number ranges where the camera moves at under 45% of this scene's median speed: steadiest places for text",
+  "frames": [
+   [
+    2,
+    20
+   ],
+   [
+    159,
+    178
+   ],
+   [
+    279,
+    300
+   ]
+  ]
+ },
+ "events": {
+  "waterfall_base_visible": {
+   "desktop": [
+    1,
+    25
+   ],
+   "mobile": [
+    1,
+    44
+   ]
+  },
+  "waterfall_top_visible": {
+   "mobile": [
+    100,
+    100
+   ]
+  },
+  "bridge_mid_visible": {
+   "desktop": [
+    115,
+    300
+   ],
+   "mobile": [
+    120,
+    300
+   ]
+  },
+  "bridge_end_visible": {
+   "desktop": [
+    116,
+    300
+   ],
+   "mobile": [
+    120,
+    268
+   ]
+  },
+  "cave_mouth_visible": {
+   "desktop": [
+    116,
+    300
+   ],
+   "mobile": [
+    120,
+    268
+   ]
+  }
+ }
+}

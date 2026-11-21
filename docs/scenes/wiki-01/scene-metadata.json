@@ -1,273 +1,129 @@
 {
-  "id": "wiki-01",
-  "title": "Wiki — 山谷飛行（第一幕）",
-  "version": "v1-2026-11-19",
-  "source": {
-    "blend": "C:\\Users\\08880\\Desktop\\claude\\teacafe-3d\\wiki-01\\scene.blend",
-    "blender": "5.3.0",
-    "engine": "BLENDER_EEVEE",
-    "samples": 32,
-    "view_transform": "Standard",
-    "rebuild_script": "build_scene.py",
-    "render_script": "deliver.py",
-    "render_batch": "render_all.bat"
+ "id": "wiki-01",
+ "title": "Wiki — 山谷飛行（第一幕）",
+ "version": "v2-2026-11-19",
+ "source": {
+  "blend": "\\sessions\\rcw-012ysbmnmc9yrs7hz1av9jet\\mnt\\teacafe-3d\\wiki-01\\wiki_full.blend",
+  "blender": "5.3.0",
+  "engine": "BLENDER_EEVEE",
+  "samples": 32,
+  "view_transform": "Standard",
+  "rebuild": "blender -b --factory-startup -P build_wiki_ext.py (runs build_scene.py first)",
+  "render": "deliver_wiki.py",
+  "postprocess": "postprocess_wiki.py",
+  "batch": "render_wiki.bat"
+ },
+ "fps": 30,
+ "frames": 300,
+ "blender_frames": [
+  1,
+  300
+ ],
+ "duration_seconds": 10.0,
+ "frame_numbering": "1-based per scene. File 0001 = Blender frame 1, file 0300 = Blender frame 300. progress p (0..1) -> file 1 + round(p * 299).",
+ "continuity": {
+  "previous": null,
+  "next": "file 0300 matches file 0001 of the next scene"
+ },
+ "deterministic": "Camera keyed on every frame (linear). Water, waterfall and mist textures are static (no frame drivers); live motion is the frontend layer. The only frame-driven values are the cloud-sea fade-in (frames 300-345) and the cave fog switch when the camera enters the cave. Any frame renders identically in any order.",
+ "outputs": {
+  "desktop": {
+   "type": "webp-sequence",
+   "pattern": "frames-desktop/{0000}.webp",
+   "count": 300,
+   "resolution": [
+    1600,
+    900
+   ],
+   "webp_quality": 82,
+   "camera": "FlightCam",
+   "lens_mm": 28,
+   "sensor": "36 mm horizontal fit",
+   "hfov_deg": 65.5,
+   "vfov_deg": 39.6,
+   "suggested_focus": [
+    0.5,
+    0.45
+   ],
+   "total_bytes": 17027118,
+   "frame_bytes_range": [
+    10416,
+    70808
+   ]
   },
-  "fps": 30,
-  "frames": 300,
-  "frame_start": 1,
-  "frame_end": 300,
-  "duration_seconds": 10.0,
-  "frame_numbering": "1-based. File 0001.webp = Blender frame 1. progress p (0..1) -> frame = 1 + round(p * 299).",
-  "deterministic": "Camera has one keyframe on every frame (linear). Water, mist, waterfall, koi, boat and birds are keyframed or driven by the frame number only. Any frame renders identically in any order, so forward and reverse scrubbing show the same image.",
-  "outputs": {
-    "desktop": {
-      "type": "webp-sequence",
-      "pattern": "frames-desktop/{0000}.webp",
-      "first": "0001.webp",
-      "last": "0300.webp",
-      "count": 300,
-      "resolution": [
-        1600,
-        900
-      ],
-      "aspect": "16:9",
-      "webp_quality": 82,
-      "camera": "FlightCam",
-      "lens_mm": 28,
-      "sensor": "36 mm, horizontal fit",
-      "hfov_deg": 65.5,
-      "vfov_deg": 39.6,
-      "suggested_focus": [
-        0.5,
-        0.45
-      ],
-      "total_bytes": 13185878,
-      "frame_bytes_range": [
-        16478,
-        58464
-      ]
-    },
-    "mobile": {
-      "type": "mp4",
-      "file": "mobile-g8.mp4",
-      "resolution": [
-        720,
-        1280
-      ],
-      "aspect": "9:16",
-      "codec": "H.264 High, yuv420p, MP4 (moov at start / +faststart)",
-      "keyframe_interval_frames": 8,
-      "b_frames": 0,
-      "audio": false,
-      "camera": "FlightCamPortrait",
-      "camera_note": "Separate portrait camera that shares FlightCam's animation (same path, same rotation). Only the lens fit differs: 28 mm with VERTICAL sensor fit, so the portrait frame shows the centre of the landscape view plus more sky and water. Not a stretched or cropped landscape video.",
-      "lens_mm": 28,
-      "sensor": "36 mm, vertical fit",
-      "hfov_deg": 39.6,
-      "vfov_deg": 65.5,
-      "suggested_focus": [
-        0.5,
-        0.45
-      ],
-      "encoder": "ffmpeg libx264 -preset slow -crf 21 -g 8 -keyint_min 8 -sc_threshold 0 -bf 0 -an, from lossless PNG frames",
-      "keyframe_positions": "every 8th frame exactly (0, 8, 16, ... 296), no scene-cut keyframes",
-      "size_bytes": 3762108
-    },
-    "posters": {
-      "desktop": "poster-desktop.webp (1600x900, frame 1)",
-      "mobile": "poster-mobile.webp (720x1280, frame 1)",
-      "desktop_end": "poster-desktop-end.webp (1600x900, frame 300)",
-      "mobile_end": "poster-mobile-end.webp (720x1280, frame 300)"
-    }
+  "mobile": {
+   "type": "mp4",
+   "file": "mobile-g8.mp4",
+   "resolution": [
+    720,
+    1280
+   ],
+   "codec": "H.264 High, yuv420p, +faststart",
+   "keyframe_interval_frames": 8,
+   "b_frames": 0,
+   "audio": false,
+   "camera": "FlightCamPortrait (shares FlightCam's animation; 28 mm, vertical sensor fit; rendered separately, not cropped)",
+   "encoder": "ffmpeg libx264 -preset slow -crf 21 -g 8 -keyint_min 8 -sc_threshold 0 -bf 0 -an, from lossless PNG",
+   "size_bytes": 3701856,
+   "suggested_focus": [
+    0.5,
+    0.45
+   ]
   },
-  "camera_motion": {
-    "summary": "Starts 2.2 m above the lake looking down 40 deg at koi, tilts up to the horizon while accelerating, cruises low along an S-shaped river between karst towers, then slows and tilts up 12 deg toward the waterfall, stopping about 80 m in front of it.",
-    "units": "metres; Blender world space (Z up, valley runs along +Y)",
-    "start": {
-      "frame": 1,
-      "location": [
-        -5.377,
-        -14.0,
-        2.2
-      ],
-      "rotation_euler_rad": [
-        0.87266,
-        0.0,
-        -0.35917
-      ],
-      "pitch_deg": -40.0,
-      "yaw_deg": -20.58
-    },
-    "end": {
-      "frame": 300,
-      "location": [
-        -0.342,
-        168.0,
-        9.2
-      ],
-      "rotation_euler_rad": [
-        1.78024,
-        0.0,
-        0.24963
-      ],
-      "pitch_deg": 12.0,
-      "yaw_deg": 14.3
-    },
-    "pitch_deg_samples": {
-      "1": -40.0,
-      "30": -22.71,
-      "45": -8.76,
-      "60": 0.75,
-      "90": 2.0,
-      "150": 2.0,
-      "225": 2.0,
-      "270": 8.46,
-      "300": 12.0
-    },
-    "speed_m_per_s_samples": {
-      "2": 0.42,
-      "15": 7.79,
-      "30": 18.56,
-      "60": 24.63,
-      "120": 18.97,
-      "200": 22.15,
-      "250": 23.24,
-      "280": 11.16,
-      "300": 4.32
-    },
-    "per_frame_path": "camera_path.json (location + rotation for all 300 frames); camera_analysis.json (also pitch, yaw, waterfall and koi visibility per frame)",
-    "next_scene_link": "Scene 2 (climb along the waterfall) should start from the frame-300 transform above, with the same lens."
+  "posters": {
+   "desktop": "poster-desktop.webp (file 0001)",
+   "desktop_end": "poster-desktop-end.webp (file 0300)",
+   "mobile": "poster-mobile.webp (file 0001)",
+   "mobile_end": "poster-mobile-end.webp (file 0300)"
   },
-  "events": [
-    {
-      "id": "koi",
-      "frames": [
-        1,
-        23
-      ],
-      "note": "Top-down view of 11 koi through clear water; last koi leaves frame at 23 (measured)."
-    },
-    {
-      "id": "tilt_up",
-      "frames": [
-        24,
-        60
-      ],
-      "note": "Pitch -23 deg -> +0.75 deg; horizon passes -5 deg at frame 50."
-    },
-    {
-      "id": "waterfall_first_visible",
-      "frame_desktop": 33,
-      "frame_mobile": 60,
-      "note": "Measured: waterfall top inside the camera frame. It is distant and soft in mist at first."
-    },
-    {
-      "id": "cruise",
-      "frames": [
-        60,
-        255
-      ],
-      "note": "Constant +2 deg pitch, about 19-25 m/s along the river bends; towers pass on both sides."
-    },
-    {
-      "id": "approach",
-      "frames": [
-        255,
-        300
-      ],
-      "note": "Decelerates and tilts up to +12 deg; waterfall fills about 97% of frame height at 300."
-    },
-    {
-      "id": "end_hold",
-      "frame": 300,
-      "note": "Hand-off pose for the next scene."
-    }
-  ],
-  "text_ranges_suggested": [
-    {
-      "id": "title",
-      "frames": [
-        1,
-        40
-      ],
-      "progress": [
-        0.0,
-        0.13
-      ],
-      "area": "anywhere; frame is evenly toned teal water with koi in the upper-left half",
-      "reason": "Top-down water before the horizon appears (towers enter at ~45)."
-    },
-    {
-      "id": "cue",
-      "frames": [
-        1,
-        40
-      ],
-      "progress": [
-        0.0,
-        0.13
-      ],
-      "area": "bottom centre",
-      "reason": "Scroll hint while the camera still looks down."
-    },
-    {
-      "id": "intro",
-      "frames": [
-        70,
-        170
-      ],
-      "progress": [
-        0.231,
-        0.565
-      ],
-      "area": "lower 35% (calm water reflections below the horizon at ~52% height)",
-      "reason": "Stable horizon; towers occupy the upper half almost to the top edge, so the sky is NOT a reliable text area."
-    },
-    {
-      "id": "note",
-      "frames": [
-        180,
-        255
-      ],
-      "progress": [
-        0.599,
-        0.849
-      ],
-      "area": "left 35% (pale misty towers) or lower 30% (water)",
-      "reason": "Waterfall sits at x≈0.45–0.6 and right-side towers are darkest; keep text off the centre."
-    },
-    {
-      "id": "avoid",
-      "frames": [
-        256,
-        300
-      ],
-      "progress": [
-        0.853,
-        1.0
-      ],
-      "reason": "Waterfall and cliffs fill the frame; use as transition into scene 2."
-    }
-  ],
-  "layout_notes": {
-    "horizon_height_from_top": "≈0.52 from frame 60 to 255 (desktop)",
-    "waterfall_x_desktop": "≈0.45–0.6 after frame 170",
-    "checked_frames": [
-      1,
-      45,
-      70,
-      120,
-      170,
-      220,
-      255,
-      300
-    ]
-  },
-  "render_stats": {
-    "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU",
-    "desktop_avg_s_per_frame": 0.88,
-    "mobile_avg_s_per_frame": 0.53,
-    "desktop_total_render_s": 264.4,
-    "mobile_total_render_s": 158.7
+  "masks": {
+   "desktop": {
+    "pattern": "masks-desktop/{0000}.webp",
+    "count": 300,
+    "size": [
+     800,
+     450
+    ],
+    "channels": "R = lake / river surface visible, G = waterfall curtain visible (rock, trees, bridge in front are black). Mist and clouds ignored."
+   },
+   "mobile": {
+    "pattern": "masks-mobile/{0000}.webp",
+    "count": 300,
+    "size": [
+     360,
+     640
+    ],
+    "channels": "R = lake / river surface visible, G = waterfall curtain visible (rock, trees, bridge in front are black). Mist and clouds ignored."
+   }
   }
+ },
+ "camera": {
+  "path": "camera_path.json (every frame: location + XYZ euler, metres, Z up)",
+  "analysis": "camera_analysis.json (pitch/yaw + screen positions of waterfall, bridge, cave mouth and lanterns, desktop and mobile, with occlusion)"
+ },
+ "slow_windows": {
+  "note": "file-number ranges where the camera moves at under 45% of this scene's median speed: steadiest places for text",
+  "frames": [
+   [
+    2,
+    18
+   ],
+   [
+    283,
+    300
+   ]
+  ]
+ },
+ "events": {
+  "waterfall_base_visible": {
+   "desktop": [
+    33,
+    300
+   ],
+   "mobile": [
+    56,
+    300
+   ]
+  }
+ }
 }

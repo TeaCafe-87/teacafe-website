@@ -1,0 +1,139 @@
+{
+  "id": "wiki-03",
+  "chapter": "wiki",
+  "title": "吊橋入洞",
+  "version": "v2-2026-11-19",
+  "note": "Values from Cowork's docs/scenes/wiki-03/scene-metadata.json (v2-2026-11-19). Frame files are 1-based: index i (0..299) = file i+1 = Blender frame 601+i; progress p -> file 1 + round(p * 299). Camera: wiki-03.camera.json, built by tools/scenes/build_scene_data.py.",
+  "fps": 30,
+  "frames": 300,
+  "renderer": {
+    "desktop": "frames",
+    "mobile": "video"
+  },
+  "sources": {
+    "desktop": {
+      "frames": "/assets/scenes/wiki-03/frames-desktop/{0000}.webp",
+      "poster": "/assets/scenes/wiki-03/poster-desktop.webp",
+      "size": [
+        1600,
+        900
+      ],
+      "focus": [
+        0.5,
+        0.45
+      ],
+      "fit": "horizontal"
+    },
+    "mobile": {
+      "video": "/assets/scenes/wiki-03/mobile-g8.mp4",
+      "poster": "/assets/scenes/wiki-03/poster-mobile.webp",
+      "size": [
+        720,
+        1280
+      ],
+      "focus": [
+        0.5,
+        0.45
+      ],
+      "fit": "vertical"
+    }
+  },
+  "events": [
+    {
+      "id": "bridge",
+      "frames": [
+        1,
+        140
+      ],
+      "why": "onto the suspension bridge and along it to the gate"
+    },
+    {
+      "id": "bridge_end_visible",
+      "desktop": [
+        1,
+        154
+      ],
+      "mobile": [
+        69,
+        155
+      ]
+    },
+    {
+      "id": "cave_mouth_visible",
+      "desktop": [
+        1,
+        133
+      ],
+      "mobile": [
+        69,
+        144
+      ]
+    },
+    {
+      "id": "gate_known_issue",
+      "frames": [
+        146,
+        154
+      ],
+      "why": "Cowork known issue: the stone platform shows at the bottom while passing the gate"
+    },
+    {
+      "id": "camera_enters_cave",
+      "frame": 162,
+      "blender_frame": 762,
+      "why": "fog switches from paper to ink here; copy turns light"
+    },
+    {
+      "id": "lantern_grotto",
+      "frames": [
+        175,
+        300
+      ],
+      "why": "turns toward the lantern-lit bend; the Library Grotto scene continues from here later"
+    },
+    {
+      "id": "slow",
+      "windows": [
+        [
+          2,
+          14
+        ],
+        [
+          282,
+          300
+        ]
+      ]
+    }
+  ],
+  "beats": [
+    {
+      "id": "search",
+      "from": 0.043,
+      "to": 0.411,
+      "frames": [
+        14,
+        124
+      ]
+    },
+    {
+      "id": "index",
+      "from": 0.599,
+      "to": 0.98,
+      "frames": [
+        180,
+        294
+      ]
+    }
+  ],
+  "camera": "/data/scenes/wiki-03.camera.json",
+  "live": {
+    "lanterns": {
+      "glowM": 0.55,
+      "dark": [
+        130,
+        170
+      ]
+    }
+  },
+  "prev": "wiki-02"
+}

@@ -142,7 +142,9 @@ window.teaBench = (() => {
         sectionH: sec.offsetHeight, vh: innerHeight, media: sec.querySelectorAll('video,canvas.scroll-scene-canvas').length,
         revealReady: 'revealReady' in document.documentElement.dataset,
         beatsOpacity: [...sec.querySelectorAll('[data-beat]')].map(e => e.dataset.beat + ':' + getComputedStyle(e).opacity + ':' + getComputedStyle(e).visibility),
-        sceneRequests: performance.getEntriesByType('resource').filter(e => /scenes\/wiki-01\/(frames|.*\.mp4)/.test(e.name)).length,
+        sceneRequests: performance.getEntriesByType('resource').filter(e => /scenes\/wiki-0\d\/(frames|masks|.*\.mp4)/.test(e.name)).length,
+        allStatic: TeaScrollScene.scenes.map(s => s.section.classList.contains('is-static')).join(','),
+        overlap: [...document.querySelectorAll('[data-scroll-scene]')].map(s => getComputedStyle(s).marginTop).join(','),
         liveLayer: !!sc.live, fluidLayer: !!sc.fluid, liveDisplay: getComputedStyle(document.querySelector('[data-scene-world]')).display };
       await fetch('/__bench', { method: 'POST', body: JSON.stringify(res) });
       return;

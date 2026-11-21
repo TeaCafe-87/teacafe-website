@@ -140,4 +140,17 @@
   new MutationObserver(sync).observe(root, { attributes: true, attributeFilter: ['data-motion'] });
   sync();
   window.TeaScrollMotion = { scan, RANGES };
+
+  // A search box inside a scene (<form data-scene-search="#wiki-search">) hands its query to the
+  // page's own search field, which already filters the entries, and brings that field into view.
+  document.addEventListener('submit', (e) => {
+    const form = e.target.closest?.('[data-scene-search]');
+    const target = form && document.querySelector(form.dataset.sceneSearch);
+    if (!target) return;
+    e.preventDefault();
+    target.value = form.querySelector('input')?.value.trim() || '';
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+    target.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'center' });
+    target.focus({ preventScroll: true });
+  });
 })();

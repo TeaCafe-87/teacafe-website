@@ -2,8 +2,8 @@
   "id": "wiki-01",
   "chapter": "wiki",
   "title": "山谷飛行",
-  "version": "v1-2026-11-19",
-  "note": "Values from Cowork's docs/scenes/wiki-01/scene-metadata.json. Frame files are 1-based: index i (0..299) = file i+1 = Blender frame i+1; progress p -> frame 1 + round(p * 299). Frames 1-60 come from a koi-less TEST re-render (tools/scenes/render_wiki01_nokoi.py) so the live koi do not double the baked ones.",
+  "version": "v2-2026-11-19",
+  "note": "Values from Cowork's docs/scenes/wiki-01/scene-metadata.json (v2-2026-11-19). Frame files are 1-based: index i (0..299) = file i+1 = Blender frame 1+i; progress p -> file 1 + round(p * 299). Camera: wiki-01.camera.json, built by tools/scenes/build_scene_data.py.",
   "fps": 30,
   "frames": 300,
   "renderer": {
@@ -13,7 +13,7 @@
   "sources": {
     "desktop": {
       "frames": "/assets/scenes/wiki-01/frames-desktop/{0000}.webp",
-      "poster": "/assets/scenes/wiki-01/poster-desktop-nokoi.webp",
+      "poster": "/assets/scenes/wiki-01/poster-desktop.webp",
       "size": [
         1600,
         900
@@ -23,18 +23,15 @@
         0.45
       ],
       "fit": "horizontal",
-      "patches": [
-        {
-          "from": 1,
-          "to": 60,
-          "frames": "/assets/scenes/wiki-01/frames-desktop-nokoi/{0000}.webp",
-          "why": "koi-less test render"
-        }
+      "masks": "/assets/scenes/wiki-01/masks-desktop/{0000}.webp",
+      "maskSize": [
+        800,
+        450
       ]
     },
     "mobile": {
-      "video": "/assets/scenes/wiki-01/mobile-g8-nokoi.mp4",
-      "poster": "/assets/scenes/wiki-01/poster-mobile-nokoi.webp",
+      "video": "/assets/scenes/wiki-01/mobile-g8.mp4",
+      "poster": "/assets/scenes/wiki-01/poster-mobile.webp",
       "size": [
         720,
         1280
@@ -43,16 +40,22 @@
         0.5,
         0.45
       ],
-      "fit": "vertical"
+      "fit": "vertical",
+      "masks": "/assets/scenes/wiki-01/masks-mobile/{0000}.webp",
+      "maskSize": [
+        360,
+        640
+      ]
     }
   },
   "events": [
     {
-      "id": "koi",
+      "id": "lake",
       "frames": [
         1,
         23
-      ]
+      ],
+      "why": "40 deg look-down on the empty lake: the live koi swim here"
     },
     {
       "id": "tilt_up",
@@ -62,9 +65,15 @@
       ]
     },
     {
-      "id": "waterfall_first_visible",
-      "frame_desktop": 33,
-      "frame_mobile": 60
+      "id": "waterfall_base_visible",
+      "desktop": [
+        33,
+        300
+      ],
+      "mobile": [
+        56,
+        300
+      ]
     },
     {
       "id": "cruise",
@@ -78,6 +87,19 @@
       "frames": [
         255,
         300
+      ]
+    },
+    {
+      "id": "slow",
+      "windows": [
+        [
+          2,
+          18
+        ],
+        [
+          283,
+          300
+        ]
       ]
     }
   ],
@@ -145,6 +167,15 @@
         70
       ],
       "source": "build_scene.py koi(): centres river_x(-14)*0.85 + U(-2.5,3.5), y U(-11,-5), r 0.8-2.2, z U(-0.9,-0.45), size U(0.32,0.5)"
+    },
+    "water": true,
+    "waterfall": true,
+    "mist": {
+      "frames": [
+        1,
+        300
+      ]
     }
-  }
+  },
+  "next": "wiki-02"
 }

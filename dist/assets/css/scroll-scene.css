@@ -22,11 +22,26 @@
 .scroll-scene-stage::before { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none;
   background: linear-gradient(0deg, color-mix(in srgb, var(--tc-paper) 66%, transparent) 0, color-mix(in srgb, var(--tc-paper) 38%, transparent) 22%, transparent 40%); }
 
+/* ---------- Chained scenes (wiki-01 -> 02 -> 03) ----------
+ * The last frame of a scene and the first frame of the next are the same camera. Each next scene
+ * overlaps the previous one by one stage height, so it pins at the exact scroll position where
+ * the previous stage unpins. The pinned stage is on top (scroll-scene.js sets data-scene-pinned);
+ * at the hand-over both show the same picture, so the swap is invisible even if the flag lags a
+ * compositor frame behind the scroll. */
+.scroll-scene-stage { z-index: 1; }
+.scroll-scene[data-scene-pinned] > .scroll-scene-stage { z-index: 2; }
+.scroll-scene:not(.is-static) + .scroll-scene:not(.is-static) { margin-top: -100lvh; }
+
+/* Cave tone (wiki-03): the camera enters the cave at frame 162 (p .54); the paper wash fades out
+   and copy turns light on the ink-dark grotto. */
+.scroll-scene[data-scene-tone="cave"] { --dark: clamp(0, (var(--scene-progress, 0) - .47) * 12, 1); }
+.scroll-scene[data-scene-tone="cave"] .scroll-scene-stage::before { opacity: calc(1 - var(--dark)); }
+
 /* ---------- Copy + beats ---------- */
 /* .page-title-inner is kept so the admin copy editor (site-copy-core.js) still finds h1/p. */
 .scroll-scene .scroll-scene-copy { position: absolute; z-index: 5; inset: 0 0 auto; height: 100svh; width: auto; max-width: none; margin: 0;
   padding: calc(var(--tc-topbar) + 24px) var(--tc-gutter) clamp(40px, 8svh, 92px);
-  display: grid; grid-template: "side" 1fr "crumb" auto "main" auto / 1fr; color: var(--tc-ink); }
+  display: grid; grid-template: "side" 1fr "crumb" auto "main" auto / minmax(0, 1fr); color: var(--tc-ink); }
 /* Beats share one cell and replace each other in time rather than stacking in space. */
 .scroll-scene .scroll-scene-copy > * { grid-area: main; align-self: end; max-width: min(760px, 100%); margin: 0; }
 .scroll-scene .scroll-scene-copy > .crumb { grid-area: crumb; }
@@ -54,6 +69,34 @@
 .scroll-scene .scroll-scene-copy .scene-cue { grid-area: auto; position: absolute; left: 50%; bottom: 14px; translate: -50% 0; max-width: none;
   font: 500 13px/1 var(--tc-display); letter-spacing: .4em; color: var(--tc-muted); }
 
+/* Top placement: the empty sky over the cloud sea (wiki-02 frames 95-140). */
+.scroll-scene .scroll-scene-copy > [data-beat-place="top"] { grid-area: side; align-self: start; }
+.scroll-scene .scene-heading { margin: 0 0 10px; color: var(--tc-ink); letter-spacing: .04em;
+  font: 400 calc(clamp(34px, 4.6vw, 72px) * var(--text-scale, 1)) / 1.15 var(--tc-brush); text-shadow: 0 0 22px var(--tc-paper), 0 0 2px var(--tc-paper); }
+.scroll-scene .scene-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.scroll-scene .scene-chips a { padding: 9px 18px; border: 1px solid var(--tc-ink); color: var(--tc-ink); text-decoration: none;
+  font: 700 15px/1.2 var(--tc-display); letter-spacing: .06em; background: color-mix(in srgb, var(--tc-paper) 78%, transparent);
+  transition: background .2s var(--tc-ease), color .2s var(--tc-ease); }
+.scroll-scene .scene-chips a:hover, .scroll-scene .scene-chips a:focus-visible { background: var(--tc-ink); color: var(--tc-paper); }
+/* Search card (wiki-03, on the bridge): same paper card as the note. */
+.scroll-scene .scene-search { box-sizing: border-box; justify-self: start; display: grid; gap: 14px; width: min(440px, 100%); padding: 22px 26px;
+  background: color-mix(in srgb, var(--tc-paper) 86%, transparent); border-left: 2px solid var(--tc-ink);
+  box-shadow: 0 0 44px 22px color-mix(in srgb, var(--tc-paper) 66%, transparent); }
+.scroll-scene .scene-search label { color: var(--tc-body); font: 500 calc(15px * var(--text-scale, 1)) / 1.8 var(--tc-sans); }
+.scroll-scene .scene-search label b { display: block; color: var(--tc-ink); font: 700 1.15em/1.5 var(--tc-display); }
+.scroll-scene .scene-search-row { display: flex; gap: 10px; }
+.scroll-scene .scene-search input { flex: 1; min-width: 0; min-height: 46px; padding: 0 14px; border: 1px solid var(--tc-line); background: var(--tc-paper);
+  color: var(--tc-ink); font: 500 16px var(--tc-sans); }
+/* Entry index (wiki-03, lantern grotto): light on ink, the lanterns glow through. */
+.scroll-scene .scene-index { box-sizing: border-box; justify-self: start; width: min(760px, 100%); padding: 24px 28px 26px; color: var(--tc-paper);
+  background: color-mix(in srgb, #15181b 70%, transparent); border-left: 2px solid #e2b874; backdrop-filter: blur(2px); }
+.scroll-scene .scene-index .scene-heading { color: var(--tc-paper); text-shadow: 0 0 18px rgba(0, 0, 0, .6); font-size: calc(clamp(30px, 3.4vw, 52px) * var(--text-scale, 1)); }
+.scroll-scene .scene-index-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 26px; }
+.scroll-scene .scene-index-grid div { display: flex; flex-direction: column; gap: 5px; }
+.scroll-scene .scene-index-grid a { color: color-mix(in srgb, var(--tc-paper) 86%, transparent); text-decoration: none; font: 500 14px/1.5 var(--tc-sans); }
+.scroll-scene .scene-index-grid b a { color: #f0cf96; font: 700 15px/1.5 var(--tc-display); letter-spacing: .06em; }
+.scroll-scene .scene-index-grid a:hover, .scroll-scene .scene-index-grid a:focus-visible { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+
 .scroll-scene [data-beat] { --beat-in: 1; --beat-out: 0; opacity: calc(var(--beat-in) * (1 - var(--beat-out))); }
 .scroll-scene [data-beat]:not([data-beat-active]) { visibility: hidden; }          /* hidden beats are skipped by AT and hit-testing */
 .scroll-scene:not([data-scene-live]) [data-beat] { visibility: visible; }   /* before the first tick */
@@ -78,6 +121,9 @@
 @media (max-width: 760px) {
   .scroll-scene .scroll-scene-copy { padding-bottom: clamp(44px, 9svh, 84px); }
   .scroll-scene .scroll-scene-copy .scene-note { max-width: none; }
+  .scroll-scene .scene-index { padding: 18px 18px 20px; }
+  .scroll-scene .scene-index-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; }
+  .scroll-scene .scene-index-grid a { font-size: 13px; }
   .scroll-scene .scroll-scene-copy h1 { white-space: normal; font-size: calc(clamp(46px, 14vw, 76px) * var(--text-scale, 1)) !important; }
   .scroll-scene [data-beat-role="title"] { transform: translate3d(calc((1 - var(--beat-in)) * 36px), calc(var(--beat-out) * -28px), 0); }
 }
