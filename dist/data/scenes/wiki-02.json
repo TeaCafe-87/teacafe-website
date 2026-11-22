@@ -1,0 +1,158 @@
+{
+  "id": "wiki-02",
+  "chapter": "wiki",
+  "title": "雲上石塔",
+  "version": "v2-2026-11-19",
+  "note": "Values from Cowork's docs/scenes/wiki-02/scene-metadata.json (v2-2026-11-19). Frame files are 1-based: index i (0..299) = file i+1 = Blender frame 301+i; progress p -> file 1 + round(p * 299). Camera: wiki-02.camera.json, built by tools/scenes/build_scene_data.py.",
+  "fps": 30,
+  "frames": 300,
+  "renderer": {
+    "desktop": "frames",
+    "mobile": "video"
+  },
+  "sources": {
+    "desktop": {
+      "frames": "/assets/scenes/wiki-02/frames-desktop/{0000}.webp",
+      "poster": "/assets/scenes/wiki-02/poster-desktop.webp",
+      "size": [
+        1600,
+        900
+      ],
+      "focus": [
+        0.5,
+        0.45
+      ],
+      "fit": "horizontal",
+      "masks": "/assets/scenes/wiki-02/masks-desktop/{0000}.webp",
+      "maskSize": [
+        800,
+        450
+      ]
+    },
+    "mobile": {
+      "video": "/assets/scenes/wiki-02/mobile-g8.mp4",
+      "poster": "/assets/scenes/wiki-02/poster-mobile.webp",
+      "size": [
+        720,
+        1280
+      ],
+      "focus": [
+        0.5,
+        0.45
+      ],
+      "fit": "vertical",
+      "masks": "/assets/scenes/wiki-02/masks-mobile/{0000}.webp",
+      "maskSize": [
+        360,
+        640
+      ]
+    }
+  },
+  "events": [
+    {
+      "id": "climb",
+      "frames": [
+        1,
+        90
+      ],
+      "why": "up the right side of the waterfall"
+    },
+    {
+      "id": "waterfall_base_visible",
+      "desktop": [
+        1,
+        25
+      ],
+      "mobile": [
+        1,
+        44
+      ]
+    },
+    {
+      "id": "cliff_top_known_issue",
+      "frames": [
+        86,
+        94
+      ],
+      "why": "Cowork known issue: act-1 cliff top flashes dark blue for ~1 s"
+    },
+    {
+      "id": "cloud_sea",
+      "frames": [
+        95,
+        140
+      ],
+      "why": "level camera over the cloud sea; large empty sky at the top (title space)"
+    },
+    {
+      "id": "towers",
+      "frames": [
+        140,
+        230
+      ]
+    },
+    {
+      "id": "bridge_mid_visible",
+      "desktop": [
+        115,
+        300
+      ],
+      "mobile": [
+        120,
+        300
+      ]
+    },
+    {
+      "id": "cave_mouth_visible",
+      "desktop": [
+        116,
+        300
+      ],
+      "mobile": [
+        120,
+        268
+      ]
+    },
+    {
+      "id": "slow",
+      "windows": [
+        [
+          2,
+          20
+        ],
+        [
+          159,
+          178
+        ],
+        [
+          279,
+          300
+        ]
+      ]
+    }
+  ],
+  "beats": [
+    {
+      "id": "chapters",
+      "from": 0.331,
+      "to": 0.712,
+      "frames": [
+        100,
+        214
+      ]
+    }
+  ],
+  "camera": "/data/scenes/wiki-02.camera.json",
+  "live": {
+    "water": true,
+    "waterfall": true,
+    "mist": {
+      "frames": [
+        1,
+        40
+      ]
+    }
+  },
+  "prev": "wiki-01",
+  "next": "wiki-03"
+}

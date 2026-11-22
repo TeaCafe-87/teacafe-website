@@ -13,6 +13,9 @@
  *
  *   const fluid = TeaInkFluid.attach(canvas, { video, overlay, active: () => bool });
  *   fluid.destroy();
+ *
+ * `video` may also be a <canvas> that already paints the full picture over the same box
+ * (e.g. scroll-scene.js drawing a WebP frame sequence): it is sampled 1:1, no cover mapping.
  */
 (function (global) {
   'use strict';
@@ -111,6 +114,10 @@ precision highp float; in vec2 vUv; out vec4 o; ${['ink', 'show', 'seed'].includ
     const target = (w, h) => { const tex = texture(w, h), fb = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fb); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0); return { tex, fb, w, h }; };
     const pair = (w, h) => { const a = target(w, h), b = target(w, h); return { read: a, write: b, swap() { [this.read, this.write] = [this.write, this.read]; } }; };
     const videoTex = texture(), overlayTex = texture();
+    // Picture source: a <video> (object-fit: cover) or a <canvas> that is already the composed picture.
+    const media = opts.video;
+    const isCanvas = typeof HTMLCanvasElement !== 'undefined' && media instanceof HTMLCanvasElement;
+    const mediaReady = () => (isCanvas ? media.width > 1 && media.isConnected : media.readyState >= 2);
 
     let W = 0, H = 0, simW = 0, simH = 0, vel, ink, curl, div, pressure;
     function resize() {
@@ -127,6 +134,7 @@ precision highp float; in vec2 vUv; out vec4 o; ${['ink', 'show', 'seed'].includ
 
     // uv(screen) -> uv(film) for object-fit: cover with the element's object-position.
     function cover() {
+      if (isCanvas) return [1, 1, 0, 0];
       const vw = opts.video.videoWidth || 16, vh = opts.video.videoHeight || 9;
       const s = Math.max(innerWidth / vw, innerHeight / vh), dw = vw * s, dh = vh * s;
       const pos = getComputedStyle(opts.video).objectPosition.split(' ').map((v) => (parseFloat(v) || 50) / 100);
@@ -179,7 +187,7 @@ precision highp float; in vec2 vUv; out vec4 o; ${['ink', 'show', 'seed'].includ
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
       gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
       gl.bindTexture(gl.TEXTURE_2D, videoTex);
-      if (opts.video.readyState >= 2) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, opts.video);
+      if (mediaReady()) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, media);
       const live = opts.overlay;
       const hasOverlay = live && !live.hidden && live.width > 1;
       if (hasOverlay) {
@@ -195,7 +203,7 @@ precision highp float; in vec2 vUv; out vec4 o; ${['ink', 'show', 'seed'].includ
       if (!alive) return;
       const dt = Math.min((now - prev) / 1000, 1 / 30) || 1 / 60;
       prev = now;
-      if (opts.video.readyState < 2) { raf = requestAnimationFrame(frame); return; }
+      if (!mediaReady()) { raf = requestAnimationFrame(frame); return; }
       const src = { uVideo: videoTex, uOverlay: overlayTex, uCover: cover(), uHasOverlay: upload() };
       const texel = [1 / simW, 1 / simH];
       if (fresh) {
@@ -226,6 +234,9 @@ precision highp float; in vec2 vUv; out vec4 o; ${['ink', 'show', 'seed'].includ
 
     resize();
     return {
+      // Drop the stirred ink and start again from the live picture (a moving camera would otherwise
+      // keep old frames smeared where the cursor stirred).
+      reset() { fresh = true; last = null; splats.length = 0; if (visible) { visible = false; canvas.classList.remove('is-stirred'); } },
       destroy() {
         alive = false;
         cancelAnimationFrame(raf);
@@ -235,6 +246,8 @@ precision highp float; in vec2 vUv; out vec4 o; ${['ink', 'show', 'seed'].includ
         removeEventListener('touchend', onTouchEnd);
         removeEventListener('resize', resize);
         canvas.classList.remove('is-stirred');
+        const lose = gl.getExtension('WEBGL_lose_context');   // free GPU buffers now, not at GC
+        if (lose) lose.loseContext();
       },
     };
   }

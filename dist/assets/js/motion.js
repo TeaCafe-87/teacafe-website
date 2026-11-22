@@ -57,6 +57,8 @@
   const selector = 'main h2, main .title-line';
   function prepare(element) {
     if (!observer || element.dataset.kineticPrepared !== undefined || element.closest('dialog,[hidden]')) return;
+    // Regions on the shared scroll-motion system (scroll-motion.js) animate there instead.
+    if (element.closest('[data-reveal-scope],[data-reveal],[data-scroll-scene]')) return;
     // Keep rich text, links, and controls untouched.
     if (element.children.length || !element.textContent.trim() || element.hasAttribute('data-server-status')) return;
     const inner = document.createElement('span');
@@ -95,6 +97,7 @@
       }
     }, { threshold: .08, rootMargin: '0px 0px 25px 0px' });
     document.querySelectorAll('main :is(.server-info-card,.server-player-board,.wiki-faq,.rule-card,.career-card,.market-card)').forEach(element => {
+      if (element.closest('[data-reveal-scope]')) return;
       element.classList.add('reveal-on-scroll');
       revealObserver.observe(element);
     });

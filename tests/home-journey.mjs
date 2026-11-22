@@ -38,11 +38,20 @@ for (const act of ['data-p="0.31,0.41"', 'data-p="0.58,0.67"', 'data-p="0.9,1"']
 assert.match(js, /journey-night-/);
 assert.match(js, /Asia\/Taipei/);
 assert.match(js, /teacafe-theme/);
-// Content pages ride the v1 film as a fixed, scroll-scrubbed background.
-for (const page of ['rules', 'news', 'wiki', 'forum', 'gallery', 'supporters', 'careers', 'market']) {
+// Content pages ride the v1 film as a fixed, scroll-scrubbed background, until a page gets its own
+// scene (scroll-scene.js): the Wiki has its Blender flight, the others still share the film.
+for (const page of ['rules', 'news', 'forum', 'gallery', 'supporters', 'careers', 'market']) {
   const doc = read(`${page}.html`);
   assert.match(doc, /<main class="page[^"]*" data-journey><div class="page-backdrop" aria-hidden="true">/, `${page}: backdrop`);
   assert.ok(doc.includes('src="/assets/video/journey.mp4"') && doc.includes('/assets/js/home-journey.js'), `${page}: film + driver`);
+}
+{
+  const wiki = read('wiki.html');
+  assert.match(wiki, /<section class="scroll-scene" data-scroll-scene="\/data\/scenes\/wiki-01\.json"/, 'wiki: own scene');
+  for (const js of ['ink-fluid.js', 'scene-live.js', 'scroll-scene.js', 'scroll-motion.js', 'intro-gate.js']) assert.ok(wiki.includes(`/assets/js/${js}`), `wiki: ${js}`);
+  assert.ok(!wiki.includes('/assets/js/home-journey.js') && !wiki.includes('journey.mp4'), 'wiki: no shared film under its scene');
+  assert.match(wiki, /data-scene-world/);
+  assert.match(wiki, /data-scene-fluid/);
 }
 assert.match(html, /class="journey-backdrop" aria-hidden="true"/);
 assert.ok(html.includes('/assets/js/home-journey.js') && html.includes('/assets/css/home-journey.css'));
