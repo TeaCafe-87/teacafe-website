@@ -40,7 +40,7 @@
 /* ---------- Copy + beats ---------- */
 /* .page-title-inner is kept so the admin copy editor (site-copy-core.js) still finds h1/p. */
 .scroll-scene .scroll-scene-copy { position: absolute; z-index: 5; inset: 0 0 auto; height: 100svh; width: auto; max-width: none; margin: 0;
-  padding: calc(var(--tc-topbar) + 24px) var(--tc-gutter) clamp(40px, 8svh, 92px);
+  padding: calc(var(--tc-topbar) + 24px) var(--tc-gutter) clamp(72px, 10svh, 112px);
   display: grid; grid-template: "side" 1fr "crumb" auto "main" auto / minmax(0, 1fr); color: var(--tc-ink); }
 /* Beats share one cell and replace each other in time rather than stacking in space. */
 .scroll-scene .scroll-scene-copy > * { grid-area: main; align-self: end; max-width: min(760px, 100%); margin: 0; }
@@ -56,46 +56,57 @@
 .scroll-scene .scroll-scene-copy h1 .scene-latin { font: 700 .78em/1 var(--tc-display); letter-spacing: .02em; vertical-align: .04em; }
 .scroll-scene .scroll-scene-copy .crumb { display: block; margin-bottom: 14px; font: 700 13px/1.4 var(--tc-sans) !important; letter-spacing: .24em; color: var(--tc-muted); text-shadow: 0 0 12px var(--tc-paper); }
 .scroll-scene .scroll-scene-copy p { max-width: 36em; color: var(--tc-body); font: 500 calc(clamp(17px, 1.5vw, 21px) * var(--text-scale, 1)) / 2 var(--tc-sans); text-shadow: 0 0 16px var(--tc-paper), 0 0 2px var(--tc-paper); }
-/* Note: lower-left, at most 35% wide; the waterfall sits at x 0.45-0.6 from frame 170 on. */
-.scroll-scene .scroll-scene-copy .scene-note {
-  justify-self: start; max-width: min(35vw, 26em); padding: 22px 26px; color: var(--tc-body);
-  font: 500 calc(clamp(15px, 1.25vw, 18px) * var(--text-scale, 1)) / 1.95 var(--tc-sans);
-  background: color-mix(in srgb, var(--tc-paper) 82%, transparent); border-left: 2px solid var(--tc-ink);
-  box-shadow: 0 0 44px 22px color-mix(in srgb, var(--tc-paper) 70%, transparent);
-}
-.scroll-scene .scroll-scene-copy .scene-note b { display: block; margin-bottom: 4px; color: var(--tc-ink); font: 700 1.1em/1.5 var(--tc-display); letter-spacing: .04em; }
 /* grid-area:auto -> containing block is the copy's padding box (an area-placed abspos item would
    use the title row instead and sit on top of the title). Bottom centre, below the title. */
 .scroll-scene .scroll-scene-copy .scene-cue { grid-area: auto; position: absolute; left: 50%; bottom: 14px; translate: -50% 0; max-width: none;
   font: 500 13px/1 var(--tc-display); letter-spacing: .4em; color: var(--tc-muted); }
 
-/* Top placement: the empty sky over the cloud sea (wiki-02 frames 95-140). */
+/* ---------- Scene typography: no boxes, no rules. Hierarchy from size, weight and space;
+   legibility from a soft halo (text-shadow) and the stage's paper wash. Where a beat sits follows
+   the frames it plays over (docs/scroll-scenes.md, "Wiki 三幕內容"). */
 .scroll-scene .scroll-scene-copy > [data-beat-place="top"] { grid-area: side; align-self: start; }
-.scroll-scene .scene-heading { margin: 0 0 10px; color: var(--tc-ink); letter-spacing: .04em;
-  font: 400 calc(clamp(34px, 4.6vw, 72px) * var(--text-scale, 1)) / 1.15 var(--tc-brush); text-shadow: 0 0 22px var(--tc-paper), 0 0 2px var(--tc-paper); }
-.scroll-scene .scene-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
-.scroll-scene .scene-chips a { padding: 9px 18px; border: 1px solid var(--tc-ink); color: var(--tc-ink); text-decoration: none;
-  font: 700 15px/1.2 var(--tc-display); letter-spacing: .06em; background: color-mix(in srgb, var(--tc-paper) 78%, transparent);
-  transition: background .2s var(--tc-ease), color .2s var(--tc-ease); }
-.scroll-scene .scene-chips a:hover, .scroll-scene .scene-chips a:focus-visible { background: var(--tc-ink); color: var(--tc-paper); }
-/* Search card (wiki-03, on the bridge): same paper card as the note. */
-.scroll-scene .scene-search { box-sizing: border-box; justify-self: start; display: grid; gap: 14px; width: min(440px, 100%); padding: 22px 26px;
-  background: color-mix(in srgb, var(--tc-paper) 86%, transparent); border-left: 2px solid var(--tc-ink);
-  box-shadow: 0 0 44px 22px color-mix(in srgb, var(--tc-paper) 66%, transparent); }
-.scroll-scene .scene-search label { color: var(--tc-body); font: 500 calc(15px * var(--text-scale, 1)) / 1.8 var(--tc-sans); }
-.scroll-scene .scene-search label b { display: block; color: var(--tc-ink); font: 700 1.15em/1.5 var(--tc-display); }
-.scroll-scene .scene-search-row { display: flex; gap: 10px; }
-.scroll-scene .scene-search input { flex: 1; min-width: 0; min-height: 46px; padding: 0 14px; border: 1px solid var(--tc-line); background: var(--tc-paper);
-  color: var(--tc-ink); font: 500 16px var(--tc-sans); }
-/* Entry index (wiki-03, lantern grotto): light on ink, the lanterns glow through. */
-.scroll-scene .scene-index { box-sizing: border-box; justify-self: start; width: min(760px, 100%); padding: 24px 28px 26px; color: var(--tc-paper);
-  background: color-mix(in srgb, #15181b 70%, transparent); border-left: 2px solid #e2b874; backdrop-filter: blur(2px); }
-.scroll-scene .scene-index .scene-heading { color: var(--tc-paper); text-shadow: 0 0 18px rgba(0, 0, 0, .6); font-size: calc(clamp(30px, 3.4vw, 52px) * var(--text-scale, 1)); }
-.scroll-scene .scene-index-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 26px; }
-.scroll-scene .scene-index-grid div { display: flex; flex-direction: column; gap: 5px; }
-.scroll-scene .scene-index-grid a { color: color-mix(in srgb, var(--tc-paper) 86%, transparent); text-decoration: none; font: 500 14px/1.5 var(--tc-sans); }
-.scroll-scene .scene-index-grid b a { color: #f0cf96; font: 700 15px/1.5 var(--tc-display); letter-spacing: .06em; }
-.scroll-scene .scene-index-grid a:hover, .scroll-scene .scene-index-grid a:focus-visible { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+.scroll-scene .scroll-scene-copy > [data-beat-place="center"] { grid-area: side / side / main / main; align-self: center; justify-self: center; text-align: center; }
+.scroll-scene .scroll-scene-copy > .scene-at-right { justify-self: end; text-align: right; }
+.scroll-scene .scene-heading { margin: 0 0 14px; color: var(--tc-ink); letter-spacing: .05em;
+  font: 400 calc(clamp(36px, 4.8vw, 76px) * var(--text-scale, 1)) / 1.12 var(--tc-brush); text-shadow: 0 0 24px var(--tc-paper), 0 0 2px var(--tc-paper); }
+.scroll-scene .scene-kicker { margin: 0 0 10px; color: var(--tc-ink); letter-spacing: .08em; text-shadow: 0 0 18px var(--tc-paper), 0 0 2px var(--tc-paper);
+  font: 700 calc(clamp(19px, 1.7vw, 25px) * var(--text-scale, 1)) / 1.45 var(--tc-display) !important; }
+.scroll-scene .scene-passage { max-width: min(30em, 40vw); }
+.scroll-scene .scene-passage p { font-size: calc(clamp(16px, 1.3vw, 19px) * var(--text-scale, 1)); }
+/* Inside a beat the title leads; body lines and list rows follow a little later (same envelope). */
+.scroll-scene :is(.scene-passage, .scene-chapters, .scene-library) > :is(p, .scene-enter) {
+  --late: clamp(0, (var(--beat-in) - .3) / .7, 1); opacity: var(--late); transform: translate3d(0, calc((1 - var(--late)) * 14px), 0); }
+
+/* Act 2: the six chapters as an editorial list in the cloud-sea sky, not a row of buttons. */
+.scroll-scene :is(.scene-chapters, .scene-passage) { position: relative; isolation: isolate; }
+.scroll-scene :is(.scene-chapters, .scene-passage)::before { content: ""; position: absolute; z-index: -1; inset: -12% -10%; pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--tc-paper) 72%, transparent), color-mix(in srgb, var(--tc-paper) 40%, transparent) 55%, transparent); }
+.scroll-scene .scene-chapters { max-width: min(1040px, 100%); }
+.scroll-scene .scene-chapters > p { max-width: 34em; }
+.scroll-scene .scene-cats { list-style: none; margin: 26px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px clamp(20px, 3vw, 48px); }
+.scroll-scene .scene-cats li { --late: clamp(0, (var(--beat-in) - .35 - var(--i, 0) * .07) / .45, 1); opacity: var(--late); transform: translate3d(0, calc((1 - var(--late)) * 12px), 0); }
+.scroll-scene .scene-cats li:nth-child(2) { --i: 1; } .scroll-scene .scene-cats li:nth-child(3) { --i: 2; }
+.scroll-scene .scene-cats li:nth-child(4) { --i: 3; } .scroll-scene .scene-cats li:nth-child(5) { --i: 4; } .scroll-scene .scene-cats li:nth-child(6) { --i: 5; }
+.scroll-scene .scene-cat { display: grid; grid-template-columns: 2.1em 1fr; align-items: baseline; gap: 2px 10px; padding: 12px 0; color: var(--tc-ink); text-decoration: none; text-shadow: 0 0 16px var(--tc-paper), 0 0 2px var(--tc-paper); }
+.scroll-scene .scene-cat-no { grid-row: span 2; color: var(--tc-muted); font: 400 calc(26px * var(--text-scale, 1)) / 1 var(--tc-brush); transition: color .3s var(--tc-ease); }
+.scroll-scene .scene-cat-name { justify-self: start; font: 700 calc(clamp(19px, 1.6vw, 24px) * var(--text-scale, 1)) / 1.35 var(--tc-display); letter-spacing: .08em;
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size .45s var(--tc-ease); }
+.scroll-scene .scene-cat-desc { color: var(--tc-body); font: 500 calc(13.5px * var(--text-scale, 1)) / 1.6 var(--tc-sans); }
+.scroll-scene .scene-cat:is(:hover, :focus-visible) .scene-cat-name { background-size: 100% 1px; }
+.scroll-scene .scene-cat:is(:hover, :focus-visible) .scene-cat-no { color: var(--tc-accent); }
+.scroll-scene .scene-cat:focus-visible { outline: 2px solid var(--tc-ink); outline-offset: 4px; }
+
+/* Act 3: the library entrance, centred in the dark tunnel, light on ink. */
+.scroll-scene .scene-library { max-width: min(34em, 100%); color: var(--tc-paper); }
+.scroll-scene .scene-library :is(.scene-heading, .scene-kicker, p) { color: #f3ead8; text-shadow: 0 0 20px rgba(10, 10, 10, .75), 0 0 2px rgba(10, 10, 10, .6); }
+.scroll-scene .scene-library .scene-heading { font-size: calc(clamp(52px, 7vw, 112px) * var(--text-scale, 1)); margin-bottom: 18px; }
+.scroll-scene .scene-library .scene-kicker { font-size: calc(15px * var(--text-scale, 1)) !important; letter-spacing: .32em; color: #e8c890; }
+.scroll-scene .scene-library p { margin-inline: auto; }
+.scroll-scene .scene-enter { display: inline-flex; align-items: center; gap: 12px; margin-top: 26px; padding: 12px 4px; color: #f6dfb2; text-decoration: none;
+  font: 700 calc(19px * var(--text-scale, 1)) / 1.2 var(--tc-display); letter-spacing: .14em; text-shadow: 0 0 16px rgba(10, 10, 10, .8);
+  background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1px no-repeat; transition: background-size .45s var(--tc-ease), gap .45s var(--tc-ease); }
+.scroll-scene .scene-enter:is(:hover, :focus-visible) { gap: 20px; background-size: 40% 1px; }
+.scroll-scene .scene-enter:focus-visible { outline: 2px solid #f6dfb2; outline-offset: 6px; }
 
 .scroll-scene [data-beat] { --beat-in: 1; --beat-out: 0; opacity: calc(var(--beat-in) * (1 - var(--beat-out))); }
 .scroll-scene [data-beat]:not([data-beat-active]) { visibility: hidden; }          /* hidden beats are skipped by AT and hit-testing */
@@ -120,10 +131,14 @@
 
 @media (max-width: 760px) {
   .scroll-scene .scroll-scene-copy { padding-bottom: clamp(44px, 9svh, 84px); }
-  .scroll-scene .scroll-scene-copy .scene-note { max-width: none; }
-  .scroll-scene .scene-index { padding: 18px 18px 20px; }
-  .scroll-scene .scene-index-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; }
-  .scroll-scene .scene-index-grid a { font-size: 13px; }
+  /* Phone: one column; right-placed passages come back left; copy clears the bottom dock. */
+  .scroll-scene .scroll-scene-copy { padding-bottom: calc(clamp(44px, 9svh, 84px) + 56px); }
+  .scroll-scene .scroll-scene-copy > .scene-at-right { justify-self: start; text-align: left; }
+  .scroll-scene .scene-passage { max-width: none; }
+  .scroll-scene .scene-cats { grid-template-columns: 1fr; gap: 0; margin-top: 14px; }
+  .scroll-scene .scene-cat { padding: 9px 0; min-height: 48px; }
+  .scroll-scene .scene-cat-desc { font-size: 12.5px; }
+  .scroll-scene .scene-chapters > p { display: none; }
   .scroll-scene .scroll-scene-copy h1 { white-space: normal; font-size: calc(clamp(46px, 14vw, 76px) * var(--text-scale, 1)) !important; }
   .scroll-scene [data-beat-role="title"] { transform: translate3d(calc((1 - var(--beat-in)) * 36px), calc(var(--beat-out) * -28px), 0); }
 }

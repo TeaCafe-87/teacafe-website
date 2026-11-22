@@ -75,6 +75,7 @@ async function main() {
   await evaluate(HELPERS);
   if (process.env.MODE === 'perf') return perf();
   if (process.env.MODE === 'perf2') return perf2();
+  if (process.env.MODE === 'reader') return reader();
   if (process.env.MODE === 'debug') {             // live-layer internals at one point (DEBUG_AT="scene,progress")
     const [i, p] = (process.env.DEBUG_AT || '0,.7').split(',').map(Number);
     await evaluate(`scrollTo({ top: __c.y(${i}, ${p}), behavior: 'instant' }); await __c.settle(${i}, ${p}); await new Promise(r => setTimeout(r, 1500));`);
@@ -190,5 +191,72 @@ async function perf2() {
       return { variant: '${name}', frames: g.length, avgMs: +(g.reduce((x, y) => x + y, 0) / g.length).toFixed(1), p95Ms: +pct(.95).toFixed(1), maxMs: +g[g.length - 1].toFixed(1), over20: g.filter((x) => x > 20).length };`);
     console.log(JSON.stringify(r));
   }
+}
+// MODE=reader: the Wiki reader end to end with real key/text input; prints checks, saves shots.
+async function reader() {
+  const checks = [];
+  const ok = (name, pass, info) => { checks.push({ name, pass: !!pass, info }); };
+  const st = () => evaluate(`const s = TeaWikiReader.state(), L = document.getElementById('wiki-reader');
+    return { ...s, hash: location.hash, y: Math.round(scrollY), vis: getComputedStyle(L).visibility, focus: document.activeElement && (document.activeElement.id || document.activeElement.className || document.activeElement.tagName),
+      shown: [...document.querySelectorAll('.chapter-screen:not(.is-off) h2')].map(h => h.id), target: (document.querySelector('.is-target') || {}).id || null,
+      crumb: document.querySelector('.wiki-crumb').textContent, back: !document.querySelector('.wiki-reader-back').hidden,
+      results: document.querySelectorAll('.wiki-result').length, count: document.querySelector('.wiki-results-count').textContent,
+      first: (document.querySelector('.wiki-result b') || {}).textContent || null, input: document.getElementById('wiki-search').value };`);
+  const key = async (k, code, mods = 0) => { for (const type of ['keyDown', 'keyUp']) await send('Input.dispatchKeyEvent', { type, key: k, code, modifiers: mods, windowsVirtualKeyCode: { Escape: 27, Enter: 13, Slash: 191, ArrowDown: 40 }[code] || 0, text: type === 'keyDown' && k.length === 1 ? k : undefined }); };
+  const pause = (ms = 600) => wait(ms);
+  let s = await st();
+  ok('closed on load, dock ready', !s.open && s.vis === 'hidden' && await evaluate(`return getComputedStyle(document.querySelector('.wiki-dock')).display !== 'none'`), s);
+  await evaluate(`scrollTo({ top: __c.y(1, .45), behavior: 'instant' }); await __c.settle(1, .45); await new Promise(r => setTimeout(r, 900));`);
+  const y0 = (await st()).y;
+  await shot('explore-chapters');
+  await evaluate(`[...document.querySelectorAll('.scene-cat')].find(a => a.hash === '#travel').click()`); await pause();
+  s = await st(); ok('chapter link in the scene opens that chapter', s.open && s.vis === 'visible' && s.hash === '#travel' && s.shown.join() === 'travel', s);
+  await shot('reader-chapter');
+  await evaluate(`document.querySelector('.wiki-entries a[href="#waystone"]').click()`); await pause();
+  s = await st(); ok('entry link scrolls to the entry, back appears', s.hash === '#waystone' && s.target === 'waystone' && s.back && s.crumb.includes('茶咖路標'), s);
+  await evaluate(`document.getElementById('wiki-search').focus()`);
+  await send('Input.insertText', { text: '釣魚' }); await pause();
+  s = await st(); ok('typing searches across chapters', s.view === 'search' && s.results > 0 && /釣魚/.test(s.first), s);
+  await shot('reader-search');
+  await evaluate(`[...document.querySelectorAll('.wiki-filter button')].find(b => b.textContent === '經濟與道具').click()`); await pause(300);
+  s = await st(); ok('scope filter narrows results', s.results === 0 && /找不到/.test(s.count), s);
+  await evaluate(`document.querySelector('.wiki-filter button[data-filter=""]').click()`); await pause(300);
+  await key('ArrowDown', 'ArrowDown'); await key('Enter', 'Enter'); await pause();
+  s = await st(); ok('keyboard: ArrowDown + Enter opens the first result', s.view === 'chapter' && s.shown[0] === 'activities' && s.target, s);
+  await evaluate(`document.querySelector('.wiki-reader-back').click()`); await pause();
+  s = await st(); ok('back returns to the results with the query', s.view === 'search' && s.input === '釣魚' && s.results > 0, s);
+  await evaluate(`document.getElementById('wiki-search').focus()`);
+  await key('Escape', 'Escape'); await pause(300);
+  s = await st(); ok('Esc in the field clears the query', s.input === '' && s.open, s);
+  await key('Escape', 'Escape'); await pause(900);
+  s = await st(); ok('Esc again closes; scene position kept; hash cleared', !s.open && s.vis === 'hidden' && Math.abs(s.y - y0) < 2 && s.hash === '', { ...s, y0 });
+  await key('/', 'Slash'); await pause();
+  s = await st(); ok('"/" opens search with the field focused', s.open && s.view === 'search' && s.focus === 'wiki-search', s);
+  await send('Input.insertText', { text: '不存在的玩法xyz' }); await pause(300);
+  s = await st(); ok('no results: helpful message', s.results === 0 && /找不到/.test(s.count), s);
+  await shot('reader-empty');
+  await evaluate(`document.querySelector('.wiki-search-clear').click()`); await pause(300);
+  await evaluate(`history.back()`); await pause(900);
+  s = await st(); ok('browser Back closes the reader', !s.open && Math.abs(s.y - y0) < 2, s);
+  await evaluate(`scrollTo({ top: __c.y(2, .8), behavior: 'instant' }); await __c.settle(2, .8); await new Promise(r => setTimeout(r, 900));`);
+  await shot('explore-library');
+  await evaluate(`document.querySelector('.scene-enter').click()`); await pause();
+  s = await st(); ok('cave entrance opens the catalogue', s.open && s.view === 'chapter', s);
+  await evaluate(`document.querySelector('.wiki-reader-close').click()`); await pause(900);
+  s = await st(); ok('close button returns to the cave', !s.open && s.vis === 'hidden', s);
+  await evaluate(`location.hash = 'beans'`); await pause();
+  s = await st(); ok('in-page #beans (no reload) opens the reader there', s.open && s.shown[0] === 'economy' && s.target === 'beans', s);
+  await send('Page.navigate', { url: 'about:blank' }); await wait(500);
+  await send('Page.navigate', { url: `${base}/wiki.html#teleport` }); await wait(1500);
+  for (let i = 0; i < 40 && !(await evaluate('return !!window.TeaWikiReader && document.readyState === "complete"').catch(() => false)); i++) await wait(250);
+  await evaluate(HELPERS);
+  s = await st(); ok('fresh load of a shared link #teleport opens the reader at the entry', s.open && s.shown[0] === 'travel' && s.entry === 'teleport' && s.focus === 'teleport', s);
+  await evaluate(`document.querySelector('.wiki-reader-close').click()`); await pause(900);
+  s = await st(); ok('closing a shared link stays on the page (no history.back off-site)', !s.open && s.hash === '' && s.vis === 'hidden', s);
+  const live = await evaluate(`return { paused: document.documentElement.hasAttribute('data-wiki-reader'), errors: window.__errs || [] }`);
+  ok('no page errors', !live.errors.length, live);
+  for (const c of checks) console.log(`${c.pass ? 'PASS' : 'FAIL'}  ${c.name}${c.pass ? '' : '  ' + JSON.stringify(c.info)}`);
+  console.log(`${checks.filter((c) => c.pass).length}/${checks.length} passed`);
+  if (checks.some((c) => !c.pass)) process.exitCode = 1;
 }
 main().catch((e) => { console.error(e); process.exitCode = 1; }).finally(() => { try { ws && ws.close(); } catch {} chrome.kill(); setTimeout(() => { try { rmSync(prof, { recursive: true, force: true }); } catch {} }, 1500); });

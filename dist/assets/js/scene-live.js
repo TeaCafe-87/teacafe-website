@@ -507,7 +507,8 @@
     function tick(now) {
       raf = 0;
       if (!alive || !visible) return;
-      if (now - last >= minFrameMs) { last = now; draw(now); }
+      // the Wiki reader covers the stage: keep the clock, skip the drawing
+      if (now - last >= minFrameMs && !document.documentElement.hasAttribute('data-wiki-reader')) { last = now; draw(now); }
       raf = requestAnimationFrame(tick);
     }
     const wake = () => { if (alive && visible && !raf) raf = requestAnimationFrame(tick); };

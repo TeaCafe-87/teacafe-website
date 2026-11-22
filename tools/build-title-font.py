@@ -23,12 +23,13 @@ DIST = ROOT / "dist"
 OUT = DIST / "assets" / "fonts" / "teacafe-shufa.woff2"
 FAMILY = "TeaCafe Shufa"
 # Titles set in JavaScript rather than HTML, plus the seal-pass glyphs.
-EXTRA = "設定拓印已茶咖暖居山居"
+EXTRA = "設定拓印已茶咖暖居山居" + "藏書閣卷壹貳參肆伍陸"  # wiki reader title, dock glyph, chapter numerals
 
 PATTERNS = [
     r"<h1[^>]*>(.*?)</h1>",
     r'<h2 class="scene-title">(.*?)</h2>',
     r'<h2 class="scene-heading"[^>]*>(.*?)</h2>',
+    r'<h2 id="(?:start|travel|progress|economy|activities|extras)">(.*?)</h2>',   # Wiki chapter titles (reader)
     r'<span class="scene-mark"[^>]*>(.*?)</span>',
     r'class="(?:ink|cta)-seal"[^>]*>(.*?)<',
     r'class="j-no"[^>]*>(.*?)<',

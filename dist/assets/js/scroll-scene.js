@@ -357,7 +357,7 @@
     }
     fluidActive() {
       const r = this.stage.getBoundingClientRect();
-      return this.visible && r.top > -8 && r.bottom > innerHeight * 0.9;
+      return this.visible && r.top > -8 && r.bottom > innerHeight * 0.9 && !root.hasAttribute('data-wiki-reader');
     }
     // (Re)choose renderer + source for the current device state.
     mount() {

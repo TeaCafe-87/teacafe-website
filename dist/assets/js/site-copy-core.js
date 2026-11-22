@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const selectors = {
-    wiki: '.page-title-inner > h1, .page-title-inner > p, .content-panel h2, .content-panel h3, .content-panel p, .content-panel summary, .content-panel .wiki-card b, .content-panel .wiki-card small, .content-panel .tip',
+    wiki: '.page-title-inner > h1, .page-title-inner > p, .scroll-scene-copy :is(h2, p, [data-copy]), .content-panel h2, .content-panel h3, .content-panel p, .content-panel summary, .content-panel .wiki-card b, .content-panel .wiki-card small, .content-panel .tip',
     rules: '.page-title-inner > h1, .page-title-inner > p, .rule-section h2, .rule-section h3, .rule-section p, .rule-list b, .rule-list span, .avoid-grid li, .rule-alert b, .rule-alert span'
   };
   const normalized = value => String(value || '').replace(/\s+/g, ' ').trim();

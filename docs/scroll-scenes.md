@@ -70,16 +70,36 @@ Cowork 的三幕是一段連續鏡頭：前一幕第 300 格＝下一幕第 1 �
 
 首頁同一份 WebGL2 流體。可吃 `<video>` 或完整畫面的 `<canvas>`；`destroy()` 立即釋放 GPU。只在 `(hover: hover) and (pointer: fine)` 啟用，每個場景各自掛載，只有固定中的舞台接受攪動。
 
-## 五、Wiki 三幕內容
+## 五、Wiki：探索模式與閱覽模式
 
-| 區塊 | 長度 | 文字（HTML） |
+**探索模式**（三幕捲動）只放少量文字，負責氛圍與引導；**閱覽模式**（藏書閣）負責查資料，進入頁面第一秒就能用。
+
+### 探索模式的版面規則
+- 不用卡片、外框、直立裝飾線。層級靠字級與字重；可讀性靠紙色光暈（text-shadow）、舞台底部的紙色淡化，必要時加一圈柔和的徑向漸層（`::before`，不是方框）。
+- 文字放在影格本身的留白處：
+
+| 區塊 | 文字 | 位置（依影格構圖） |
 |---|---|---|
-| wiki-01 山谷飛行 | 560svh | 標題（1–40 格）、簡介（70–170）、新手提示（180–255） |
-| wiki-02 雲上石塔 | 520svh | 六大分類入口（100–214，畫面上方留白）、吊橋提示（238–296） |
-| wiki-03 吊橋入洞 | 540svh | 搜尋框（14–124，橋上）、條目索引（180–294，燈火石窟，淺色字） |
+| wiki-01 | 標題（1–40）、簡介（70–170） | 左下，湖面與倒影 |
+| wiki-01 | 新手提示（180–255） | 右下，瀑布右側的湖面 |
+| wiki-02 | 六大分類（100–214） | 上方，雲海上的大片天空；3×2 編輯式清單（手機為單欄） |
+| wiki-02 | 吊橋提示（238–296） | 左下，吊橋下方的霧 |
+| wiki-03 | 「吊橋入洞」（16–86） | 右上，鏡頭轉上吊橋時右側的亮霧 |
+| wiki-03 | 「藏書閣」入口（182–296） | 正中，燈火石窟中央的暗處，淺色字 |
 
-wiki-03 進洞（第 162 格）前後，紙色淡化層退掉、文字改為深底淺字（`data-scene-tone="cave"`，由 `--scene-progress` 計算）。wiki-03 結束後接 Wiki 主要內容；之後的「藏書石窟」場景可直接接在 wiki-03 後面。
-標題字型子集（teacafe-shufa.woff2）已重建，納入「六個分類，從這裡出發」「條目索引」（`tools/build-title-font.py` 會收錄 `h2.scene-heading`）。
+- 位置用 `data-beat-place="top|center"`、`.scene-at-right` 宣告；時間在 JSON beats；文字在 HTML。
+- 動畫：標題沿用筆刷揭示；同一段內的內文、清單列以 `--late` 稍晚出現（列與列再錯開 0.07），全是 `--beat-in` 的函數，可正反向。
+- 六大分類：編號（壹–陸，書法字）＋分類名（楷體）＋該分類的條目名（小字）。滑過時分類名下方畫出細線、編號轉為朱色。點擊直接開啟閱覽模式的該分類。
+- 文字可在管理後台編輯：`site-copy-core.js` 的 wiki 選擇器納入 `.scroll-scene-copy :is(h2, p, [data-copy])`。暫定文案以「（暫定文案）」與 `data-placeholder` 標出。
+
+### 閱覽模式（wiki-reader.js / wiki-reader.css）
+- **同一份內容**：閱覽介面就是頁面原本的 `.content-layout`（分類側欄＋內容），沒有複製。沒有 JS 時照舊在場景下方直接閱讀（SEO、無 JS 可讀）；有 JS 時變成覆蓋層，捲動位置不變，關閉後回到原本的山水畫面。
+- **入口**：右下角浮動工具（手機在下方中央）「搜尋」「目錄」；第二幕的分類；第三幕「進入藏書閣」；鍵盤 `/` 或 Ctrl/⌘ K。
+- **結構**：桌機＝分類＋本分類條目（左）／內容（右，含閱讀進度細線、目前條目標示）；手機＝全螢幕，分類與條目為兩條可橫向滑動的列。分類開頭的總覽卡改為兩欄文字清單。
+- **搜尋**：沿用頁面原有的 `#wiki-search` 欄位（app.js 對即時條目的過濾照常運作）；每次查詢都讀取當下 DOM，所以管理後台改過的文案、/api/wiki 的即時條目、總覽卡的關鍵字都搜得到。可依分類篩選；有標示的摘要；沒有結果時提示並提供「清除搜尋／搜尋全部分類」；↓、↑、Enter 可操作結果。
+- **連結與返回**：`#分類` 或 `#條目` 直接開到該處（可分享；沒有 id 的條目自動補上由標題產生的 id）。閱覽中的導覽更新網址但不堆疊歷史；「‹ 返回」回到上一個分類或搜尋結果；瀏覽器上一頁＝關閉閱覽模式。Esc 先清除搜尋、再關閉。
+- 開啟時其他區塊設為 `inert`，焦點移入；關閉時焦點回到開啟它的按鈕。場景的即時層與流體在閱覽模式下暫停繪製。
+- 書法字型子集已加入：吊橋入洞、藏書閣、壹–陸、卷、六個分類名（`tools/build-title-font.py`，字型檔 45 → 63 KB，全站共用）。
 
 ## 六、本機預覽與測試
 
@@ -89,6 +109,7 @@ node tools/cdp-scenes.mjs desktop                  # 三幕串接：定點截圖
 node tools/cdp-scenes.mjs mobile
 MODE=perf node tools/cdp-scenes.mjs desktop        # 每幕單獨掃描（即時層開／關）
 MODE=motion node tools/cdp-scenes.mjs desktop      # 停止捲動時的動態（兩張相隔 0.5 s 的截圖）
+MODE=reader node tools/cdp-scenes.mjs desktop      # 閱覽模式 18 項端對端檢查（手機改 mobile）
 python tools/bench-server.py desktop frames revealcheck livecheck inkprobe
 python tools/bench-server.py mobile video-g8 revealcheck
 BENCH_FLAGS=--force-prefers-reduced-motion python tools/bench-server.py desktop staticcheck

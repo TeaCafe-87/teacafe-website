@@ -107,22 +107,24 @@
   ],
   "beats": [
     {
-      "id": "search",
-      "from": 0.043,
-      "to": 0.411,
+      "id": "threshold",
+      "from": 0.05,
+      "to": 0.284,
       "frames": [
-        14,
-        124
-      ]
+        16,
+        86
+      ],
+      "why": "bright mist on the right third while the camera turns onto the bridge"
     },
     {
-      "id": "index",
-      "from": 0.599,
-      "to": 0.98,
+      "id": "library",
+      "from": 0.605,
+      "to": 0.987,
       "frames": [
-        180,
-        294
-      ]
+        182,
+        296
+      ],
+      "why": "dark tunnel centre in the lantern grotto: the library entrance"
     }
   ],
   "camera": "/data/scenes/wiki-03.camera.json",
