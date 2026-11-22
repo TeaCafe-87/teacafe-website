@@ -37,10 +37,14 @@ assert.ok(js.indexOf('const MEDIA_PREFIX') < js.indexOf('startsWith(MEDIA_PREFIX
 assert.ok(!/innerHTML/.test(js), 'home-sections.js must not use innerHTML on API data');
 
 // One scroll gesture = the next scene; text fields and dialogs keep their own scrolling.
-assert.match(journey, /addEventListener\('wheel'[\s\S]*?preventDefault[\s\S]*?\{ passive: false \}/);
-assert.match(journey, /addEventListener\('keydown'/);
-assert.match(journey, /dialog\[open\]/);
-assert.match(journey, /if \(!filmSet\) return;/, 'stepping is home-only');
+// The gestures live in journey-nav.js, shared with the scroll-scene pages (scene-journey.js).
+const nav = read('assets/js/journey-nav.js');
+assert.match(nav, /addEventListener\('wheel'[\s\S]*?preventDefault[\s\S]*?\{ passive: false \}/);
+assert.match(nav, /addEventListener\('keydown'/);
+assert.match(nav, /dialog\[open\]/);
+assert.match(journey, /window\.TeaJourneyNav\(\{/, 'home steps through journey-nav.js');
+assert.match(journey, /if \(!filmSet \|\| !window\.TeaJourneyNav\) return;/, 'stepping is home-only');
+assert.ok(read('index.html').indexOf('journey-nav.js') < read('index.html').indexOf('home-journey.js'), 'journey-nav.js loads before home-journey.js');
 
 // Titles: brush calligraphy font, shipped renamed under the OFL, and not selectable by accident.
 assert.match(ui, /@font-face \{ font-family: "TeaCafe Shufa"; src: url\(\/assets\/fonts\/teacafe-shufa\.woff2\)/);

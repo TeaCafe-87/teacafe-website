@@ -220,7 +220,17 @@
     }
     draw(progress) {
       const want = Math.round(progress * (this.count - 1));
-      const have = this.nearest(want);
+      // Never step against the motion: take the newest ready frame between the one on screen and the
+      // target. (Plain nearest could show a frame past the target, then step back when a closer one
+      // loads: a visible backfill during fast moves.) Without a frame on screen, plain nearest.
+      let have = -1;
+      const d = this.drawn;
+      if (d >= 0 && this.ready[d] && want !== d) {
+        const s = want > d ? -1 : 1;
+        for (let i = want; i !== d; i += s) if (this.ready[i]) { have = i; break; }
+        if (have < 0) have = d;
+      }
+      if (have < 0) have = this.nearest(want);
       if (have < 0) return true;
       if (have !== this.drawn) {
         const first = this.drawn < 0;
@@ -357,7 +367,7 @@
     }
     fluidActive() {
       const r = this.stage.getBoundingClientRect();
-      return this.visible && r.top > -8 && r.bottom > innerHeight * 0.9 && !root.hasAttribute('data-wiki-reader');
+      return this.visible && !this.moving && r.top > -8 && r.bottom > innerHeight * 0.9 && !root.hasAttribute('data-wiki-reader');
     }
     // (Re)choose renderer + source for the current device state.
     mount() {
@@ -400,6 +410,24 @@
       const r = this.section.getBoundingClientRect();
       return clamp(-r.top / Math.max(1, r.height - innerHeight));
     }
+    // Scroll Y at which this scene shows `p` (0..1); scene-journey.js turns data-scene-stops into stops.
+    scrollAt(p) {
+      return this.section.getBoundingClientRect().top + scrollY + clamp(p) * Math.max(1, this.section.offsetHeight - innerHeight);
+    }
+    // True once the picture at `p` (or a frame within 2 of it) can be drawn: a journey waits for this.
+    readyAt(p) {
+      const r = this.renderer;
+      if (!r) return this.section.classList.contains('is-static');
+      if (r.video) return r.video.readyState >= 2;
+      const want = Math.round(clamp(p) * (this.frameCount - 1)), have = r.nearest(want);
+      return have >= 0 && Math.abs(have - want) <= 2;
+    }
+    // Hold the full frame set while a journey flies through this scene (and start loading it now).
+    keepFull(on) {
+      this.hold = on;
+      if (on) this.renderer?.setActive?.(true, Math.round(this.progress() * (this.frameCount - 1)));
+      else this.queue();                                   // the next tick trims it if it is not pinned
+    }
     queue() {
       if (!this.frame && !document.hidden) this.frame = requestAnimationFrame(this.tick);
     }
@@ -422,13 +450,18 @@
       // right at a hand-over does not reload a scene's frames over and over.
       if (this.renderer?.setActive) {
         if (pinned) { clearTimeout(this.trimTimer); this.trimTimer = 0; this.renderer.setActive(true, Math.round(target * (this.frameCount - 1))); }
-        else if (this.renderer.full && !this.trimTimer) this.trimTimer = setTimeout(() => { this.trimTimer = 0; if (!this.pinned) this.renderer?.setActive(false, 0); }, 1500);
+        else if (this.renderer.full && !this.trimTimer && !this.hold) this.trimTimer = setTimeout(() => { this.trimTimer = 0; if (!this.pinned) this.renderer?.setActive(false, 0); }, 1500);
       }
       const still = this.section.classList.contains('is-static');
       // Critically damped follow (~80 ms) hides wheel steps without feeling detached.
       if (this.shown === null || still) this.shown = target;
       else this.shown += (target - this.shown) * (1 - Math.exp(-dt / 80));
       if (Math.abs(target - this.shown) < 1 / (this.frameCount * 4)) this.shown = target;
+      // While the camera moves the ink-fluid layer rests and forgets what it stirred (fluidActive).
+      const moving = this.shown !== target || this.shown !== this.lastShown;
+      if (moving && !this.moving) this.fluid?.reset?.();
+      this.moving = moving;
+      this.lastShown = this.shown;
       this.section.style.setProperty('--scene-progress', this.shown.toFixed(4));
       this.section.dataset.sceneLive = '';
       for (const b of this.beatData) {

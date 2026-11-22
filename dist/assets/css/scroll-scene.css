@@ -41,25 +41,35 @@
 /* .page-title-inner is kept so the admin copy editor (site-copy-core.js) still finds h1/p. */
 .scroll-scene .scroll-scene-copy { position: absolute; z-index: 5; inset: 0 0 auto; height: 100svh; width: auto; max-width: none; margin: 0;
   padding: calc(var(--tc-topbar) + 24px) var(--tc-gutter) clamp(72px, 10svh, 112px);
-  display: grid; grid-template: "side" 1fr "crumb" auto "main" auto / minmax(0, 1fr); color: var(--tc-ink); }
+  display: grid; grid-template: "side" 1fr "main" auto / minmax(0, 1fr); color: var(--tc-ink); }
 /* Beats share one cell and replace each other in time rather than stacking in space. */
 .scroll-scene .scroll-scene-copy > * { grid-area: main; align-self: end; max-width: min(760px, 100%); margin: 0; }
-.scroll-scene .scroll-scene-copy > .crumb { grid-area: crumb; }
 .scroll-scene .scroll-scene-copy > :is(h1, p) { animation: none !important; }
-/* Brush title like the home acts; one line in the lower quarter, below the koi (frames 1-23). */
+/* Opening title: one vertical brush line set into the lake's right third, like a hanging scroll
+   over the water (frames 1-23 look straight down at it; the koi swim around it). Ink, no halo:
+   it reads as a mark on the water, not a logo pasted over the film. */
 .scroll-scene .scroll-scene-copy h1 {
-  max-width: none; white-space: nowrap; color: var(--tc-ink);
-  font: 400 calc(clamp(52px, 8.6vw, 136px) * var(--text-scale, 1)) / 1.05 var(--tc-brush) !important;
-  letter-spacing: .06em; text-shadow: 0 0 22px var(--tc-paper), 0 0 2px var(--tc-paper);
+  grid-area: side / side / main / main; align-self: start; justify-self: end; max-width: none; white-space: nowrap;
+  margin: clamp(12px, 7svh, 84px) clamp(4px, 10vw, 190px) 0 0; writing-mode: vertical-rl;
+  color: color-mix(in srgb, var(--tc-ink) 86%, #1d3b37); letter-spacing: .36em;
+  font: 400 calc(clamp(50px, 5.4vw, 90px) * var(--text-scale, 1)) / 1 var(--tc-brush) !important;
+  text-shadow: 0 .02em .12em color-mix(in srgb, #10211f 30%, transparent);
 }
-/* The brush subset has no designed Latin: "Wiki" takes the Kai display face at the same weight. */
-.scroll-scene .scroll-scene-copy h1 .scene-latin { font: 700 .78em/1 var(--tc-display); letter-spacing: .02em; vertical-align: .04em; }
-.scroll-scene .scroll-scene-copy .crumb { display: block; margin-bottom: 14px; font: 700 13px/1.4 var(--tc-sans) !important; letter-spacing: .24em; color: var(--tc-muted); text-shadow: 0 0 12px var(--tc-paper); }
+/* The brush wipe runs down the column, the way the line is written. */
+.scroll-scene .scroll-scene-copy h1[data-beat-role="title"] {
+  clip-path: inset(-.3em -.4em calc((1 - var(--beat-in)) * 100%) -.4em) !important;
+  transform: translate3d(0, calc((1 - var(--beat-in)) * 48px - var(--beat-out) * 30px), 0);
+}
 .scroll-scene .scroll-scene-copy p { max-width: 36em; color: var(--tc-body); font: 500 calc(clamp(17px, 1.5vw, 21px) * var(--text-scale, 1)) / 2 var(--tc-sans); text-shadow: 0 0 16px var(--tc-paper), 0 0 2px var(--tc-paper); }
 /* grid-area:auto -> containing block is the copy's padding box (an area-placed abspos item would
    use the title row instead and sit on top of the title). Bottom centre, below the title. */
-.scroll-scene .scroll-scene-copy .scene-cue { grid-area: auto; position: absolute; left: 50%; bottom: 14px; translate: -50% 0; max-width: none;
-  font: 500 13px/1 var(--tc-display); letter-spacing: .4em; color: var(--tc-muted); }
+.scroll-scene .scroll-scene-copy .scene-cue { grid-area: auto; position: absolute; left: 50%; bottom: clamp(18px, 4svh, 40px); translate: -50% 0; max-width: none;
+  display: grid; justify-items: center; gap: 10px; font: 500 13px/1 var(--tc-display); letter-spacing: .4em; text-indent: .4em;
+  color: color-mix(in srgb, var(--tc-paper) 86%, transparent); }
+/* A hairline that keeps drawing downward: the only motion on the opening besides the water. */
+.scroll-scene .scroll-scene-copy .scene-cue::after { content: ""; width: 1px; height: 34px; background: currentColor; transform-origin: 50% 0;
+  animation: scene-cue 2.4s var(--tc-ease) infinite; }
+@keyframes scene-cue { 0% { transform: scaleY(0); opacity: 1; } 60% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(1); opacity: 0; } }
 
 /* ---------- Scene typography: no boxes, no rules. Hierarchy from size, weight and space;
    legibility from a soft halo (text-shadow) and the stage's paper wash. Where a beat sits follows
@@ -128,6 +138,7 @@
 .scroll-scene.is-static .scroll-scene-copy { position: relative; height: auto; min-height: 100svh; display: flex; flex-direction: column; justify-content: end; gap: 22px; }
 .scroll-scene.is-static [data-beat] { --beat-in: 1 !important; --beat-out: 0 !important; visibility: visible; transform: none; clip-path: none !important; }
 .scroll-scene.is-static .scene-cue { display: none; }
+.scroll-scene.is-static .scroll-scene-copy h1 { writing-mode: horizontal-tb; justify-self: start; margin: 0; letter-spacing: .12em; }
 
 @media (max-width: 760px) {
   .scroll-scene .scroll-scene-copy { padding-bottom: clamp(44px, 9svh, 84px); }
@@ -139,9 +150,22 @@
   .scroll-scene .scene-cat { padding: 9px 0; min-height: 48px; }
   .scroll-scene .scene-cat-desc { font-size: 12.5px; }
   .scroll-scene .scene-chapters > p { display: none; }
-  .scroll-scene .scroll-scene-copy h1 { white-space: normal; font-size: calc(clamp(46px, 14vw, 76px) * var(--text-scale, 1)) !important; }
-  .scroll-scene [data-beat-role="title"] { transform: translate3d(calc((1 - var(--beat-in)) * 36px), calc(var(--beat-out) * -28px), 0); }
+  .scroll-scene .scroll-scene-copy h1 { margin: clamp(8px, 5svh, 48px) 8vw 0 0; font-size: calc(clamp(44px, 13vw, 64px) * var(--text-scale, 1)) !important; letter-spacing: .3em; }
+  .scroll-scene [data-beat-role="title"]:not(h1) { transform: translate3d(calc((1 - var(--beat-in)) * 36px), calc(var(--beat-out) * -28px), 0); }
 }
+
+/* ---------- Journeys (scene-journey.js) ---------- */
+/* While the camera flies into the library the scene copy steps aside. */
+html[data-journey-flying] .scroll-scene .scroll-scene-copy { opacity: 0; transition: opacity .5s var(--tc-ease); }
+/* Ink veil: hides a jump or the hand-over to the reader. A wash that bleeds in from the edges,
+   never a flat blank: the scene stays faintly visible in the centre until fully covered. */
+.scene-veil { position: fixed; inset: 0; z-index: 84; pointer-events: none; opacity: 0; visibility: hidden;
+  --veil: var(--tc-paper);
+  background: radial-gradient(ellipse 75% 70% at 50% 52%, color-mix(in srgb, var(--veil) 82%, transparent) 0, var(--veil) 72%);
+  transition: opacity .42s var(--tc-ease), visibility 0s linear .42s; }
+.scene-veil[data-tone="ink"] { --veil: #1b1f1d; }
+.scene-veil.is-on { opacity: 1; visibility: visible; transition: opacity .42s var(--tc-ease), visibility 0s; }
+.scene-veil.is-instant { transition: none; }
 
 /* ---------- Shared reveal language (scroll-motion.js) ---------- */
 /* Without html[data-reveal-ready] (no JS, reduced motion) everything renders at rest. */
@@ -157,6 +181,7 @@ html[data-reveal-ready] [data-reveal="body"] { opacity: var(--rv-in, 1); transfo
 
 @media (prefers-reduced-motion: reduce) {
   [data-reveal], [data-beat] { transform: none !important; opacity: 1 !important; clip-path: none !important; }
+  .scroll-scene .scroll-scene-copy .scene-cue::after, .scene-veil { animation: none; transition: none; }
 }
 @media (max-width: 760px) {
   html[data-reveal-ready] [data-reveal="title"] { transform: translate3d(calc((1 - var(--rv-in, 1)) * 36px), calc(var(--rv-out, 0) * -18px), 0); }

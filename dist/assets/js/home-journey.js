@@ -192,7 +192,7 @@
    * centred in its act's blank half, then the page end. The glide is a timed scroll, so the film
    * plays the camera move between acts. A scene taller than the screen is paged through first.
    * The scrollbar, anchor links and text fields keep working normally. */
-  if (!filmSet) return;
+  if (!filmSet || !window.TeaJourneyNav) return;
   const scenes = [...journey.querySelectorAll('.act .scene')];
   const docTop = (el) => el.getBoundingClientRect().top + scrollY;
   const maxY = () => document.documentElement.scrollHeight - innerHeight;
@@ -207,115 +207,21 @@
     list.push(maxY());
     return list.map((y) => clamp(Math.round(y), 0, maxY())).filter((y, i, a) => i === 0 || y > a[i - 1] + 8);
   }
-  // The stop whose scene is on screen, and how much of a tall scene is still below the fold.
-  function nextTarget(dir) {
-    const list = stops(), y = scrollY, vh = innerHeight;
-    if (dir > 0) {
+  // Gestures, glides and the topbar: journey-nav.js (shared with the scroll-scene pages).
+  const nav = window.TeaJourneyNav({
+    stops,
+    page(dir) {   // a scene taller than the screen is paged through before moving on
+      const vh = innerHeight, y = scrollY;
       const cur = scenes.find((el) => { const r = el.getBoundingClientRect(); return r.top < vh * 0.5 && r.bottom > vh * 0.5; });
-      if (cur) {
-        const bottom = cur.getBoundingClientRect().bottom;
-        if (bottom > vh + 24) return y + Math.min(bottom - vh + 48, vh * 0.75);
-      }
-      return list.find((s) => s > y + 8) ?? y;
-    }
-    const cur = scenes.find((el) => { const r = el.getBoundingClientRect(); return r.top < vh * 0.5 && r.bottom > vh * 0.5; });
-    if (cur) {
-      const top = cur.getBoundingClientRect().top;
-      if (top < -24) return y + Math.max(top - vh * 0.12, -vh * 0.75);
-    }
-    return [...list].reverse().find((s) => s < y - 8) ?? y;
-  }
-
-  /* Glides. A gesture during a glide extends it toward the following stop instead of waiting,
-   * so a continuous scroll flows through the scenes without halting at each one. */
-  let gliding = false, glideTo = 0, glideRaf = 0, lastIntent = 0;
-  const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-  const easeOut = (t) => 1 - Math.pow(1 - t, 3);
-  // Within an act (text to text) stays brisk; a change of act lets the camera move be watched.
-  const durationFor = (dist) => (dist <= innerHeight * 1.35
-    ? clamp(650 + dist * 0.42, 800, 1500)
-    : clamp(2200 + dist * 0.62, 3800, 7200));
-  function glide(to, { chained = false, duration } = {}) {
-    to = clamp(Math.round(to), 0, maxY());
-    const from = scrollY, dist = to - from;
-    cancelAnimationFrame(glideRaf);
-    if (Math.abs(dist) < 2) { gliding = false; return; }
-    if (reduced()) { gliding = false; scrollTo({ top: to, behavior: 'instant' }); return; }
-    gliding = true;
-    glideTo = to;
-    const span = duration || durationFor(Math.abs(dist));
-    const curve = chained ? easeOut : easeInOut; // a chained glide is already moving: no slow start
-    const t0 = performance.now();
-    const step = (now) => {
-      const k = Math.min(1, (now - t0) / span);
-      scrollTo({ top: from + dist * curve(k), behavior: 'instant' });
-      if (k < 1) glideRaf = requestAnimationFrame(step);
-      else gliding = false;
-    };
-    glideRaf = requestAnimationFrame(step);
-  }
-  function go(dir) {
-    if (dir < 0) peekTopbar();
-    if (gliding && Math.sign(glideTo - scrollY) === dir) {
-      // extend: plan from where this glide was heading
-      const y = scrollY;
-      scrollTo({ top: glideTo, behavior: 'instant' });
-      const next = nextTarget(dir);
-      scrollTo({ top: y, behavior: 'instant' });
-      if (next !== glideTo) glide(next, { chained: true });
-      return;
-    }
-    glide(nextTarget(dir), { chained: gliding });
-  }
-  window.teaGlideTo = (y, duration) => glide(y, { duration });
-  const blocked = (target) => document.querySelector('dialog[open]')
-    || (target instanceof Element && target.closest('input, textarea, select, [contenteditable], dialog'));
-  const intent = (dir) => {
-    const now = performance.now();
-    if (now - lastIntent < 300) return; // one step per beat, however fast the wheel spins
-    lastIntent = now;
-    go(dir);
-  };
-
-  // Wheel: a fresh push (a pause, or deltas holding or growing) is intent; decaying deltas are
-  // trackpad inertia and are ignored, so a flick never overshoots several scenes.
-  let wheelSum = 0, wheelAt = 0, lastDelta = 0;
-  addEventListener('wheel', (event) => {
-    if (event.ctrlKey || blocked(event.target)) return;
-    event.preventDefault();
-    const now = performance.now();
-    const delta = event.deltaMode === 1 ? event.deltaY * 32 : event.deltaY;
-    const fresh = now - wheelAt > 160 || Math.abs(delta) >= Math.abs(lastDelta) || Math.sign(delta) !== Math.sign(lastDelta);
-    wheelAt = now;
-    lastDelta = delta;
-    if (!fresh) return;
-    wheelSum = Math.sign(wheelSum) === Math.sign(delta) ? wheelSum + delta : delta;
-    if (Math.abs(wheelSum) >= 24) { wheelSum = 0; intent(Math.sign(delta)); }
-  }, { passive: false });
-
-  let touchY = null;
-  addEventListener('touchstart', (event) => {
-    touchY = event.touches.length === 1 && !blocked(event.target) ? event.touches[0].clientY : null;
-  }, { passive: true });
-  addEventListener('touchmove', (event) => { if (touchY !== null && event.cancelable) event.preventDefault(); }, { passive: false });
-  addEventListener('touchend', (event) => {
-    if (touchY === null) return;
-    const dy = touchY - event.changedTouches[0].clientY;
-    touchY = null;
-    if (Math.abs(dy) > 36) intent(Math.sign(dy));
-  }, { passive: true });
-
-  addEventListener('keydown', (event) => {
-    if (event.altKey || event.ctrlKey || event.metaKey || blocked(event.target)) return;
-    const down = ['ArrowDown', 'PageDown'].includes(event.key) || (event.key === ' ' && !event.shiftKey);
-    const up = ['ArrowUp', 'PageUp'].includes(event.key) || (event.key === ' ' && event.shiftKey);
-    if (!down && !up && event.key !== 'Home' && event.key !== 'End') return;
-    if (event.target instanceof Element && event.target.closest('button, a') && event.key === ' ') return;
-    event.preventDefault();
-    if (event.key === 'Home') { peekTopbar(); glide(0); }
-    else if (event.key === 'End') glide(maxY());
-    else intent(down ? 1 : -1);
+      if (!cur) return null;
+      const r = cur.getBoundingClientRect();
+      if (dir > 0 && r.bottom > vh + 24) return y + Math.min(r.bottom - vh + 48, vh * 0.75);
+      if (dir < 0 && r.top < -24) return y + Math.max(r.top - vh * 0.12, -vh * 0.75);
+      return null;
+    },
   });
+  const { glide, peekTopbar } = nav;
+  window.teaGlideTo = (y, duration) => glide(y, { duration });
 
   // In-page links (如何入住, the footer seal) glide slowly so the film plays the whole way there.
   document.addEventListener('click', (event) => {
@@ -332,21 +238,4 @@
     history.replaceState(null, '', '#' + encodeURIComponent(id));
   }, true);
 
-  /* ---- Topbar: stays on the hero; elsewhere it tucks away and peeks briefly on the way back up ---- */
-  const topbar = document.querySelector('.topbar');
-  let peekUntil = 0, topbarTimer = 0;
-  function peekTopbar() { peekUntil = performance.now() + 2600; updateTopbar(); }
-  function updateTopbar() {
-    if (!topbar || document.body.classList.contains('site-intro-pending')) return;
-    const inHero = scrollY < innerHeight * 0.55;
-    const engaged = topbar.matches(':hover, :focus-within') || topbar.querySelector('details[open]');
-    const show = inHero || engaged || performance.now() < peekUntil;
-    topbar.classList.toggle('topbar-hidden', !show);
-    clearTimeout(topbarTimer);
-    if (show && !inHero) topbarTimer = setTimeout(updateTopbar, Math.max(400, peekUntil - performance.now() + 50));
-  }
-  addEventListener('scroll', updateTopbar, { passive: true });
-  addEventListener('teacafe-intro-finished', () => setTimeout(updateTopbar, 900));
-  topbar?.addEventListener('mouseleave', () => setTimeout(updateTopbar, 600));
-  topbar?.addEventListener('focusout', () => setTimeout(updateTopbar, 600));
 })();

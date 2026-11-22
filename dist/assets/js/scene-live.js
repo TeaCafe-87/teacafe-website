@@ -267,7 +267,6 @@
 
     // ---------------------------------------------------------------- koi
     const kc = cfg.koi || {};
-    const PALETTE = { orange: [[204, 128, 70], [226, 216, 200]], white: [[222, 224, 214], [206, 120, 64]], ink: [[58, 62, 66], [214, 214, 206]] };
     const WATER = [92, 126, 124];
     const kinds = ['orange', 'white', 'ink', 'orange', 'white', 'orange', 'ink', 'white', 'orange', 'white', 'ink', 'orange'];
     const koi = Array.from({ length: kc.count || 0 }, (_, i) => {
@@ -306,48 +305,79 @@
         k.tail += dt * (4.5 + k.s * 14 + Math.abs(k.turn) * 3);
       }
     }
-    // Body outline in fish units (lateral, forward); the head points to +forward.
-    const BODY = [[0, 1], [0.18, 0.82], [0.27, 0.45], [0.26, 0.05], [0.18, -0.42], [0.08, -0.78], [0, -0.86], [-0.08, -0.78], [-0.18, -0.42], [-0.26, 0.05], [-0.27, 0.45], [-0.18, 0.82]];
+    // Koi silhouette in fish units: half-width at each point along the spine (head +1, tail root -0.8).
+    // Blunt head, widest just behind the pectorals, a slim tail stalk; the body bends as one wave.
+    const SPINE = [1, 0.93, 0.8, 0.6, 0.36, 0.1, -0.16, -0.4, -0.6, -0.8];
+    const HALF = [0.07, 0.15, 0.205, 0.24, 0.25, 0.23, 0.18, 0.12, 0.075, 0.045];
+    // Patterns (fish units: forward, lateral, radius): kohaku red on white, white on ink, ogon plain.
+    for (const k of koi) {
+      k.spots = k.kind === 'orange' ? [] : Array.from({ length: 2 + Math.floor(r() * 2) }, () => [0.75 - r() * 1.2, (r() - 0.5) * 0.2, 0.1 + r() * 0.1]);
+    }
+    const SKIN = { orange: [214, 146, 92], white: [232, 230, 220], ink: [52, 56, 60] };
+    const SPOT = { orange: null, white: [196, 92, 60], ink: [214, 210, 198] };
     function drawKoi(f, t) {
       const gate = 1 - smooth((f - (kc.frames ? kc.frames[1] - 18 : 55)) / 18);
       if (gate <= 0.01) return;
-      const tint = (col, w) => `rgb(${col.map((c, i) => Math.round(mix(c, WATER[i], w))).join(',')})`;
+      const tint = (col, w, a = 1) => `rgba(${col.map((c, i) => Math.round(mix(c, WATER[i], w))).join(',')},${a})`;
       const order = koi.map((k) => [k, P(k.x, k.y, k.z)]).filter((e) => e[1]).sort((a, b) => b[1][2] - a[1][2]);
-      for (const [k] of order) {
-        const sway = Math.sin(k.tail) * (0.35 + Math.min(0.25, Math.abs(k.turn) * 0.2));
-        const fx = Math.cos(k.h), fy = Math.sin(k.h), rx = Math.sin(k.h), ry = -Math.cos(k.h);
-        const wob = 0.025 * Math.sin(t * 1.7 + k.p1);          // light refraction wobble under the surface
-        const W = (lat, fwd) => P(k.x + (rx * lat + fx * fwd) * k.size + wob, k.y + (ry * lat + fy * fwd) * k.size, k.z);
-        const bend = (fwd) => (fwd < 0 ? -fwd * 0.22 * sway : 0);   // the rear half follows the tail
-        const pts = BODY.map(([lat, fwd]) => W(lat + bend(fwd), fwd));
-        if (pts.some((p) => !p)) continue;
-        const cx = pts[0][0], cy = pts[0][1];
-        if (cx < -60 || cy < -60 || cx > box.w + 60 || cy > box.h + 60) continue;
-        const depthTint = 0.18 + 0.32 * clamp(-k.z, 0, 1);
-        const [bodyCol, finCol] = PALETTE[k.kind];
-        ctx.globalAlpha = 0.9 * gate;
-        // tail: two lobes swinging around the tail root
-        const root = [0 + bend(-0.86), -0.86];
-        const tip = (side) => { const a = sway * 0.9, lx = side * 0.3, ly = -0.55; return [root[0] + lx * Math.cos(a) - ly * Math.sin(a), root[1] + lx * Math.sin(a) + ly * Math.cos(a)]; };
-        const T0 = W(...root), T1 = W(...tip(-1)), T2 = W(...tip(1)), Tm = W(root[0] + Math.sin(sway * 0.9) * 0.38, root[1] - 0.38);
-        ctx.fillStyle = tint(finCol, depthTint);
-        if (T0 && T1 && T2 && Tm) { ctx.beginPath(); ctx.moveTo(T0[0], T0[1]); ctx.lineTo(T1[0], T1[1]); ctx.lineTo(Tm[0], Tm[1]); ctx.lineTo(T2[0], T2[1]); ctx.closePath(); ctx.fill(); }
-        // pectoral fins, a slow paddle
-        const flap = 0.08 * Math.sin(t * 3 + k.p2);
-        for (const side of [-1, 1]) {
-          const a = W(side * 0.18, 0.4), b = W(side * (0.52 + flap), 0.15), c = W(side * 0.2, 0.12);
-          if (a && b && c) { ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.closePath(); ctx.fill(); }
-        }
-        // body, smoothed through the outline midpoints
-        ctx.fillStyle = tint(bodyCol, depthTint);
-        ctx.beginPath();
+      const smoothPath = (pts, closed) => {
         const n = pts.length, mid = (i) => [(pts[i][0] + pts[(i + 1) % n][0]) / 2, (pts[i][1] + pts[(i + 1) % n][1]) / 2];
-        let m = mid(n - 1); ctx.moveTo(m[0], m[1]);
-        for (let i = 0; i < n; i++) { m = mid(i); ctx.quadraticCurveTo(pts[i][0], pts[i][1], m[0], m[1]); }
-        ctx.fill();
-        if (k.kind === 'white') {                          // kohaku patch on the back
-          const a = W(0, 0.62), b = W(0.1, 0.1), c = W(0, -0.32), d = W(-0.1, 0.1);
-          if (a && b && c && d) { ctx.fillStyle = tint(finCol, depthTint); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.quadraticCurveTo(b[0], b[1], c[0], c[1]); ctx.quadraticCurveTo(d[0], d[1], a[0], a[1]); ctx.fill(); }
+        ctx.beginPath();
+        if (closed) { let m = mid(n - 1); ctx.moveTo(m[0], m[1]); for (let i = 0; i < n; i++) { m = mid(i); ctx.quadraticCurveTo(pts[i][0], pts[i][1], m[0], m[1]); } ctx.closePath(); }
+        else { ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < n - 1; i++) { const m = mid(i); ctx.quadraticCurveTo(pts[i][0], pts[i][1], m[0], m[1]); } ctx.lineTo(pts[n - 1][0], pts[n - 1][1]); }
+      };
+      for (const [k] of order) {
+        const fx = Math.cos(k.h), fy = Math.sin(k.h), rx = Math.sin(k.h), ry = -Math.cos(k.h);
+        const wob = 0.02 * Math.sin(t * 1.7 + k.p1);           // refraction wobble under the surface
+        // Travelling wave: small at the head, growing toward the tail; a turn curves the whole body.
+        const amp = 0.13 + Math.min(0.1, Math.abs(k.turn) * 0.08);
+        const off = (fwd) => { const back = (1 - fwd) / 1.8; return Math.sin(k.tail - back * 2.6) * amp * back * back - k.turn * 0.09 * back * back; };
+        const W = (lat, fwd, z = k.z) => P(k.x + (rx * lat + fx * fwd) * k.size + wob, k.y + (ry * lat + fy * fwd) * k.size, z);
+        const head = W(off(1), 1);
+        if (!head || head[0] < -80 || head[1] < -80 || head[0] > box.w + 80 || head[1] > box.h + 80) continue;
+        const outline = (z) => {
+          const R = [], L = [];
+          for (let i = 0; i < SPINE.length; i++) { const o = off(SPINE[i]); R.push(W(o + HALF[i], SPINE[i], z)); L.push(W(o - HALF[i], SPINE[i], z)); }
+          return R.concat(L.slice(1, -1).reverse());
+        };
+        const body = outline(k.z);
+        if (body.some((q) => !q)) continue;
+        const deep = clamp(-k.z, 0, 1), haze = 0.2 + 0.34 * deep;   // deeper fish sink into the water colour
+        const alpha = (0.86 - 0.3 * deep) * gate;
+        // Shadow on the lake bed: the same outline, lower and soft.
+        const shadow = outline(k.z - 0.16);
+        if (!shadow.some((q) => !q)) { ctx.globalAlpha = 0.09 * gate; ctx.fillStyle = 'rgb(28,44,44)'; smoothPath(shadow, true); ctx.fill(); }
+        ctx.globalAlpha = alpha;
+        const skin = SKIN[k.kind];
+        // Tail: two soft lobes trailing the wave, the fin membrane seen through.
+        const tr = SPINE[SPINE.length - 1], to = off(tr), tw = Math.sin(k.tail - 2.6) * 0.32;
+        const lobe = (side) => [W(to, tr), W(to + side * 0.1 + tw * 0.4, tr - 0.2), W(to + side * 0.34 + tw, tr - 0.58), W(to + side * 0.05 + tw * 0.8, tr - 0.4)];
+        ctx.fillStyle = tint(skin, haze + 0.1, 0.72);
+        for (const side of [-1, 1]) {
+          const q = lobe(side);
+          if (q.some((x) => !x)) continue;
+          ctx.beginPath(); ctx.moveTo(q[0][0], q[0][1]); ctx.quadraticCurveTo(q[1][0], q[1][1], q[2][0], q[2][1]); ctx.quadraticCurveTo(q[3][0], q[3][1], q[0][0], q[0][1]); ctx.fill();
+        }
+        // Pectoral fins: rounded paddles, translucent.
+        const flap = 0.07 * Math.sin(t * 2.6 + k.p2);
+        for (const side of [-1, 1]) {
+          const o = off(0.55), a0 = W(o + side * 0.2, 0.58), a1 = W(o + side * (0.5 + flap), 0.5), a2 = W(o + side * (0.44 + flap), 0.3), a3 = W(o + side * 0.18, 0.4);
+          if (a0 && a1 && a2 && a3) { ctx.beginPath(); ctx.moveTo(a0[0], a0[1]); ctx.bezierCurveTo(a1[0], a1[1], a2[0], a2[1], a3[0], a3[1]); ctx.closePath(); ctx.fill(); }
+        }
+        // Body, then its markings clipped to it, then a darker back line for volume.
+        ctx.fillStyle = tint(skin, haze);
+        smoothPath(body, true); ctx.fill();
+        const unit = Math.hypot(head[0] - body[4][0], head[1] - body[4][1]) / Math.hypot(0.64, HALF[4]);   // px per fish unit
+        if (SPOT[k.kind] && unit > 1.5) {
+          ctx.save(); smoothPath(body, true); ctx.clip();
+          ctx.fillStyle = tint(SPOT[k.kind], haze);
+          for (const [fw, lat, rad] of k.spots) { const c = W(off(fw) + lat, fw); if (c) { ctx.beginPath(); ctx.ellipse(c[0], c[1], rad * unit * 1.35, rad * unit, Math.atan2(fy, fx), 0, TAU); ctx.fill(); } }
+          ctx.restore();
+        }
+        const back = SPINE.slice(1, -1).map((fw) => W(off(fw), fw));
+        if (!back.some((q) => !q) && unit > 2) {
+          ctx.globalAlpha = alpha * 0.28; ctx.strokeStyle = tint(k.kind === 'ink' ? [20, 22, 24] : [120, 70, 40], haze); ctx.lineWidth = Math.max(0.6, unit * 0.06);
+          smoothPath(back, false); ctx.stroke();
         }
       }
       ctx.globalAlpha = 1;

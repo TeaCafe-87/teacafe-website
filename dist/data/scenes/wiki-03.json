@@ -107,24 +107,14 @@
   ],
   "beats": [
     {
-      "id": "threshold",
-      "from": 0.05,
-      "to": 0.284,
-      "frames": [
-        16,
-        86
-      ],
-      "why": "bright mist on the right third while the camera turns onto the bridge"
-    },
-    {
       "id": "library",
-      "from": 0.605,
-      "to": 0.987,
+      "from": 0.58,
+      "to": 1,
       "frames": [
-        182,
-        296
+        174,
+        300
       ],
-      "why": "dark tunnel centre in the lantern grotto: the library entrance"
+      "why": "just inside the cave, lantern grotto ahead: the library entrance. Stays to the end; 進入藏書閣 flies on to the last frame before the reader opens"
     }
   ],
   "camera": "/data/scenes/wiki-03.camera.json",

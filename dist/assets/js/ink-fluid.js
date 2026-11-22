@@ -234,6 +234,9 @@ precision highp float; in vec2 vUv; out vec4 o; ${['ink', 'show', 'seed'].includ
 
     resize();
     return {
+      // Drop the stirred ink and start again from the live picture (a moving camera would otherwise
+      // keep old frames smeared where the cursor stirred).
+      reset() { fresh = true; last = null; splats.length = 0; if (visible) { visible = false; canvas.classList.remove('is-stirred'); } },
       destroy() {
         alive = false;
         cancelAnimationFrame(raf);

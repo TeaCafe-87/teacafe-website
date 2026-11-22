@@ -140,15 +140,6 @@
         100,
         214
       ]
-    },
-    {
-      "id": "bridge",
-      "from": 0.793,
-      "to": 0.987,
-      "frames": [
-        238,
-        296
-      ]
     }
   ],
   "camera": "/data/scenes/wiki-02.camera.json",

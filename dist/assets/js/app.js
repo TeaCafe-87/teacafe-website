@@ -153,6 +153,8 @@ document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
   const openDialog = [...document.querySelectorAll('dialog[open]')].at(-1);
   if (openDialog && openDialog !== settings && openDialog !== auth) return;
+  // A page's own open modal panel (e.g. the Wiki reader) or a camera flight handles its own Esc.
+  if (document.querySelector('[aria-modal="true"]:not(dialog):not([inert])') || document.documentElement.hasAttribute('data-journey-flying')) return;
   event.preventDefault();
   if (settings.open) { settings.close(); return; }
   if (auth?.open) { auth.close(); return; }
