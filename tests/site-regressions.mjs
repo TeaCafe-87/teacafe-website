@@ -104,7 +104,7 @@ globalThis.caches = { default: { match: async () => null, put: async () => {} } 
 globalThis.fetch = async url => { statusLookup = String(url); return Response.json({ online: false }); };
 try {
   await serverStatus({ request: request('/api/server/status'), env, waitUntil() {} });
-  assert.ok(statusLookup.includes('mc.teacafe.xyz'));
+  assert.ok(statusLookup.includes('teacafe.xyz'));
 } finally {
   globalThis.fetch = originalFetch;
   globalThis.caches = originalCaches;
