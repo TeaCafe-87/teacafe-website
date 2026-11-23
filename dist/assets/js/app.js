@@ -394,7 +394,7 @@ paintTheme();
 applyInterfaceSettings();
 
 $$('[data-copy]').forEach((button) => button.addEventListener("click", async () => {
-  const value = button.dataset.copy === "SERVER_IP" ? "mc.teacafe.xyz" : button.dataset.copy;
+  const value = button.dataset.copy === "SERVER_IP" ? "teacafe.xyz" : button.dataset.copy;
   try { await navigator.clipboard.writeText(value); toast("已拓下 " + value + "・可直接貼上"); }
   catch { toast(value); }
 }));
@@ -438,7 +438,7 @@ async function loadServerStatus() {
     const data = await response.json().catch(() => ({}));
     if (!response.ok && data.online !== false) throw new Error("status");
     const address = $("[data-server-address]");
-    if (address) address.textContent = data.address || "mc.teacafe.xyz";
+    if (address) address.textContent = data.address || "teacafe.xyz";
     if (data.online) {
       status.textContent = "● 線上";
       status.classList.add("status-online");

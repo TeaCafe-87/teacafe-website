@@ -1,5 +1,5 @@
 // Live server status for the home page (卷一 山門).
-// mc.teacafe.xyz sits behind an anti-DDoS proxy that may drop status pings from data centres, so
+// teacafe.xyz sits behind an anti-DDoS proxy that may drop status pings from data centres, so
 // the probe can target a separate address (MINECRAFT_STATUS_ADDRESS, e.g. the origin "host:port"),
 // and two public status services are tried in turn. The address shown to players stays
 // MINECRAFT_SERVER_ADDRESS.
@@ -36,7 +36,7 @@ async function fromMcsrvstat(probe) {
 
 export async function onRequestGet(context) {
   const { request, env } = context;
-  const address = String(env.MINECRAFT_SERVER_ADDRESS || 'mc.teacafe.xyz').trim();
+  const address = String(env.MINECRAFT_SERVER_ADDRESS || 'teacafe.xyz').trim();
   const probe = String(env.MINECRAFT_STATUS_ADDRESS || address).trim();
   const cache = caches.default;
   const cacheKey = new Request(new URL('/api/server/status', request.url).toString(), { method: 'GET' });

@@ -61,7 +61,7 @@
 
 論壇與相冊的 `GET /api/community/posts` 支援 `q` 搜尋標題／內文，以及包含時間和貼文 ID 的 `cursor` 分頁。分享連結不需要登入；寫入分享計數需要 Discord 登入，同一使用者對同一貼文每 24 小時最多記錄一次。
 
-管理員可在 `/admin` 編輯公告、Wiki 補充條目與通行證季節。`GET/POST /api/admin/content` 僅接受官方 Discord 身分，POST 需同源請求；草稿不會出現在公開 API。Minecraft 狀態預設查詢 `mc.teacafe.xyz`，需要改址時可設定 Pages 環境變數 `MINECRAFT_SERVER_ADDRESS`。
+管理員可在 `/admin` 編輯公告、Wiki 補充條目與通行證季節。`GET/POST /api/admin/content` 僅接受官方 Discord 身分，POST 需同源請求；草稿不會出現在公開 API。Minecraft 狀態預設查詢 `teacafe.xyz`，需要改址時可設定 Pages 環境變數 `MINECRAFT_SERVER_ADDRESS`。
 
 論壇與相冊不再顯示示範貼文。新投稿待審期間，只有投稿者與管理員能讀取其媒體；公開 Feed、按讚、留言與分享只針對已核准貼文。`site_members` 從這次部署後的 Discord 登入開始記錄；舊貼文作者可由遷移補入，但更早只瀏覽網站、沒有發文的訪客無法回溯。舊版 `gallery_posts`／`gallery_comments` 若已有正式資料，須另行做資料遷移後再切換新 API。
 
